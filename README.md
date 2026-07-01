@@ -1,7 +1,7 @@
 # PaulsCode.Com Umbrel Community App Store
 
 An [Umbrel](https://umbrel.com) community app store bringing together all of
-[paulscode](https://github.com/paulscode)'s Umbrel apps under one heading.
+[Paul Lamb](https://paulscode.com)'s Umbrel apps under one heading.
 
 ## How to add this store to your Umbrel
 
