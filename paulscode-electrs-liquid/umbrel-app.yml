@@ -1,0 +1,57 @@
+manifestVersion: 1.1
+id: paulscode-electrs-liquid
+category: bitcoin
+name: Electrs Liquid
+version: "0.1.0"
+tagline: A Liquid Electrum server — full node plus indexer
+description: >-
+  Run your own Liquid (liquidv1) Electrum server. This app bundles a Liquid full
+  node (elementsd) and an Electrum indexer (electrs, built with Liquid support)
+  together, exposing a single Electrum endpoint for the Liquid network — so your
+  Liquid wallets and other apps query balances, transaction history, and broadcast
+  transactions through your own node instead of a third-party server.
+
+
+  Self-contained: it runs its own Liquid node, so it does NOT require the Bitcoin
+  app.
+
+
+  ⚠️ HEAVYWEIGHT — READ BEFORE INSTALLING
+
+
+  This stores the full Liquid chain plus its address index (roughly 115 GB of
+  disk). The app itself uses about 14 GiB of RAM during the initial sync
+  (dominated by the Liquid full node; the indexer stays ~2-4 GiB). Because it is
+  meant to run alongside your other Bitcoin/Lightning services, at least 32 GB of
+  total system RAM is recommended. A machine with 16 GB also running other
+  services will run out of memory. The first sync can take many hours.
+
+
+  CONNECTING
+
+
+  - Other Umbrel apps: depend on this app and read APP_ELECTRS_LIQUID_ELECTRS_NODE_IP
+    and APP_ELECTRS_LIQUID_ELECTRS_NODE_PORT (internal Electrum port 50001).
+
+  - Wallets on your LAN: point an Electrum-compatible Liquid wallet at your
+    Umbrel's address on port 50101.
+
+
+  The Liquid network is fixed to mainnet (liquidv1).
+developer: Paul Lamb
+website: https://github.com/paulscode/electrs-liquid-startos
+dependencies: []
+repo: https://github.com/paulscode/electrs-liquid-startos
+support: https://github.com/paulscode/electrs-liquid-startos/issues
+port: 3027
+# Community stores must supply full URLs for icon and gallery — Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-electrs-liquid/icon.svg
+gallery:
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-electrs-liquid/gallery/1.png
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: ""
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store

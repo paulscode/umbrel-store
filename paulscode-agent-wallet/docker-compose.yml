@@ -1,0 +1,47 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: $APP_AGENT_WALLET_IP
+      APP_PORT: 8100
+
+  # Single container: the Agent Wallet app plus its co-resident PostgreSQL,
+  # Redis, Tor, and BOLT 12 gateway, supervised by s6-overlay. The Umbrel
+  # entrypoint (docker_entrypoint_umbrel.sh, baked into the image) wires the
+  # environment below to the app's runtime config.
+  web:
+    image: paulscode/agent-wallet-umbrel:0.4.17.0@sha256:0994797cb78155ce6a27ad2ed29fa67e460ec877e46e9510748a474714240105
+    restart: on-failure
+    stop_grace_period: 5m
+    volumes:
+      # Persistent data: Postgres, Redis, Tor, secrets, BOLT 12 state.
+      - ${APP_DATA_DIR}/data:/data
+      # LND credentials (tls.cert + admin.macaroon), read-only.
+      - ${APP_LIGHTNING_NODE_DATA_DIR}:/mnt/lnd:ro
+    environment:
+      # ── LND (Lightning Node app) ──
+      APP_LIGHTNING_NODE_IP: $APP_LIGHTNING_NODE_IP
+      APP_LIGHTNING_NODE_REST_PORT: $APP_LIGHTNING_NODE_REST_PORT
+      # ── Indexer (Electrs app; Fulcrum re-exports these too) ──
+      APP_ELECTRS_NODE_IP: $APP_ELECTRS_NODE_IP
+      APP_ELECTRS_NODE_PORT: $APP_ELECTRS_NODE_PORT
+      # ── Dashboard login = the Umbrel app password ──
+      APP_PASSWORD: $APP_PASSWORD
+      # ── Optional local Mempool (set by exports.sh when one is installed;
+      #    empty -> public mempool.space) ──
+      AGENT_WALLET_MEMPOOL_API: ${APP_AGENT_WALLET_MEMPOOL_API:-}
+      AGENT_WALLET_MEMPOOL_EXPLORER: ${APP_AGENT_WALLET_MEMPOOL_EXPLORER:-}
+      # ── Optional Liquid backend (Electrs Liquid app), used only when both
+      #    Anonymize and Liquid are enabled below ──
+      APP_ELECTRS_LIQUID_ELECTRS_NODE_IP: ${APP_ELECTRS_LIQUID_ELECTRS_NODE_IP:-}
+      APP_ELECTRS_LIQUID_ELECTRS_NODE_PORT: ${APP_ELECTRS_LIQUID_ELECTRS_NODE_PORT:-}
+      # ── Feature toggles (Umbrel has no settings form; edit + restart to change) ──
+      AGENT_WALLET_BOLT12: "true"
+      AGENT_WALLET_BRAIINS_DEPOSIT: "true"
+      AGENT_WALLET_ANONYMIZE: "false"
+      AGENT_WALLET_LIQUID: "false"
+      AGENT_WALLET_LOG_LEVEL: "INFO"
+    networks:
+      default:
+        ipv4_address: $APP_AGENT_WALLET_IP

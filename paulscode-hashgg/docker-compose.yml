@@ -1,0 +1,23 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      # Umbrel container naming: <app-id>_<service>_<n>
+      APP_HOST: paulscode-hashgg_web_1
+      APP_PORT: 3000
+
+  web:
+    image: paulscode/hashgg:0.6.0.1
+    restart: on-failure
+    environment:
+      # Datum has no exports.sh, so there's no APP_DATUM_STRATUM_PORT —
+      # hardcode the port Datum listens on (23334 per its own compose).
+      # APP_DATUM_NODE_IP should be auto-injected by Umbrel because of the
+      # `dependencies: [datum]` in umbrel-app.yml. If it isn't populated on
+      # install, the fallback hostname `datum_datum_1` is deterministic from
+      # Umbrel's container naming and will work on the internal network.
+      DATUM_HOST: ${APP_DATUM_NODE_IP:-datum_datum_1}
+      DATUM_STRATUM_PORT: "23334"
+    volumes:
+      - ${APP_DATA_DIR}/data:/root/data

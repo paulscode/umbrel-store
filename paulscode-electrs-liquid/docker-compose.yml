@@ -1,0 +1,40 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: $APP_ELECTRS_LIQUID_ELECTRS_WEB_IP
+      APP_PORT: 80
+
+  # Small static page shown by the app's "Open" button: how to connect a wallet.
+  web:
+    image: nginx:1.27-alpine
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/web:/usr/share/nginx/html:ro
+    networks:
+      default:
+        ipv4_address: $APP_ELECTRS_LIQUID_ELECTRS_WEB_IP
+
+  # Liquid full node (elementsd) + Electrum indexer (electrs --features liquid),
+  # supervised by the image's env-driven entrypoint (same image as the StartOS
+  # package). Serves the Electrum protocol on 50001 inside the network; published
+  # on host port 50101 so LAN wallets can connect (50101 avoids colliding with the
+  # Bitcoin Electrs app's 50001).
+  server:
+    image: paulscode/elements-electrs:0.1.0@sha256:2a914acccb73fc68f1cb7965f8f9ec988cc342ab852e9e1a528bc9853ed068bc
+    restart: always
+    stop_grace_period: 5m
+    environment:
+      LIQUID_NETWORK: liquidv1
+      LOG_LEVEL: INFO
+      # P2P egress is clearnet in this version. To route it through Umbrel's Tor,
+      # set: ELEMENTS_PROXY: "${TOR_PROXY_IP}:${TOR_PROXY_PORT}"
+      ELEMENTS_PROXY: ""
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+    ports:
+      - "50101:50001"
+    networks:
+      default:
+        ipv4_address: $APP_ELECTRS_LIQUID_ELECTRS_NODE_IP

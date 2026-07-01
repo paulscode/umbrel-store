@@ -1,0 +1,83 @@
+manifestVersion: 1.1
+id: paulscode-agent-wallet
+category: bitcoin
+name: Agent Wallet
+version: "0.4.17.0"
+tagline: A self-custodial Bitcoin & Lightning wallet with an automation API
+description: >-
+  Agent Wallet is a self-custodial Bitcoin and Lightning wallet that connects to
+  your Umbrel's Lightning Node (LND) and exposes a dashboard plus a programmatic
+  API designed for AI agents to initiate payments within configured limits.
+
+
+  It uses your installed Electrum indexer (Electrs or Fulcrum) for on-chain
+  lookups, and an optional Mempool explorer for fee estimates and links (falling
+  back to the public mempool.space API when none is installed). It also bundles a
+  BOLT 12 onion-message gateway and an optional, experimental Anonymize feature
+  with an optional Liquid hop.
+
+
+  The wallet runs its own PostgreSQL, Redis, and Tor inside one container — the
+  same image contract as the Agent Wallet StartOS package.
+
+
+  ⚠️ SECURITY
+
+
+  Anyone holding the dashboard password or an issued API key can spend from the
+  connected LND node, up to its limits. Treat the dashboard password and API keys
+  like cash. To get your dashboard login, right-click the Agent Wallet tile on
+  your Umbrel home screen and choose "Show default credentials".
+
+
+  🛠️ REQUIREMENTS
+
+
+  - Lightning Node (LND) — required.
+
+  - Electrs — required (the on-chain indexer). Fulcrum also works: it re-exports
+    the same connection variables, so either indexer satisfies the app.
+
+  - Mempool — optional (official Mempool or Mempool BIP-110); used for fee
+    estimates when present, otherwise the public mempool.space API is used.
+
+
+  ⚙️ CONFIGURATION
+
+
+  Feature toggles default to sensible values (BOLT 12 on, Braiins deposits on,
+  Anonymize off, Liquid off). To change them, edit the environment block of the
+  app's docker-compose.yml. See the store README for details.
+
+
+  For more information: https://github.com/paulscode/agent-wallet
+developer: Paul Lamb
+website: https://github.com/paulscode/agent-wallet
+dependencies:
+  - lightning
+  - electrs
+repo: https://github.com/paulscode/agent-wallet
+support: https://github.com/paulscode/agent-wallet/issues
+port: 3028
+# Community stores must supply full URLs for icon and gallery — Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-agent-wallet/icon.svg
+gallery: []
+path: ""
+defaultUsername: ""
+# The dashboard login token is the Umbrel app password ($APP_PASSWORD, wired to
+# DASHBOARD_TOKEN in the entrypoint). deterministicPassword:true makes Umbrel
+# surface that exact value under the app's "Show default credentials" right-click
+# menu so the user can copy it to sign in. (The login is token-only — no
+# username — so defaultUsername stays empty.)
+defaultPassword: ""
+deterministicPassword: true
+releaseNotes: >-
+  Tracks upstream Agent Wallet v0.4.17. Fixes Retry on a failed inbound build:
+  restarting the same plan previously just re-showed the old, already-failed run
+  instead of starting a new one. Re-running an identical plan now correctly
+  launches a fresh build once the previous one has ended. Carries forward v0.4.16
+  (failed-build banner with Retry / Dismiss), v0.4.15 (anchor-reserve sizing),
+  v0.4.14 (mempool links), and all earlier 0.4.x work.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store

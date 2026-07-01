@@ -1,0 +1,61 @@
+###############################################################################
+# Mempool BIP-110 Backend — Umbrel Docker Image
+#
+# Build context: mempool-bip110 repo root
+# Usage:
+#   docker buildx build -f docker/Dockerfile.backend \
+#     --platform linux/amd64,linux/arm64 \
+#     --tag paulscode/mempool-bip110-backend:v3.2.1 \
+#     --output type=registry .
+###############################################################################
+
+FROM rust:1.84-bookworm AS builder
+
+WORKDIR /build
+
+# Install Node.js 22
+RUN apt-get update && \
+    apt-get install -y curl ca-certificates && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs=22.14.0-1nodesource1 build-essential python3 pkg-config && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy backend source
+COPY backend/ .
+
+# Copy Rust GBT source (needed for native module build)
+COPY rust/ ../rust/
+
+ENV PATH="/usr/local/cargo/bin:$PATH"
+ENV FD=/build/rust-gbt
+
+RUN npm install --omit=dev --omit=optional
+RUN npm run package
+
+###############################################################################
+# Final image: Node.js runtime with packaged backend
+###############################################################################
+FROM node:22.14.0-bookworm-slim
+
+WORKDIR /backend
+
+RUN chown 1000:1000 ./
+
+# Copy packaged backend from builder
+COPY --from=builder --chown=1000:1000 /build/package ./package/
+
+# Copy docker runtime files (config template, start script, wait-for-it)
+COPY --chown=1000:1000 docker/backend/mempool-config.json .
+COPY --chown=1000:1000 docker/backend/start.sh .
+COPY --chown=1000:1000 docker/backend/wait-for-it.sh .
+
+RUN chmod +x start.sh wait-for-it.sh
+
+# Create cache directory
+RUN mkdir -p /backend/cache && chown 1000:1000 /backend/cache
+
+USER 1000
+
+EXPOSE 8999
+
+CMD ["/backend/start.sh"]

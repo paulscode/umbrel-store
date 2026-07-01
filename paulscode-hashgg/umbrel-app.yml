@@ -1,0 +1,87 @@
+manifestVersion: 1.1
+id: paulscode-hashgg
+category: bitcoin
+name: HashGG
+version: "0.6.0.1"
+tagline: Sovereign hash routing for your Bitcoin miners
+description: >-
+  HashGG exposes your Datum Gateway stratum port to the public internet —
+  so any miner, anywhere, can connect to your node and mine blocks you built.
+
+
+  Choose between two tunnel options directly in the HashGG web UI:
+
+
+    - playit.gg (~$3/month, fiat) — easiest setup, managed service
+
+    - VPS SSH tunnel (~$11/month, Bitcoin) — privacy-focused, full control,
+      no third-party on the data path
+
+
+  No router configuration, no dynamic DNS, no VPN. Works behind NAT, double NAT,
+  or CGNAT — whatever your ISP throws at you.
+
+
+  🛠️ SET-UP INSTRUCTIONS
+
+
+  ### Prerequisites:
+
+
+  Install and configure the Datum app first (which itself requires Bitcoin Knots).
+  HashGG connects to Datum's stratum port automatically — no configuration needed
+  on install.
+
+
+  ### After installing HashGG:
+
+
+  Open the HashGG app from your Umbrel home screen. Pick a tunnel mode:
+
+
+    - playit.gg — approve a one-time claim URL in your browser
+
+    - VPS — provision a VPS (we recommend BitLaunch), paste the generated
+      setup script into its root shell, enter its IP in HashGG
+
+
+  Copy the public mining endpoint HashGG displays and point your miners at it.
+
+
+  ### Connecting your miner:
+
+
+    - Stratum URL: use the public endpoint HashGG shows you, e.g.
+      stratum+tcp://paul-hashgg-123.joinplayit.com:12345
+
+    - Username: your Bitcoin address (for OCEAN rewards), with an optional
+      worker name after a period, e.g. bc1qxyz...abc.bitaxe
+
+    - Password: leave blank or any value
+
+
+  For more information: https://github.com/paulscode/hashgg
+developer: Paul Lamb
+website: https://github.com/paulscode/hashgg
+dependencies:
+  - datum
+repo: https://github.com/paulscode/hashgg
+support: https://github.com/paulscode/hashgg/issues
+port: 3000
+# Community stores must supply full URLs for icon and gallery — Umbrel's
+# resolver (packages/umbreld/source/modules/apps/app-repository.ts) only
+# auto-prefixes URLs for the official `umbrel-app-store`. Source comment:
+# "TODO: make this work for custom repos".
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-hashgg/icon.svg
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: >-
+  Fix a blank dashboard when a VPS tunnel was configured but not connected;
+  the dashboard now always shows status and the Reset control. Includes the
+  0.6.0 features: additional miners (expose extra stratum servers through their
+  own tunnels, each with live status), playit.gg cleanup (delete leftover
+  tunnels from previous installs), and a one-click VPS teardown script.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store

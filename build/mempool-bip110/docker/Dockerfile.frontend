@@ -1,0 +1,79 @@
+###############################################################################
+# Mempool BIP-110 Frontend — Umbrel Docker Image
+#
+# Build context: mempool-bip110 repo root
+# Usage:
+#   docker buildx build -f docker/Dockerfile.umbrel-frontend \
+#     --platform linux/amd64,linux/arm64 \
+#     --tag paulscode/mempool-bip110-frontend:v3.2.1 \
+#     --output type=registry .
+###############################################################################
+
+FROM node:22.14.0-bookworm-slim AS builder
+
+WORKDIR /build
+
+# Copy frontend source
+COPY frontend/ .
+
+# Copy docker runtime files into build context so they end up in the builder
+COPY docker/frontend/entrypoint.sh .
+COPY docker/frontend/wait-for .
+
+# Copy nginx configs from repo root
+COPY nginx.conf .
+COPY nginx-mempool.conf .
+
+# Apply the same transformations that docker/init.sh normally does:
+# - Replace listen address with a port placeholder for the entrypoint
+# - Bind to 0.0.0.0 instead of localhost
+# - Remove 'user nobody;' (nginx alpine runs as non-root uid 1000)
+# - Fix the include path to point to /etc/nginx/conf.d/
+# - Replace backend address with placeholders for the entrypoint
+RUN sed -i "s/127.0.0.1:80/0.0.0.0:__MEMPOOL_FRONTEND_HTTP_PORT__/g" nginx.conf && \
+    sed -i "s/127.0.0.1/0.0.0.0/g" nginx.conf && \
+    sed -i "s/user nobody;//g" nginx.conf && \
+    sed -i "s!/etc/nginx/nginx-mempool.conf!/etc/nginx/conf.d/nginx-mempool.conf!g" nginx.conf && \
+    sed -i "s/127.0.0.1:8999/__MEMPOOL_BACKEND_MAINNET_HTTP_HOST__:__MEMPOOL_BACKEND_MAINNET_HTTP_PORT__/g" nginx-mempool.conf
+
+RUN apt-get update && \
+    apt-get install -y build-essential rsync && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN cp mempool-frontend-config.sample.json mempool-frontend-config.json
+
+ENV CYPRESS_INSTALL_BINARY=0
+ENV SKIP_SYNC=1
+RUN npm install --omit=dev --omit=optional
+RUN npm run build
+
+###############################################################################
+# Final image: nginx serving the built Angular frontend
+###############################################################################
+FROM nginx:1.27.0-alpine
+
+WORKDIR /patch
+
+COPY --from=builder /build/entrypoint.sh .
+COPY --from=builder /build/wait-for .
+COPY --from=builder /build/dist/mempool /var/www/mempool
+COPY --from=builder /build/nginx.conf /etc/nginx/
+COPY --from=builder /build/nginx-mempool.conf /etc/nginx/conf.d/
+
+RUN chmod +x /patch/entrypoint.sh && \
+    chmod +x /patch/wait-for
+
+RUN chown -R 1000:1000 /patch && chmod -R 755 /patch && \
+    chown -R 1000:1000 /var/cache/nginx && \
+    chown -R 1000:1000 /var/log/nginx && \
+    chown -R 1000:1000 /etc/nginx/nginx.conf && \
+    chown -R 1000:1000 /etc/nginx/conf.d && \
+    chown -R 1000:1000 /var/www/mempool
+
+RUN touch /var/run/nginx.pid && \
+    chown -R 1000:1000 /var/run/nginx.pid
+
+USER 1000
+
+ENTRYPOINT ["/patch/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]

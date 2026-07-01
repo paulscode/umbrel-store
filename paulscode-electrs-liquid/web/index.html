@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Electrs Liquid</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #0b1220;
+        color: #e6edf3;
+        margin: 0;
+        padding: 2.5rem 1.25rem;
+        line-height: 1.55;
+      }
+      .card {
+        max-width: 680px;
+        margin: 0 auto;
+        background: #131c2e;
+        border: 1px solid #233047;
+        border-radius: 14px;
+        padding: 1.75rem 2rem;
+      }
+      h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .sub { color: #9fb0c8; margin: 0 0 1.5rem; }
+      h2 { font-size: 1.05rem; margin: 1.5rem 0 0.4rem; }
+      code {
+        background: #0b1220;
+        border: 1px solid #233047;
+        border-radius: 6px;
+        padding: 0.15rem 0.45rem;
+        font-size: 0.95em;
+      }
+      .note { color: #9fb0c8; font-size: 0.92rem; }
+      a { color: #4ea1ff; }
+      ul { padding-left: 1.2rem; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Electrs Liquid</h1>
+      <p class="sub">A Liquid full node and Electrum indexer, running on your Umbrel.</p>
+
+      <h2>Connect a wallet on your network</h2>
+      <p>
+        Point an Electrum-compatible <strong>Liquid</strong> wallet at this server:
+      </p>
+      <ul>
+        <li>Host: your Umbrel's address (e.g. <code>umbrel.local</code> or its LAN IP)</li>
+        <li>Port: <code>50101</code> (plaintext TCP)</li>
+      </ul>
+
+      <h2>Use it from another Umbrel app</h2>
+      <p>
+        Add <code>paulscode-electrs-liquid</code> as a dependency and read
+        <code>APP_ELECTRS_LIQUID_ELECTRS_NODE_IP</code> and
+        <code>APP_ELECTRS_LIQUID_ELECTRS_NODE_PORT</code> (internal Electrum port
+        <code>50001</code>).
+      </p>
+
+      <h2>First sync</h2>
+      <p class="note">
+        The Liquid chain and its address index are large (~115 GB of disk) and the
+        first sync can take many hours. The endpoint becomes usable once both the
+        Liquid node and the Electrum index have finished syncing — watch the app's
+        logs for progress.
+      </p>
+
+      <p class="note">
+        Network: Liquid mainnet (<code>liquidv1</code>).
+        &nbsp;·&nbsp;
+        <a href="https://github.com/paulscode/umbrel-store">Project &amp; docs</a>
+      </p>
+    </div>
+  </body>
+</html>
