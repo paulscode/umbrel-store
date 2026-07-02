@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-agent-wallet
 category: bitcoin
 name: Agent Wallet
-version: "0.4.17.0"
+version: "0.4.18.0"
 tagline: A self-custodial Bitcoin & Lightning wallet with an automation API
 description: >-
   Agent Wallet is a self-custodial Bitcoin and Lightning wallet that connects to
@@ -73,11 +73,12 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
-  Tracks upstream Agent Wallet v0.4.17. Fixes Retry on a failed inbound build:
-  restarting the same plan previously just re-showed the old, already-failed run
-  instead of starting a new one. Re-running an identical plan now correctly
-  launches a fresh build once the previous one has ended. Carries forward v0.4.16
-  (failed-build banner with Retry / Dismiss), v0.4.15 (anchor-reserve sizing),
-  v0.4.14 (mempool links), and all earlier 0.4.x work.
+  Tracks upstream Agent Wallet v0.4.18. Fixes an Efficient/bootstrap inbound
+  build that could get stuck on "recycling (confirming)" even after the recycle
+  succeeded on-chain — the round now finalizes correctly (in the rare case where
+  the swap completed but its transaction id wasn't recorded) and the build
+  continues to the next round. Carries forward v0.4.17 (retry a failed build),
+  v0.4.16 (failed-build banner), v0.4.15 (anchor-reserve sizing), and all earlier
+  0.4.x work.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
