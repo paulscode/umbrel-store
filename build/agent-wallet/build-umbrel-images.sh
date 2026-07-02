@@ -6,7 +6,7 @@
 # same infrastructure layering as the StartOS package (PostgreSQL + Redis + Tor +
 # the BOLT 12 gateway, supervised by s6-overlay), with an Umbrel-specific
 # entrypoint (docker_entrypoint_umbrel.sh) that maps Umbrel's environment/mounts
-# to the app's env. It pins the same app + gateway base images as the 0.4.17.0
+# to the app's env. It pins the same app + gateway base images as the 0.4.18.0
 # StartOS release, so both packages run byte-identical binaries.
 #
 # Prerequisites:
@@ -23,7 +23,7 @@
 
 set -euo pipefail
 
-VERSION="0.4.17.0"
+VERSION="0.4.18.0"
 IMAGE="paulscode/agent-wallet-umbrel:${VERSION}"
 PLATFORMS="linux/amd64,linux/arm64"
 
