@@ -8,11 +8,17 @@ services:
       APP_PORT: 3030
 
   web:
-    image: paulscode/pickhash:0.1.0.0@sha256:508bd29ef71154acb86a1b7c5dc62b97cf896bc8dc3335fac5eb539fd0b7add9
+    image: paulscode/pickhash:0.1.0.0@sha256:b1eab70c8fba240c7b5dfa57aa0d4a62d2711dbc5c162f29ab2191bc16db9247
     restart: on-failure
     environment:
       PORT: "3030"
       DATA_DIR: /root/data
+      # Dashboard login = the Umbrel app password, surfaced under the tile's
+      # "Show default credentials" (deterministicPassword: true in umbrel-app.yml).
+      # Wiring it to DASHBOARD_PASSWORD puts Pickhash in managed-password mode, so
+      # it's ready to use out of the box — no separate password to set first.
+      DASHBOARD_PASSWORD: $APP_PASSWORD
+      DASHBOARD_PASSWORD_PATH: 'Find it by right-clicking the Pickhash tile and choosing "Show default credentials".'
       # Optional HashGG auto-discovery. If the HashGG app is installed, its web
       # container is reachable at this deterministic name and Pickhash can discover
       # your public stratum endpoint automatically. If HashGG is NOT installed the

@@ -32,8 +32,9 @@ description: >-
   Open the Pickhash app and follow the first-run wizard:
 
 
-    1. Set a dashboard password — this protects the money-spending controls
-       before any credentials are entered.
+    1. Log in — your dashboard password is set for you. Right-click the Pickhash
+       tile and choose "Show default credentials" to see it. This password
+       protects the money-spending controls.
 
     2. Add MiningRigRentals API credentials — create an API key at
        miningrigrentals.com (Account → API) and paste the key and secret.
@@ -65,7 +66,12 @@ icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-
 gallery: []
 path: ""
 defaultUsername: ""
+# The dashboard login is the Umbrel app password ($APP_PASSWORD, wired to
+# DASHBOARD_PASSWORD in docker-compose.yml). deterministicPassword: true makes
+# Umbrel surface that exact value under the tile's "Show default credentials",
+# so Pickhash starts with a working password instead of an empty setup step.
 defaultPassword: ""
+deterministicPassword: true
 releaseNotes: >-
   Initial release. Autonomous Bitcoin hashrate rental from MiningRigRentals
   pointed at your own pool: three-number quoting (spend / hashrate / duration),
