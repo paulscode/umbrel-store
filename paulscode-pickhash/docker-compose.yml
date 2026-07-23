@@ -1,0 +1,25 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      # Umbrel container naming: <app-id>_<service>_<n>
+      APP_HOST: paulscode-pickhash_web_1
+      APP_PORT: 3030
+
+  web:
+    image: paulscode/pickhash:0.1.0.0@sha256:508bd29ef71154acb86a1b7c5dc62b97cf896bc8dc3335fac5eb539fd0b7add9
+    restart: on-failure
+    environment:
+      PORT: "3030"
+      DATA_DIR: /root/data
+      # Optional HashGG auto-discovery. If the HashGG app is installed, its web
+      # container is reachable at this deterministic name and Pickhash can discover
+      # your public stratum endpoint automatically. If HashGG is NOT installed the
+      # probe simply fails and Pickhash falls back to manual endpoint entry — so this
+      # is an optional convenience, NOT a hard dependency (hence no `dependencies:`
+      # entry in umbrel-app.yml, which would force HashGG to be installed).
+      HASHGG_HOST: paulscode-hashgg_web_1
+      HASHGG_PORT: "3000"
+    volumes:
+      - ${APP_DATA_DIR}/data:/root/data

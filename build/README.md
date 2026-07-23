@@ -24,6 +24,11 @@ HashGG's image is built from its own repo
 ([paulscode/hashgg](https://github.com/paulscode/hashgg)); there is no build
 script for it here.
 
+Pickhash's image is likewise built from its own repo
+([paulscode/pickhash](https://github.com/paulscode/pickhash)) — run
+`make docker-buildx` there to build+push `paulscode/pickhash` multi-arch — so
+there is no build script for it here either.
+
 ## Usage
 
 ```bash

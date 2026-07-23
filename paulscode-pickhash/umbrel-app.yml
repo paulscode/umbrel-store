@@ -1,0 +1,77 @@
+manifestVersion: 1.1
+id: paulscode-pickhash
+category: bitcoin
+name: Pickhash
+version: "0.1.0.0"
+tagline: Rent Bitcoin hashrate on your own terms
+description: >-
+  Pickhash rents SHA-256 (AsicBoost) hashrate from MiningRigRentals and points
+  it at your own stratum endpoint — typically your Bitcoin node behind a Datum
+  Gateway — so the hashrate you pay for mines your block templates.
+
+
+  You work with three linked numbers — how much to spend, how much hashrate,
+  and for how long — and Pickhash handles the rest: finding reliable rigs,
+  pricing, creating the rentals, pointing them at your pool, and watching over
+  delivery (ramp-up, under-delivery, offline rigs, refunds).
+
+
+  🛡️ SPENDS REAL BITCOIN — BY DESIGN, SAFELY
+
+
+  Pickhash starts in DRY-RUN (a rehearsal that spends nothing). Going LIVE
+  requires a dashboard password, and every rental is checked against your
+  budget and guardrails before any funds move. Marketplace credentials are
+  encrypted at rest and never leave your server except to talk to the
+  marketplace.
+
+
+  🛠️ SET-UP INSTRUCTIONS
+
+
+  Open the Pickhash app and follow the first-run wizard:
+
+
+    1. Set a dashboard password — this protects the money-spending controls
+       before any credentials are entered.
+
+    2. Add MiningRigRentals API credentials — create an API key at
+       miningrigrentals.com (Account → API) and paste the key and secret.
+       Deposit a little Bitcoin there to fund rentals.
+
+    3. Set your stratum endpoint — where the rented hashrate should point.
+       If you also run the HashGG app, Pickhash can auto-discover your public
+       endpoint; otherwise enter host:port manually.
+
+
+  Then choose a target hashrate, a budget, and a duration, switch to LIVE when
+  you're ready, and Pickhash takes it from there.
+
+
+  HashGG is an optional companion — it exposes your Datum Gateway stratum port
+  to the internet so Pickhash can auto-discover your endpoint. Pickhash works
+  fine without it using any reachable host:port you enter.
+
+
+  For more information: https://github.com/paulscode/pickhash
+developer: Paul Lamb
+website: https://github.com/paulscode/pickhash
+repo: https://github.com/paulscode/pickhash
+support: https://github.com/paulscode/pickhash/issues
+port: 3030
+# Community stores must supply full URLs for icon and gallery — Umbrel's
+# resolver only auto-prefixes URLs for the official `umbrel-app-store`.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-pickhash/icon.svg
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: >-
+  Initial release. Autonomous Bitcoin hashrate rental from MiningRigRentals
+  pointed at your own pool: three-number quoting (spend / hashrate / duration),
+  a DRY-RUN rehearsal mode, password-gated LIVE spending, budget and 24-hour
+  guardrails, per-rental health and delivery tracking with automatic-refund
+  awareness, a market "hash value" read, and optional HashGG endpoint
+  auto-discovery.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store

@@ -23,6 +23,7 @@ An [Umbrel](https://umbrel.com) community app store bringing together all of
 | [Electrs Liquid](#electrs-liquid) | A Liquid (`liquidv1`) full node bundled with an Electrum indexer | none (self-contained) |
 | [HashGG](#hashgg) | Sovereign hash routing — exposes your Datum stratum port to the public internet | Datum (→ Bitcoin Knots) |
 | [Mempool BIP-110](#mempool-bip-110) | Mempool block explorer fork that visualizes BIP-110 activation activity | Bitcoin Node (+ Electrs) |
+| [Pickhash](#pickhash) | Autonomously rents Bitcoin hashrate from MiningRigRentals and points it at your own pool | none (optional: HashGG) |
 
 ---
 
@@ -125,6 +126,31 @@ activity on the Bitcoin network:
 **Requirements:** a fully synced **Bitcoin Node**; **Electrs** recommended.
 
 - Source: https://github.com/paulscode/mempool-bip110
+
+---
+
+### Pickhash
+
+Rent Bitcoin hashrate on your own terms. Pickhash autonomously rents SHA-256
+(AsicBoost) hashrate from [MiningRigRentals](https://www.miningrigrentals.com)
+and points it at *your* stratum endpoint — typically your Bitcoin node behind a
+[Datum Gateway](https://github.com/ocean-xyz/datum_gateway) — so the hashrate you
+pay for mines *your* block templates.
+
+You set a target hashrate, a budget, and a duration; Pickhash finds reliable
+rigs, prices and creates the rentals, points them at your pool, and watches over
+delivery (ramp-up, under-delivery, offline rigs, refunds). It starts in DRY-RUN
+(a rehearsal that spends nothing); going LIVE requires a dashboard password.
+
+> ⚠️ Pickhash spends real Bitcoin on your behalf, within the budget and
+> guardrails you set. Marketplace credentials are encrypted at rest. Set a
+> dashboard password before switching to LIVE.
+
+Optionally pair it with the [**HashGG**](#hashgg) app above to auto-discover your
+public stratum endpoint — not required; you can enter any reachable `host:port`.
+
+- Source: https://github.com/paulscode/pickhash
+- Issues: https://github.com/paulscode/pickhash/issues
 
 ---
 
