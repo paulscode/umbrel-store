@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-pickhash
 category: bitcoin
 name: Pickhash
-version: "0.1.0.0"
+version: "0.1.0.1"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
   Pickhash rents SHA-256 (AsicBoost) hashrate from MiningRigRentals and points
@@ -73,11 +73,13 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
-  Initial release. Autonomous Bitcoin hashrate rental from MiningRigRentals
-  pointed at your own pool: three-number quoting (spend / hashrate / duration),
-  a DRY-RUN rehearsal mode, password-gated LIVE spending, budget and 24-hour
-  guardrails, per-rental health and delivery tracking with automatic-refund
-  awareness, a market "hash value" read, and optional HashGG endpoint
-  auto-discovery.
+  Autopilot rig selection now picks the cheapest rigs that fit your target
+  without over-provisioning, and the preview matches what it actually rents
+  (fixing an estimate that could read ~6x high). New Ocean fallback pool (on by
+  default): if your pool endpoint drops, rented hashrate fails over to Ocean —
+  mining to your same Bitcoin address — instead of being wasted. Market tab: a
+  new "hashrate you've aimed at your own node" impact chart, a clearer pay-rate
+  line that persists after a session, and an estimated rate in the Autopilot
+  preview. Also: HashGG uptime now reads n/a when HashGG isn't configured.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
