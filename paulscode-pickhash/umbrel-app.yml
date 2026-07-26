@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-pickhash
 category: bitcoin
 name: Pickhash
-version: "0.1.0.2"
+version: "0.1.1.0"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
   Pickhash rents SHA-256 (AsicBoost) hashrate from MiningRigRentals and points
@@ -73,15 +73,17 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
-  Fixes the Ocean fallback pool for Autopilot: the safety net is now actually
-  attached to Autopilot rentals (previously only manual rents got it, so most
-  rented hashrate had no failover if your endpoint dropped). New blended rate
-  ceiling: cap your overall pay-rate — the "you" line on the market chart — from
-  the Autopilot preview or Settings, in sats/PH·day. Autopilot fills your target
-  with the cheapest rigs while holding the average under your cap, leaving a
-  shortfall rather than overpaying when the market runs hot, with a per-rig
-  backstop so no single rig is absurdly priced. Auto-extend now respects the
-  ceiling too, the preview keeps a ceiling you've typed, and shortfall reporting
-  is more accurate.
+  Autopilot reliability release. Dead-rig fallback: when a rented rig connects
+  but never mines on your pool while your other rigs are mining fine, Autopilot
+  now reroutes just that one rig to the Ocean fallback and messages its owner, so
+  its paid time isn't wasted (on by default, alongside the Ocean fallback).
+  Self-healing rig scoring: a rig that delivered nothing is never rented again,
+  and consistently reliable rigs earn a ranking preference. The Autopilot
+  preview's suggested rate ceiling now carries headroom so it fills your target
+  instead of stalling just under the cap, with a new alert when it's holding
+  below target because the ceiling was reached. Fixes: a session now ends cleanly
+  when its budget can no longer rent anything or the ceiling blocks every rental
+  — no more showing "running" with no live rigs — and the preview's budget-runway
+  estimate is now accurate and monotonic.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
