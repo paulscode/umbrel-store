@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-hashgg
 category: bitcoin
 name: HashGG
-version: "0.7.0.4"
+version: "0.7.0.5"
 tagline: Sovereign hash routing for your Bitcoin miners
 description: >-
   HashGG exposes your Datum Gateway stratum port to the public internet —
