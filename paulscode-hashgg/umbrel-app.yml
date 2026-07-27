@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-hashgg
 category: bitcoin
 name: HashGG
-version: "0.6.0.1"
+version: "0.7.0.1"
 tagline: Sovereign hash routing for your Bitcoin miners
 description: >-
   HashGG exposes your Datum Gateway stratum port to the public internet —
@@ -78,10 +78,10 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fix a blank dashboard when a VPS tunnel was configured but not connected;
-  the dashboard now always shows status and the Reset control. Includes the
-  0.6.0 features: additional miners (expose extra stratum servers through their
-  own tunnels, each with live status), playit.gg cleanup (delete leftover
-  tunnels from previous installs), and a one-click VPS teardown script.
+  Make your Bitcoin node reachable: a new section that gives your Bitcoin node a
+  public address through your VPS, so other nodes can connect to it. Your home IP
+  address is never exposed to them. HashGG sets up the tunnel, gives you the one
+  line to add to Bitcoin Knots, and then checks from the internet that your node
+  really answers.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

@@ -8,7 +8,7 @@ services:
       APP_PORT: 3000
 
   web:
-    image: paulscode/hashgg:0.6.0.1
+    image: paulscode/hashgg:0.7.0.1
     restart: on-failure
     environment:
       # Datum has no exports.sh, so there's no APP_DATUM_STRATUM_PORT —
@@ -19,5 +19,29 @@ services:
       # Umbrel's container naming and will work on the internal network.
       DATUM_HOST: ${APP_DATUM_NODE_IP:-datum_datum_1}
       DATUM_STRATUM_PORT: "23334"
+
+      # Declared rather than inferred: without it HashGG guesses the platform,
+      # and the guess decides which instructions the Bitcoin reachability
+      # feature shows for editing the node's configuration.
+      HASHGG_PLATFORM: umbrel
+
+      # Where Bitcoin Knots listens for peers. 9333 is the PLAIN bind; 9335 is
+      # the whitebind listener, and forwarding that to the internet would grant
+      # every anonymous peer whitelisted permissions on the user's node.
+      # Declaring the right port is the protection — the whitebind port is named
+      # only so it can be refused. The bitcoin-knots app exports these; the
+      # defaults are its documented values, so a missing injection still works.
+      BITCOIN_P2P_HOST: ${APP_BITCOIN_NODE_IP:-10.21.21.7}
+      BITCOIN_P2P_PORT: ${APP_BITCOIN_P2P_PORT:-9333}
+      BITCOIN_P2P_WHITEBIND_PORT: "9335"
+
+      # Read-only RPC, used only to confirm the node picked up the address it
+      # was told to advertise. Read from the environment at call time and never
+      # written to disk. Empty defaults so a missing injection degrades to
+      # "cannot see it" rather than breaking startup.
+      BITCOIN_RPC_HOST: ${APP_BITCOIN_NODE_IP:-10.21.21.7}
+      BITCOIN_RPC_PORT: ${APP_BITCOIN_RPC_PORT:-9332}
+      BITCOIN_RPC_USER: ${APP_BITCOIN_RPC_USER:-}
+      BITCOIN_RPC_PASS: ${APP_BITCOIN_RPC_PASS:-}
     volumes:
       - ${APP_DATA_DIR}/data:/root/data
