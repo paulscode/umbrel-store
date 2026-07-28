@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-hashgg
 category: bitcoin
 name: HashGG
-version: "0.7.0.6"
+version: "0.7.2.1"
 tagline: Sovereign hash routing for your Bitcoin miners
 description: >-
   HashGG exposes your Datum Gateway stratum port to the public internet —
@@ -14,12 +14,18 @@ description: >-
 
     - playit.gg (~$3/month, fiat) — easiest setup, managed service
 
-    - VPS SSH tunnel (~$11/month, Bitcoin) — privacy-focused, full control,
+    - VPS SSH tunnel (~€6/month, Bitcoin) — privacy-focused, full control,
       no third-party on the data path
 
 
   No router configuration, no dynamic DNS, no VPN. Works behind NAT, double NAT,
   or CGNAT — whatever your ISP throws at you.
+
+
+  HashGG can also make your Bitcoin node reachable from the internet, so other
+  nodes can connect to yours without exposing your home connection. You can set
+  that up on its own and stop there — mining is what HashGG is for, but nothing
+  obliges you to switch it on. One server can carry both jobs.
 
 
   🛠️ SET-UP INSTRUCTIONS
@@ -78,11 +84,20 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Make your Bitcoin node reachable: a guided setup that gives your node a public
-  address so other nodes can connect to it, without exposing your home internet
-  connection. Five screens, written for people who have never used a terminal —
-  where to get a small server, how to open a terminal on Windows or a Mac, and
-  exactly what to paste. If you already run a server for your mining tunnel, it
-  can carry this too at no extra cost.
+  You can now make your Bitcoin node reachable without setting up mining. It is
+  offered on the first screen alongside the tunnel choices, and if you stop there
+  the dashboard treats mining as a choice you have not made rather than something
+  wrong.
+
+
+  One server can carry both jobs whichever order you set them up in — set up
+  reachability first and it is offered when you later set up mining, and the
+  other way round. A second HashGG installation on another machine can share the
+  same server too, without disturbing the first.
+
+
+  Also fixes a dashboard row that always showed Datum Gateway as reachable
+  without checking, which hid the one thing that would explain a hashrate of
+  zero.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
