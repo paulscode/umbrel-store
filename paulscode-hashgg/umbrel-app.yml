@@ -85,18 +85,33 @@ defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
   You can now make your Bitcoin node reachable without setting up mining. It is
-  offered on the first screen alongside the tunnel choices, and if you stop there
-  the dashboard treats mining as a choice you have not made rather than something
-  wrong.
+  offered on the first screen alongside the tunnel choices, and if you stop
+  there the dashboard treats mining as a choice you have not made rather than
+  something wrong.
 
 
-  One server can carry both jobs whichever order you set them up in — set up
-  reachability first and it is offered when you later set up mining, and the
-  other way round. A second HashGG installation on another machine can share the
-  same server too, without disturbing the first.
+  One server can carry both jobs whichever order you set them up in, and a
+  second HashGG installation on another machine can share it too. That last part
+  used to be quietly destructive: setting up a second machine against a server
+  another was already using replaced the first one's access, and its tunnel
+  stopped at the next reconnect — hours later, with nothing to connect the two
+  events. Each installation now keeps its own access, and removing one leaves
+  the others working.
 
 
-  Also fixes a dashboard row that always showed Datum Gateway as reachable
+  If a port is already taken on that server, HashGG says which one and offers a
+  free alternative in one click, instead of failing with a message from ssh. Two
+  nodes can share one server on different ports.
+
+
+  The reachability setup is clearer throughout: it no longer walks past a
+  connection that failed to come up, it says why when there is nothing to show
+  you yet, and when the address it gave you changes it tells you exactly which
+  line to replace in your node's settings. The box holding that line can no
+  longer show anything that would break your node if pasted.
+
+
+  Also fixes a dashboard row that always reported Datum Gateway as reachable
   without checking, which hid the one thing that would explain a hashrate of
   zero.
 submitter: Paul Lamb
