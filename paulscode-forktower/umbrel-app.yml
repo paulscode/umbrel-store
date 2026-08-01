@@ -1,0 +1,84 @@
+manifestVersion: 1.1
+id: paulscode-forktower
+category: bitcoin
+name: Forktower
+version: "0.5.0"
+tagline: Watches the other chain, so a split does not cost you a channel
+description: >-
+  During a contested Bitcoin upgrade the network can separate into two chains.
+  Your node follows one of them, and from its point of view nothing unusual has
+  happened — it simply stops seeing certain blocks. But your Lightning channels
+  exist on both chains, and the timers that protect them keep running on both.
+
+
+  A channel is protected by a deadline: if your counterparty publishes an old
+  state, you have a fixed number of blocks to respond before their claim becomes
+  final. Your node cannot respond on a chain it cannot see. It cannot even tell
+  you it is happening.
+
+
+  Forktower runs a second Bitcoin node following the other chain and answers
+  three questions your own node cannot: have the chains actually separated, which
+  of your channels would be exposed and how long you have, and is anything
+  happening on the other chain right now that you need to act on.
+
+
+  🔒 WHAT IT CAN AND CANNOT DO
+
+
+  It reads from your Lightning node. It holds no keys, signs nothing, and has no
+  code in it that could send your node an instruction. If Forktower is
+  compromised, your money does not move. It is given the read-only macaroon your
+  node wrote for itself — never the admin one, and never your node's data
+  directory.
+
+
+  It cannot close a channel for you. What it can do is tell you, in time, that
+  you should — and, once you have set up a watchtower, respond to a few specific
+  things on the other chain automatically.
+
+
+  It is useful before anything happens, which is the point. The decision worth
+  making is whether to keep channels open through an activation, and that has to
+  be made beforehand.
+
+
+  🛠️ WHAT IT USES
+
+
+  - A Bitcoin node — required, and either one works. The official Bitcoin Node
+    app or Bitcoin Knots; Forktower detects which you have. It is not listed as a
+    dependency because listing one would exclude users of the other.
+
+  - Lightning Node (LND) — optional. Without it Forktower still watches both
+    chains; it just cannot tell you which of your channels a split would expose.
+
+
+  💾 DISK AND BANDWIDTH
+
+
+  The second Bitcoin node is pruned and will use roughly 20 GB, plus the
+  bandwidth of an initial sync. It reaches the other chain over Tor.
+
+
+  📖 More: https://github.com/paulscode/forktower
+developer: Paul Lamb
+website: https://github.com/paulscode/forktower
+dependencies: []
+repo: https://github.com/paulscode/forktower
+support: https://github.com/paulscode/forktower/issues
+port: 3029
+# Community stores must supply full URLs for icon and gallery — Umbrel's
+# resolver only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-forktower/icon.svg
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: >-
+  First release. Forktower runs a second Bitcoin node following the chain your
+  own node does not, tells you which of your Lightning channels a split would
+  expose and how long you have, and can watch a watchtower on the other chain and
+  copy your own closing transactions across.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store

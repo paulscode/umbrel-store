@@ -1,0 +1,96 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: $APP_FORKTOWER_IP
+      APP_PORT: 8330
+
+  # One container: the daemon plus the second Bitcoin node, supervised by
+  # s6-overlay. The same image the compose reference and the StartOS package
+  # use — what is tested in one is tested in all of them.
+  web:
+    # A moving tag while this is in testing, so a rebuild does not need a version
+    # bump: umbreld pulls every image in this file on install and on update, and
+    # a tag is re-checked against the registry each time.
+    #
+    # **Pin the digest at release** (`:0.5.0@sha256:...`). A moving tag is
+    # convenient for us and wrong for a user, who should get the bits that were
+    # tested rather than whatever the tag points at today.
+    image: paulscode/forktower:dev
+    restart: on-failure
+    # A Bitcoin node asked to stop mid-write needs time to finish. Killing it
+    # early is how a datadir comes back needing a reindex.
+    stop_grace_period: 5m
+    volumes:
+      # Forktower's own data: its database, its configuration, and the second
+      # Bitcoin node's datadir under sq/.
+      - ${APP_DATA_DIR}/data:/data
+      # The Lightning credentials, as two individual read-only files.
+      #
+      # **Not the data directory**, which is what the neighbouring apps mount.
+      # The read-only macaroon is the one LND wrote itself at wallet creation and
+      # it answers everything Forktower asks; the data directory contains rather
+      # more than that, and a mount is not something a careful credential policy
+      # can take back afterwards.
+      #
+      # /dev/null when no Lightning node is installed — the file is then empty,
+      # which the entrypoint reads as "no node" and carries on. Forktower watches
+      # both chains perfectly well without one.
+      - ${APP_FORKTOWER_LND_CERT:-/dev/null}:/mnt/lnd/tls.cert:ro
+      - ${APP_FORKTOWER_LND_MACAROON:-/dev/null}:/mnt/lnd/readonly.macaroon:ro
+    environment:
+      # Declared, never guessed. The guess decides which "how to turn on your
+      # watchtower client" instructions the dashboard shows, and the three
+      # platforms have three different answers — naming a control that is not on
+      # the user's screen is worse than saying nothing.
+      FORKTOWER_PLATFORM: umbrel
+
+      # ── The user's own Bitcoin node ──
+      #
+      # Both flavours are passed and the entrypoint picks whichever exists. The
+      # official Bitcoin Node app exports APP_BITCOIN_*; Bitcoin Knots exports
+      # APP_BITCOIN_KNOTS_*. Requiring one in umbrel-app.yml would exclude the
+      # other, and both are real audiences: a Knots user is enforcing the new
+      # rules whether or not they chose to, and a Core user is on the status-quo
+      # side and equally wants to see the chain they are blind to.
+      UMBREL_KNOTS_IP: ${APP_BITCOIN_KNOTS_NODE_IP:-}
+      UMBREL_KNOTS_RPC_PORT: ${APP_BITCOIN_KNOTS_RPC_PORT:-}
+      UMBREL_KNOTS_RPC_USER: ${APP_BITCOIN_KNOTS_RPC_USER:-}
+      UMBREL_KNOTS_RPC_PASS: ${APP_BITCOIN_KNOTS_RPC_PASS:-}
+      UMBREL_KNOTS_ZMQ_RAWBLOCK_PORT: ${APP_BITCOIN_KNOTS_ZMQ_RAWBLOCK_PORT:-}
+      UMBREL_KNOTS_ZMQ_RAWTX_PORT: ${APP_BITCOIN_KNOTS_ZMQ_RAWTX_PORT:-}
+      UMBREL_CORE_IP: ${APP_BITCOIN_NODE_IP:-}
+      UMBREL_CORE_RPC_PORT: ${APP_BITCOIN_RPC_PORT:-}
+      UMBREL_CORE_RPC_USER: ${APP_BITCOIN_RPC_USER:-}
+      UMBREL_CORE_RPC_PASS: ${APP_BITCOIN_RPC_PASS:-}
+      UMBREL_CORE_ZMQ_RAWBLOCK_PORT: ${APP_BITCOIN_ZMQ_RAWBLOCK_PORT:-}
+      UMBREL_CORE_ZMQ_RAWTX_PORT: ${APP_BITCOIN_ZMQ_RAWTX_PORT:-}
+
+      # ── The Lightning node, if one is installed (detected in exports.sh) ──
+      UMBREL_LND_IP: ${APP_FORKTOWER_LND_IP:-}
+      UMBREL_LND_REST_PORT: ${APP_FORKTOWER_LND_REST_PORT:-}
+
+      # ── The second Bitcoin node, which this container runs ──
+      FORKTOWER_SQ_MODE: all-in-one
+      FORKTOWER_SQ_P2P_PORT: "8433"
+      # Pruned. Enough for everything Forktower does, and the alternative is
+      # asking for a second full chain on a machine that already holds one.
+      FORKTOWER_SQ_PRUNE_MB: "20000"
+      FORKTOWER_SQ_BLOCKSONLY: "0"
+      # Tor, both ways. The traffic says which side of a contested upgrade you
+      # are watching, and that is nobody else's business.
+      FORKTOWER_SQ_CLEARNET: "false"
+      FORKTOWER_TOR_PROXY: ${APP_BITCOIN_KNOTS_TOR_PROXY_IP:-${APP_BITCOIN_TOR_PROXY_IP:-10.21.21.11}}:${APP_BITCOIN_KNOTS_TOR_PROXY_PORT:-${APP_BITCOIN_TOR_PROXY_PORT:-9050}}
+
+      # ── The dashboard ──
+      #
+      # Bound to every address because Umbrel's app proxy reaches it over the app
+      # network, and authenticated by that proxy rather than by a second password
+      # of our own.
+      FORKTOWER_UI_LISTEN: 0.0.0.0:8330
+      FORKTOWER_UI_AUTH: platform
+      FORKTOWER_LOG_LEVEL: info
+    networks:
+      default:
+        ipv4_address: $APP_FORKTOWER_IP
