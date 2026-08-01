@@ -46,9 +46,9 @@ description: >-
   🛠️ WHAT IT USES
 
 
-  - A Bitcoin node — required, and either one works. The official Bitcoin Node
-    app or Bitcoin Knots; Forktower detects which you have. It is not listed as a
-    dependency because listing one would exclude users of the other.
+  - A Bitcoin node — required, and either one works. Bitcoin Knots declares
+    itself an implementation of the Bitcoin Node dependency, so Umbrel will let
+    you satisfy this with whichever you run.
 
   - Lightning Node (LND) — optional. Without it Forktower still watches both
     chains; it just cannot tell you which of your channels a split would expose.
@@ -64,7 +64,8 @@ description: >-
   📖 More: https://github.com/paulscode/forktower
 developer: Paul Lamb
 website: https://github.com/paulscode/forktower
-dependencies: []
+dependencies:
+  - bitcoin
 repo: https://github.com/paulscode/forktower
 support: https://github.com/paulscode/forktower/issues
 port: 3029
