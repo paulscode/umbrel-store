@@ -18,6 +18,12 @@ services:
     # convenient for us and wrong for a user, who should get the bits that were
     # tested rather than whatever the tag points at today.
     image: paulscode/forktower:dev
+    # The image's default entrypoint is the shared renderer, which is what the
+    # compose reference deployment wants. Umbrel needs the translation step in
+    # front of it — two Bitcoin apps with two variable prefixes — so it is named
+    # here. Without this the container starts, finds no FORKTOWER_SF_RPC_URL,
+    # and asks the user to set a variable no Umbrel user has ever heard of.
+    entrypoint: /usr/local/bin/docker_entrypoint_umbrel.sh
     restart: on-failure
     # A Bitcoin node asked to stop mid-write needs time to finish. Killing it
     # early is how a datadir comes back needing a reindex.
