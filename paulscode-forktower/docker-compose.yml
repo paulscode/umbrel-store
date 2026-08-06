@@ -23,7 +23,7 @@ services:
     # that means the Raspberry Pi users. `make umbrel-pin` reads the index
     # digest and refuses a tag that is a single image or missing an
     # architecture.
-    image: paulscode/forktower:v0.6.0@sha256:e295fd5d7b143664e7d61539c33d3a55146638ea6d9feee091405462cbbf57de
+    image: paulscode/forktower:v0.6.1@sha256:46191f1590440c754f4c26ed6ffac976f4840dea7dec38305d0340e463cb5e0e
     # The image's default entrypoint is the shared renderer, which is what the
     # compose reference deployment wants. Umbrel needs the translation step in
     # front of it — two Bitcoin apps with two variable prefixes — so it is named
@@ -98,6 +98,21 @@ services:
       # to bootstrap from.
       FORKTOWER_SQ_ONION_ONLY: "false"
       FORKTOWER_TOR_PROXY: ${APP_BITCOIN_KNOTS_TOR_PROXY_IP:-${APP_BITCOIN_TOR_PROXY_IP:-10.21.21.11}}:${APP_BITCOIN_KNOTS_TOR_PROXY_PORT:-${APP_BITCOIN_TOR_PROXY_PORT:-9050}}
+
+      # ── Telling you when something happens ──
+      #
+      # **Umbrel gives an app no settings screen and no notification system an
+      # app can reach**, so without these there is no way to configure an alert
+      # on this platform at all — while the dashboard tells the user, correctly,
+      # that it has no way to reach them and escalates until they act. Demanding
+      # an action the platform makes impossible is worse than not asking.
+      #
+      # Set one of these here and restart the app. Whatever you point at is told
+      # the severity and the kind of thing that happened, and nothing else — not
+      # which channel, not how much, not how long you have.
+      FORKTOWER_NTFY_URL: ${FORKTOWER_NTFY_URL:-}
+      FORKTOWER_NTFY_TOKEN: ${FORKTOWER_NTFY_TOKEN:-}
+      FORKTOWER_WEBHOOK_URL: ${FORKTOWER_WEBHOOK_URL:-}
 
       # ── The companion watchtower ──
       #
