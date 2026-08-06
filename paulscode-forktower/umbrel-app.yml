@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-forktower
 category: bitcoin
 name: Forktower
-version: "0.6.6"
+version: "0.6.7"
 tagline: Watches the other chain, so a split does not cost you a channel
 description: >-
   During a contested Bitcoin upgrade the network can separate into two chains.
@@ -79,13 +79,13 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  On Umbrel, having nowhere to send alerts is no longer shown as a setup step you
-  cannot complete. Umbrel gives an app no settings screen, so Forktower now
-  states it as a fact — alerts appear on its page and nowhere else — instead of
-  asking you to edit a compose file by hand. A future version will let you set
-  notifications up from Forktower's own screen. Also: if you used the faster
-  first sync, Forktower could report that the other chain had been replaced and
-  stop watching it. It now tells your node's active chain from the second one
-  Bitcoin Core builds in the background after that shortcut.
+  Alerts that were never separate problems are cleared away. If a per-block
+  dedup fault had filled your list with thousands of copies of the same urgent
+  alert, upgrading collapses them into the single entry a correct version would
+  have written — and that entry closes itself as soon as Forktower reads a
+  block, so there is nothing left to dismiss. Alerts about scanning having
+  stopped now also say when it has started again, which none of them previously
+  did. Also fixes a crash loop on start, where a Bitcoin node still loading its
+  block index was read as a node on the wrong network.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
