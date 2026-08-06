@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-forktower
 category: bitcoin
 name: Forktower
-version: "0.6.2"
+version: "0.6.3"
 tagline: Watches the other chain, so a split does not cost you a channel
 description: >-
   During a contested Bitcoin upgrade the network can separate into two chains.
@@ -79,13 +79,13 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes for Forktower describing its own state wrongly after you have acted on
-  it. Nothing on the dashboard could close a warning: a watchtower that came
-  back, a chain that could be seen again, or a notification path that started
-  working each recorded the good news as a fresh copy of the bad news, and
-  un-dismissed the warning you had already read — so changing a setting on your
-  own node appeared to do nothing. A fresh install no longer reports that no
-  watchtower is protecting your channels while Forktower's own watchtower is
-  still starting.
+  Fixes for what Forktower says to a user who already has a watchtower. On a
+  fresh install it could report that your channels were protected by somebody
+  else's watchtower and that this works — said once, before the watchtower
+  Forktower runs here had even finished starting. A tower somebody else runs
+  watches whichever chain their node follows, which cannot be seen from here.
+  The tower here is the one with a known view of the chain your own node cannot
+  see, so Forktower now asks you to register it alongside whatever you already
+  use rather than instead of it.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
