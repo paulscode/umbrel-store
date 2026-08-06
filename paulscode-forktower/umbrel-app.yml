@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-forktower
 category: bitcoin
 name: Forktower
-version: "0.6.7"
+version: "0.6.8"
 tagline: Watches the other chain, so a split does not cost you a channel
 description: >-
   During a contested Bitcoin upgrade the network can separate into two chains.
@@ -79,13 +79,13 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Alerts that were never separate problems are cleared away. If a per-block
-  dedup fault had filled your list with thousands of copies of the same urgent
-  alert, upgrading collapses them into the single entry a correct version would
-  have written — and that entry closes itself as soon as Forktower reads a
-  block, so there is nothing left to dismiss. Alerts about scanning having
-  stopped now also say when it has started again, which none of them previously
-  did. Also fixes a crash loop on start, where a Bitcoin node still loading its
-  block index was read as a node on the wrong network.
+  Corrects a claim in 0.6.7. That release said upgrading would leave nothing to
+  dismiss after collapsing duplicate alerts; it would in fact have left exactly
+  one, permanently, because the entry could only be closed by a run that had
+  itself seen the problem — and upgrading restarts the app. Installs upgrading
+  from 0.6.7 will find it closed. A split ending now also closes the alert
+  saying the chains had separated, which used to stand alongside the news that
+  it was over. And a busy mempool is no longer reported as trouble seeing the
+  other chain: it costs early warning, not sight of the chain.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
