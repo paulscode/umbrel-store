@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-forktower
 category: bitcoin
 name: Forktower
-version: "0.6.3"
+version: "0.6.4"
 tagline: Watches the other chain, so a split does not cost you a channel
 description: >-
   During a contested Bitcoin upgrade the network can separate into two chains.
@@ -79,13 +79,13 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes for what Forktower says to a user who already has a watchtower. On a
-  fresh install it could report that your channels were protected by somebody
-  else's watchtower and that this works — said once, before the watchtower
-  Forktower runs here had even finished starting. A tower somebody else runs
-  watches whichever chain their node follows, which cannot be seen from here.
-  The tower here is the one with a known view of the chain your own node cannot
-  see, so Forktower now asks you to register it alongside whatever you already
-  use rather than instead of it.
+  Two fixes for Forktower blaming the wrong thing while it starts up. If your
+  channels were reported as not protected because your node had not negotiated
+  a session with the watchtower, that was wrong: your node was asking,
+  correctly and repeatedly, and Forktower's own watchtower cannot accept a
+  session until the second Bitcoin node has finished syncing. That is now what
+  it says, and it no longer raises an alert about it. Separately, a Lightning
+  node that had not been read yet was reported in red as one that could not be
+  read, from the moment the app started until the first poll returned.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
