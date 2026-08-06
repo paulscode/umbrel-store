@@ -10,14 +10,20 @@ services:
   # s6-overlay. The same image the compose reference and the StartOS package
   # use — what is tested in one is tested in all of them.
   web:
-    # A moving tag while this is in testing, so a rebuild does not need a version
-    # bump: umbreld pulls every image in this file on install and on update, and
-    # a tag is re-checked against the registry each time.
+    # Pinned by digest, which is what a released version must be: umbreld pulls
+    # every image in this file on install and on update, and re-checks a tag
+    # against the registry each time — so a moving tag gives a user whatever it
+    # points at today rather than the bits that were tested.
     #
-    # **Pin the digest at release** (`:0.5.0@sha256:...`). A moving tag is
-    # convenient for us and wrong for a user, who should get the bits that were
-    # tested rather than whatever the tag points at today.
-    image: paulscode/forktower:dev
+    # **The digest is the index's, not a platform's.** A multi-architecture tag
+    # is an index listing one image per platform, and `docker manifest inspect`
+    # shows the per-platform digests prominently — they are the easiest thing to
+    # copy and the wrong thing to pin, because pinning one serves that
+    # architecture and leaves everybody else unable to install. For this project
+    # that means the Raspberry Pi users. `make umbrel-pin` reads the index
+    # digest and refuses a tag that is a single image or missing an
+    # architecture.
+    image: paulscode/forktower:v0.6.0@sha256:e295fd5d7b143664e7d61539c33d3a55146638ea6d9feee091405462cbbf57de
     # The image's default entrypoint is the shared renderer, which is what the
     # compose reference deployment wants. Umbrel needs the translation step in
     # front of it — two Bitcoin apps with two variable prefixes — so it is named
@@ -87,7 +93,32 @@ services:
       # Tor, both ways. The traffic says which side of a contested upgrade you
       # are watching, and that is nobody else's business.
       FORKTOWER_SQ_CLEARNET: "false"
+      # Onion peers only. Off: everything already goes through Tor, and refusing
+      # non-onion peers on top of that leaves a cold start with almost nowhere
+      # to bootstrap from.
+      FORKTOWER_SQ_ONION_ONLY: "false"
       FORKTOWER_TOR_PROXY: ${APP_BITCOIN_KNOTS_TOR_PROXY_IP:-${APP_BITCOIN_TOR_PROXY_IP:-10.21.21.11}}:${APP_BITCOIN_KNOTS_TOR_PROXY_PORT:-${APP_BITCOIN_TOR_PROXY_PORT:-9050}}
+
+      # ── The companion watchtower ──
+      #
+      # On by default, and that is the point of it being here at all. Umbrel
+      # gives an app no settings screen, so a tower that had to be switched on
+      # would be a tower nobody switches on — and until this existed, a packaged
+      # user was told to register a watchtower and given nowhere to get one.
+      #
+      # It watches the *second* node, which is the chain their own node cannot
+      # see and therefore the chain a breach against them would be published on.
+      # A tower watching the same chain as their node would be a second copy of
+      # protection they already have.
+      FORKTOWER_TOWER_LND_ENABLED: ${FORKTOWER_TOWER_LND_ENABLED:-true}
+      # The address the Lightning app connects to. Both apps sit on the same
+      # Umbrel network, so this is reachable without Tor and without publishing
+      # anything to the LAN — and it is the address the dashboard tells the user
+      # to paste, so it has to be the one that works from another container
+      # rather than from inside this one.
+      FORKTOWER_TOWER_LND_BIND: 0.0.0.0:9911
+      FORKTOWER_TOWER_LND_EXTERNAL_ADDR: $APP_FORKTOWER_IP:9911
+      FORKTOWER_TOWER_LND_MAX_DISK_MB: ${FORKTOWER_TOWER_LND_MAX_DISK_MB:-2048}
 
       # ── The dashboard ──
       #
