@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-forktower
 category: bitcoin
 name: Forktower
-version: "0.6.1"
+version: "0.6.2"
 tagline: Watches the other chain, so a split does not cost you a channel
 description: >-
   During a contested Bitcoin upgrade the network can separate into two chains.
@@ -79,9 +79,13 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  First release. Forktower runs a second Bitcoin node following the chain your
-  own node does not, tells you which of your Lightning channels a split would
-  expose and how long you have, and can watch a watchtower on the other chain and
-  copy your own closing transactions across.
+  Fixes for Forktower describing its own state wrongly after you have acted on
+  it. Nothing on the dashboard could close a warning: a watchtower that came
+  back, a chain that could be seen again, or a notification path that started
+  working each recorded the good news as a fresh copy of the bad news, and
+  un-dismissed the warning you had already read — so changing a setting on your
+  own node appeared to do nothing. A fresh install no longer reports that no
+  watchtower is protecting your channels while Forktower's own watchtower is
+  still starting.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
