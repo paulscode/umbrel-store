@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-forktower
 category: bitcoin
 name: Forktower
-version: "0.6.5"
+version: "0.6.6"
 tagline: Watches the other chain, so a split does not cost you a channel
 description: >-
   During a contested Bitcoin upgrade the network can separate into two chains.
@@ -79,13 +79,13 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Forktower no longer watches the other chain until that chain's node has caught
-  up. On a fresh install the second Bitcoin node is still doing its initial sync,
-  and Forktower was taking its position in that sync as a starting point and
-  following the download forward — scanning blocks from years before any of your
-  channels existed, and raising an urgent "scanning has stopped" alert every time
-  a read hiccupped under the load. Nothing was at risk: during that sync the
-  second node cannot see the other chain anyway. Nothing on the dashboard should
-  have suggested otherwise.
+  On Umbrel, having nowhere to send alerts is no longer shown as a setup step you
+  cannot complete. Umbrel gives an app no settings screen, so Forktower now
+  states it as a fact — alerts appear on its page and nowhere else — instead of
+  asking you to edit a compose file by hand. A future version will let you set
+  notifications up from Forktower's own screen. Also: if you used the faster
+  first sync, Forktower could report that the other chain had been replaced and
+  stop watching it. It now tells your node's active chain from the second one
+  Bitcoin Core builds in the background after that shortcut.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
