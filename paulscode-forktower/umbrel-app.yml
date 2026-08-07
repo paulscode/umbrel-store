@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-forktower
 category: bitcoin
 name: Forktower
-version: "0.6.9"
+version: "0.6.10"
 tagline: Watches the other chain, so a split does not cost you a channel
 description: >-
   During a contested Bitcoin upgrade the network can separate into two chains.
@@ -79,13 +79,12 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Two fixes for what happens when Forktower restarts. An urgent alert left over
-  from a previous run could not be closed while Forktower was waiting for its
-  second Bitcoin node to catch up — and waiting is exactly what it does for the
-  first days of an install, so the alert would have stood that whole time. It
-  now closes as soon as the node answers. And the second node is not listening
-  at all for the first moment after a restart, which Forktower reported as the
-  node being on the wrong network before exiting and being restarted; it now
-  waits, as it already did for a node still loading its block index.
+  Two new warnings for watchtower problems that used to be silent: a
+  registration whose address no longer reaches the tower, and a tower your node
+  cannot reach at all. Neither was reported before — the underlying failure is
+  logged by Lightning nodes only at debug level, so a tower that can never be
+  reached looked exactly like one about to succeed. Umbrel itself was measured
+  and needed no change: its Lightning node dials local addresses directly, and
+  Forktower's address there is fixed rather than one that can drift.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
