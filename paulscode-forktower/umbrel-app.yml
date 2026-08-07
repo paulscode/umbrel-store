@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-forktower
 category: bitcoin
 name: Forktower
-version: "0.6.10"
+version: "0.6.11"
 tagline: Watches the other chain, so a split does not cost you a channel
 description: >-
   During a contested Bitcoin upgrade the network can separate into two chains.
@@ -79,12 +79,13 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Two new warnings for watchtower problems that used to be silent: a
-  registration whose address no longer reaches the tower, and a tower your node
-  cannot reach at all. Neither was reported before — the underlying failure is
-  logged by Lightning nodes only at debug level, so a tower that can never be
-  reached looked exactly like one about to succeed. Umbrel itself was measured
-  and needed no change: its Lightning node dials local addresses directly, and
-  Forktower's address there is fixed rather than one that can drift.
+  A watchtower registration left over from reinstalling Forktower stops your
+  node ever agreeing a session with the new one, and Forktower used to say there
+  was nothing to do about it. It now names the tower, gives the exact command
+  for Umbrel with the key already filled in, and offers help on the forum if you
+  would rather not run it yourself. The watchtower setup steps have also been
+  rewritten to match what is actually on Umbrel's screens — including that the
+  Add button stays disabled until the client is switched on and the node
+  restarted — and the address now has a copy button.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
