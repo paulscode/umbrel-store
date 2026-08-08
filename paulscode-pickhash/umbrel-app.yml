@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-pickhash
 category: bitcoin
 name: Pickhash
-version: "0.1.2.0"
+version: "0.1.2.1"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
   Pickhash rents SHA-256 (AsicBoost) hashrate from MiningRigRentals and points
@@ -73,17 +73,13 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
-  DuckDNS naming for raw-IP endpoints. MiningRigRentals does not refund rentals
-  pointed at a bare IP address — so if your stratum endpoint is a raw IP
-  (typically a self-hosted VPS tunnel), Pickhash can now give it a free, stable
-  DNS name via DuckDNS and use that for all rentals, protecting your refunds.
-  Enter a DuckDNS subdomain and token in first-run setup or on Settings → Stratum
-  endpoint (the option appears only when your endpoint is a raw IP, and is on by
-  default). Pickhash points the name at your endpoint, verifies it resolves before
-  switching, and then keeps it in sync automatically if your VPS IP ever changes —
-  no rentals need re-pointing. Your token is encrypted at rest and never leaves
-  your server; if verification fails, your working raw-IP endpoint is kept so
-  setup is never blocked. A HashGG playit tunnel already gives you a hostname, so
-  this won't appear there.
+  The Ocean fallback pool now connects to Ocean's BIP110 stratum endpoint
+  (bip110.mine.ocean.xyz:3110) instead of the general one, so hashrate that fails
+  over is mining the block templates you'd want it on. Everything else about the
+  fallback is unchanged: it only engages if your own endpoint drops (or when a
+  stuck rig is rerouted), it mines to your same Bitcoin address, and its worker is
+  still tagged .fallback so fallback hashrate is easy to spot on Ocean. Existing
+  rentals keep whatever fallback they were created with; new rentals get the new
+  endpoint.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
