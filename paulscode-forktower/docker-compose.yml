@@ -23,7 +23,7 @@ services:
     # that means the Raspberry Pi users. `make umbrel-pin` reads the index
     # digest and refuses a tag that is a single image or missing an
     # architecture.
-    image: paulscode/forktower:v0.6.12@sha256:2ef5763ddea284c48d4c6e01be665bdd0d21ba4592f10930650118c4b8a62525
+    image: paulscode/forktower:v0.6.13@sha256:17aa4d05a42d54a6952816b96410190a8328fc35901d7427e52cd42e3d32a4e3
     # The image's default entrypoint is the shared renderer, which is what the
     # compose reference deployment wants. Umbrel needs the translation step in
     # front of it — two Bitcoin apps with two variable prefixes — so it is named
