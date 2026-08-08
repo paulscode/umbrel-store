@@ -14,7 +14,7 @@
 
 set -euo pipefail
 
-VERSION="v3.2.1.3"
+VERSION="v3.2.1.4"
 FRONTEND_IMAGE="paulscode/mempool-bip110-frontend:${VERSION}"
 BACKEND_IMAGE="paulscode/mempool-bip110-backend:${VERSION}"
 PLATFORMS="linux/amd64,linux/arm64"
