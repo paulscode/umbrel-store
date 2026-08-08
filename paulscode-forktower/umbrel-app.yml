@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-forktower
 category: bitcoin
 name: Forktower
-version: "0.6.13"
+version: "0.6.14"
 tagline: Watches the other chain, so a split does not cost you a channel
 description: >-
   During a contested Bitcoin upgrade the network can separate into two chains.
@@ -79,12 +79,13 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  A second place where Forktower could lose track of a Lightning node that
-  moved. Updating or restarting your node gives it a new address, and 0.6.11
-  taught Forktower to follow that — but only for reading your channels. The
-  check that reports whether your channels are actually backed up to a
-  watchtower kept dialling the old address, so the dashboard recovered on its
-  own while that check went on failing in the log. Both now share one way of
-  following a node.
+  Install this if you are watching the current fork. Forktower could fail to
+  report a split that was really happening: it confirmed one only when both
+  chains built several blocks past the point they separated, and a split is
+  often exactly what stops one of them building. A split is now also confirmed
+  when the separation simply persists, and you are warned within two minutes
+  that one may be happening — a warning that confirms nothing and starts no
+  countdown. The fork observed in production on 8 August is replayed as a
+  standing test.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
