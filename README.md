@@ -20,6 +20,8 @@ An [Umbrel](https://umbrel.com) community app store bringing together all of
 | App | What it does | Requires |
 |-----|--------------|----------|
 | [Agent Wallet](#agent-wallet) | Self-custodial Bitcoin & Lightning wallet with an automation API for AI agents | Lightning Node (LND) + Electrs/Fulcrum |
+| [Bitcoin Knots BLAKE2b](#bitcoin-knots-blake2b) | A private test chain enforcing the proposed BLAKE2b proof of work | none (self-contained) |
+| [Datum Gateway BLAKE2b](#datum-gateway-blake2b) | Mine that test chain with a Sia-style BLAKE2b ASIC you already own | Bitcoin Knots BLAKE2b |
 | [Electrs Liquid](#electrs-liquid) | A Liquid (`liquidv1`) full node bundled with an Electrum indexer | none (self-contained) |
 | [HashGG](#hashgg) | Sovereign hash routing — exposes your Datum stratum port to the public internet | Datum (→ Bitcoin Knots) |
 | [Mempool BIP-110](#mempool-bip-110) | Mempool block explorer fork that visualizes BIP-110 activation activity | Bitcoin Node (+ Electrs) |
@@ -66,6 +68,65 @@ and restart the app:
 
 - Source: https://github.com/paulscode/agent-wallet
 - Issues: https://github.com/paulscode/agent-wallet/issues
+
+---
+
+### Bitcoin Knots BLAKE2b
+
+### Datum Gateway BLAKE2b
+
+Two apps, one experiment, and the only reason to install either is to answer a
+hardware question: **can a BLAKE2b ASIC built for Sia mine Bitcoin blocks?**
+
+Bitcoin uses SHA256d today. There is an open proposal
+([Knots PR #359](https://github.com/bitcoinknots/bitcoin/pull/359)) to change its
+proof of work to BLAKE2b, which is what Sia mines — so Sia ASICs would be able to
+mine Bitcoin. **Bitcoin Knots BLAKE2b** runs a node built from that branch on its
+own private `regtest` chain, and **Datum Gateway BLAKE2b** turns that node's block
+templates into Stratum work in the dialect Sia miners speak. Point a miner at it
+and you can see for yourself, in about ten minutes.
+
+> ⚠️ **This is a test chain, not Bitcoin.** `regtest` starts empty, has no peers,
+> and is yours alone. The coins it mines are worthless by construction and cannot
+> be sent anywhere. BLAKE2b is a proposal Bitcoin has not adopted, and this is not
+> a way to mine Bitcoin with a Sia miner today.
+
+**Install the node first**, then the gateway. There is nothing to configure: the
+gateway asks the node for a payout address on its own, and BLAKE2b activates at
+height 1 so the first block your miner finds is already a BLAKE2b block.
+
+The node has no web interface, because a Bitcoin node does not have one; opening
+it shows a short page saying what to do next. The gateway's tile is where the work
+happens: it shows the Stratum address, links through to the mining dashboard, and
+generates a compatibility report.
+
+**Use your server's IP address, not a `.local` name.** Most ASIC firmware has no
+mDNS resolver, so a `.local` pool address fails silently and the miner simply
+reports that the pool is not ready. This is the single most common reason a miner
+appears not to work.
+
+**Ports:** Stratum on **23336**, a compatibility-capture port on **23337**, and
+DATUM's dashboard on **7152**. These avoid the official
+[Datum](https://apps.umbrel.com/app/datum) app's `23334`, so both can be installed
+on the same server.
+
+#### Reporting your hardware
+
+Verified so far: **Goldshell HS-Box** (firmware 2.2.4) in Sia mode, on stock
+firmware, no changes — it connects, receives BLAKE2b work, and the blocks it finds
+are accepted with no rejections. Other Sia BLAKE2b miners are expected to work but
+have not been tried.
+
+If yours is not on that list, point it at the capture port for a minute or two,
+then fill in the form on the gateway's page. It produces a short report you can
+share in the [Bitcoin section of the forum](https://paulscode.com/c/bitcoin/8)
+(posting needs a free account) or as a GitHub issue. Nothing is sent anywhere on
+its own: you see exactly what you are sharing, and worker names are hashed and
+passwords dropped before anything reaches disk.
+
+- Source: https://github.com/paulscode/knots-blake2b-startos
+- Source: https://github.com/paulscode/datum-blake2b-startos
+- Questions and results: https://paulscode.com/c/bitcoin/8
 
 ---
 

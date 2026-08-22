@@ -1,0 +1,55 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: $APP_KNOTS_BLAKE2B_WEB_IP
+      APP_PORT: 80
+
+  # A node has no web interface, and every Umbrel app needs something behind its
+  # Open button. This is a static page saying what the app is and what to install
+  # next, which is more useful than a tile that opens nothing.
+  web:
+    image: nginx:1.27-alpine
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/web:/usr/share/nginx/html:ro
+    networks:
+      default:
+        ipv4_address: $APP_KNOTS_BLAKE2B_WEB_IP
+
+  # Bitcoin Knots built from the BLAKE2b proof-of-work branch (PR #359), on its
+  # own private regtest chain. Same image as the StartOS package; the entrypoint
+  # writes bitcoin.conf from this environment.
+  node:
+    image: paulscode/knots-blake2b:1.0.0@sha256:8584cae7c862a462e00625378046d57cac6914d726c259a41b5fc8a8fc864fff
+    restart: on-failure
+    stop_grace_period: 1m
+    environment:
+      CHAIN: regtest
+
+      # Consensus-critical: the activation block's coinbase must contain this
+      # string, and the gateway that builds that coinbase reads the same exported
+      # value. Change it in exports.sh, not here, or the two will disagree and the
+      # node will reject the block with `bad-headline`.
+      BLAKE2B_HEADLINE: ${APP_KNOTS_BLAKE2B_HEADLINE}
+
+      # Where SHA256d stops and BLAKE2b begins. 1 means the first block mined is
+      # already BLAKE2b, which is the point of the app: a Sia ASIC cannot mine
+      # SHA256d at all, so any higher value would leave a miner connected,
+      # receiving work it cannot use, with nothing to show why.
+      BLAKE2B_ACTIVATION_HEIGHT: "1"
+
+      # Umbrel's Docker network, not the 172.16/12 the image defaults to.
+      RPC_ALLOW_IP: "10.21.0.0/16"
+
+      # A chain that starts empty does not need much, and pruning keeps it that
+      # way however long it is left running. 550 MiB is bitcoind's minimum.
+      PRUNE: "550"
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+    # RPC (18443) and P2P (18444) stay on the internal network. RPC authenticates
+    # with the cookie the node writes itself, and this chain has no peers to find.
+    networks:
+      default:
+        ipv4_address: $APP_KNOTS_BLAKE2B_NODE_IP

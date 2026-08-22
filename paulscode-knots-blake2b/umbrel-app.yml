@@ -1,0 +1,64 @@
+manifestVersion: 1.1
+id: paulscode-knots-blake2b
+category: bitcoin
+name: Bitcoin Knots BLAKE2b
+version: "1.0.0"
+tagline: A private test chain for the proposed BLAKE2b proof of work
+description: >-
+  A Bitcoin Knots node built from the proposed BLAKE2b proof-of-work change
+  (Knots PR #359), running its own private regtest chain so you can find out
+  whether a BLAKE2b ASIC you already own can mine Bitcoin blocks.
+
+
+  Bitcoin uses SHA256d today. There is an open proposal to change it to BLAKE2b,
+  which is the algorithm Sia mines, so the ASICs built for Sia would be able to
+  mine Bitcoin. This app runs a node that enforces the proposed rules. Install
+  **Datum Gateway BLAKE2b** next to it, point your miner at that, and you can see
+  for yourself whether your hardware works.
+
+
+  ⚠️ THIS IS A TEST CHAIN, NOT BITCOIN
+
+
+  It runs `regtest`: a private chain that starts empty, has no peers, and is
+  yours alone. The coins it mines are worthless by construction and cannot be
+  sent anywhere. Nothing here touches Bitcoin, and BLAKE2b is a proposal that
+  has not been adopted. This app exists to answer a hardware question, not to
+  mine anything of value.
+
+
+  WHAT IT USES
+
+
+  Small. It is pruned to the minimum and the chain starts from nothing, so it is
+  a few hundred megabytes rather than the hundreds of gigabytes a real node
+  needs. RPC is served on the internal Docker network only and is never published
+  to your LAN.
+
+
+  NO WEB INTERFACE
+
+
+  A Bitcoin node does not have one. Opening this app shows a short page telling
+  you what to do next; the mining dashboard lives in the Datum Gateway BLAKE2b
+  app.
+developer: Paul Lamb
+website: https://github.com/paulscode/knots-blake2b-startos
+dependencies: []
+repo: https://github.com/paulscode/knots-blake2b-startos
+support: https://paulscode.com/c/bitcoin/8
+port: 3028
+# Community stores must supply full URLs for icon and gallery — Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-knots-blake2b/icon.png
+gallery:
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-knots-blake2b/gallery/1.png
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: >-
+  First Umbrel release. Same image as the StartOS package, built for both x86_64
+  and aarch64. BLAKE2b activates at height 1, so the first block your miner finds
+  is already a BLAKE2b block.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store

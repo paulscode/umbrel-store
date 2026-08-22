@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitcoin Knots BLAKE2b</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+         max-width: 42rem; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 1.5rem; margin-bottom: .25rem; }
+  .sub { opacity: .7; margin-top: 0; }
+  .card { border: 1px solid rgba(128,128,128,.35); border-radius: .6rem;
+          padding: 1rem 1.25rem; margin: 1.25rem 0; }
+  .warn { border-color: rgba(220,150,40,.6); }
+  code { background: rgba(128,128,128,.18); padding: .1rem .3rem; border-radius: .25rem; }
+  ol { padding-left: 1.2rem; }
+</style>
+</head>
+<body>
+<h1>Bitcoin Knots BLAKE2b</h1>
+<p class="sub">The node is running. There is nothing to see here, and that is normal.</p>
+
+<div class="card">
+<p>A Bitcoin node has no web interface. This page exists because every Umbrel app
+needs something behind its Open button.</p>
+<p>What this app does is run a private test chain that enforces the proposed
+BLAKE2b proof-of-work rules, so a BLAKE2b ASIC can mine blocks a Bitcoin node
+accepts. To actually mine, you need the other half:</p>
+<ol>
+<li>Install <strong>Datum Gateway BLAKE2b</strong> from the same app store.</li>
+<li>Open it. It will show you the address to point your miner at, and it will
+    ask this node for a payout address on its own.</li>
+<li>Point your miner at that address, using your server's IP rather than a
+    <code>.local</code> name, and watch the dashboard.</li>
+</ol>
+</div>
+
+<div class="card warn">
+<p><strong>This is not Bitcoin.</strong> It is <code>regtest</code>: a private
+chain that starts empty and has no peers. The coins it mines are worthless by
+construction and cannot be sent anywhere. BLAKE2b is a proposal that Bitcoin has
+not adopted, and this app exists to answer a hardware question, not to mine
+anything of value.</p>
+</div>
+
+<p style="opacity:.7;font-size:.9rem">
+Built from <a href="https://github.com/bitcoinknots/bitcoin/pull/359">Knots PR #359</a>.
+Questions and results: <a href="https://paulscode.com/c/bitcoin/8">paulscode.com/c/bitcoin/8</a>.
+</p>
+</body>
+</html>

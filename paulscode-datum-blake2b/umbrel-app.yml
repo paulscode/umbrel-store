@@ -1,0 +1,89 @@
+manifestVersion: 1.1
+id: paulscode-datum-blake2b
+category: bitcoin
+name: Datum Gateway BLAKE2b
+version: "1.0.0"
+tagline: Mine a private Bitcoin test chain with a BLAKE2b ASIC you already own
+description: >-
+  Bitcoin uses SHA256d today. There is an open proposal to change its proof of
+  work to BLAKE2b, which is the algorithm Sia mines, so the ASICs built for Sia
+  would be able to mine Bitcoin blocks. This app lets you find out whether yours
+  can, on a private test chain, in about ten minutes.
+
+
+  It runs the DATUM Gateway built against the BLAKE2b branch. It takes block
+  templates from your **Bitcoin Knots BLAKE2b** node, turns them into Stratum
+  work in the dialect Sia miners speak, and hands that out on your LAN. Point
+  your miner at it and watch the blocks come in.
+
+
+  ⚠️ THIS IS A TEST CHAIN, NOT BITCOIN
+
+
+  The node it mines is `regtest`: a private chain that starts empty and has no
+  peers. The coins it mines are worthless by construction and cannot be sent
+  anywhere. BLAKE2b is a proposal that Bitcoin has not adopted. Nothing here
+  earns anything, and it is not a way to mine Bitcoin with a Sia miner today.
+
+
+  HOW TO USE IT
+
+
+  1. Install **Bitcoin Knots BLAKE2b** first and let it start.
+
+  2. Install this and open it. It asks the node for a payout address on its own,
+     so there is nothing to configure.
+
+  3. In your miner's own web interface, set the pool to the Stratum address the
+     page shows you. The worker name and password are not used.
+
+  4. Watch the dashboard.
+
+
+  Use your server's IP address, not a `.local` name. Most ASIC firmware has no
+  mDNS resolver, so a `.local` address fails silently and the miner just reports
+  that the pool is not ready.
+
+
+  REPORTING YOUR HARDWARE
+
+
+  Verified so far: Goldshell HS-Box on stock firmware, in Sia mode, no changes.
+  Other Sia BLAKE2b miners are expected to work but have not been tried.
+
+
+  If yours is not on that list, this app can record how it talks to the gateway
+  and turn that into a short report you can share, so the upstream projects can
+  make BLAKE2b mining work on more hardware. Point the miner at the capture port
+  for a minute, fill in the form, and copy what it gives you. Nothing is sent
+  anywhere on its own, worker names are hashed and passwords are dropped before
+  anything reaches disk, and you see exactly what you are sharing.
+
+
+  PORTS
+
+
+  Stratum on 23336 and the compatibility-test port on 23337, chosen so this can
+  sit alongside the official Datum app, which keeps 23334.
+developer: Paul Lamb
+website: https://github.com/paulscode/datum-blake2b-startos
+dependencies:
+  - paulscode-knots-blake2b
+repo: https://github.com/paulscode/datum-blake2b-startos
+support: https://paulscode.com/c/bitcoin/8
+port: 7153
+# Community stores must supply full URLs for icon and gallery — Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-datum-blake2b/icon.png
+gallery:
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-datum-blake2b/gallery/1.png
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: >-
+  First Umbrel release. Same image as the StartOS package, built for both x86_64
+  and aarch64, with two things added for Umbrel: the payout address is taken from
+  your node instead of being asked for, and the compatibility report is a web page
+  rather than a StartOS action.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store
