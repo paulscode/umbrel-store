@@ -28,7 +28,10 @@
 
 set -euo pipefail
 
-VERSION="1.0.0"
+# Versioned separately. The pair is released together, but a fix to one is not a
+# reason to make everybody re-pull the other, and Umbrel offers an update per app.
+KNOTS_VERSION="1.0.0"
+DATUM_VERSION="1.0.1"
 PLATFORMS="linux/amd64,linux/arm64"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -65,7 +68,7 @@ if [[ -n "${BUILDER}" ]]; then
 fi
 
 build_one() {
-  local name="$1" repo="$2" image="paulscode/$1:${VERSION}"
+  local name="$1" repo="$2" version="$3" image="paulscode/$1:$3"
   local ctx="${STARTOS_DIR}/${repo}"
 
   if [[ ! -f "${ctx}/Dockerfile" ]]; then
@@ -97,15 +100,15 @@ build_one() {
 }
 
 [[ "${WHICH}" == "both" || "${WHICH}" == "knots" ]] && \
-  build_one knots-blake2b knots-blake2b-startos
+  build_one knots-blake2b knots-blake2b-startos "${KNOTS_VERSION}"
 [[ "${WHICH}" == "both" || "${WHICH}" == "datum" ]] && \
-  build_one datum-blake2b datum-blake2b-startos
+  build_one datum-blake2b datum-blake2b-startos "${DATUM_VERSION}"
 
 if [[ -n "${PUSH}" ]]; then
   echo ""
   echo "📝 Pin the digests above in each app's docker-compose.yml, e.g.:"
-  echo "   image: paulscode/knots-blake2b:${VERSION}@sha256:<digest>"
-  echo "   image: paulscode/datum-blake2b:${VERSION}@sha256:<digest>"
+  echo "   image: paulscode/knots-blake2b:${KNOTS_VERSION}@sha256:<digest>"
+  echo "   image: paulscode/datum-blake2b:${DATUM_VERSION}@sha256:<digest>"
   echo "   (the gateway digest appears three times: gateway, capture, report)"
 fi
 

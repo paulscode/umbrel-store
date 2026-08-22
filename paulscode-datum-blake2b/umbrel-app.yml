@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum Gateway BLAKE2b
-version: "1.0.0"
+version: "1.0.1"
 tagline: Mine a private Bitcoin test chain with a BLAKE2b ASIC you already own
 description: >-
   Bitcoin uses SHA256d today. There is an open proposal to change its proof of
@@ -81,9 +81,9 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  First Umbrel release. Same image as the StartOS package, built for both x86_64
-  and aarch64, with two things added for Umbrel: the payout address is taken from
-  your node instead of being asked for, and the compatibility report is a web page
-  rather than a StartOS action.
+  Fixes the Stratum address on the app's page, which was built from whatever
+  hostname the browser had used. Reached at a .local name it printed a .local
+  address, directly contradicting the warning underneath it not to use one. It now
+  shows the server's own LAN address.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

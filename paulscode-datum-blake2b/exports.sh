@@ -21,3 +21,18 @@ export APP_DATUM_BLAKE2B_STRATUM_PORT="23336"
 
 # The opt-in compatibility-test port. Same mining, with the conversation recorded.
 export APP_DATUM_BLAKE2B_CAPTURE_PORT="23337"
+
+# The server's own LAN address, worked out here because this file runs on the
+# host and the containers cannot see it: from inside Umbrel's Docker network a
+# container only knows its own 10.21.x.x address.
+#
+# The report page needs it because it is the one thing a miner must be told, and
+# the page cannot infer it. Echoing back the hostname the browser used produces
+# `pauls-umbrel.local`, which is precisely the address that does not work: ASIC
+# firmware generally has no mDNS resolver, so the miner fails silently and reports
+# only that the pool is not ready.
+#
+# `ip route get` gives the source address of the default route, which is the LAN
+# interface. `hostname -I` is the fallback and is less reliable here, because on a
+# box running Docker it also lists bridge addresses and the order is not fixed.
+export APP_DATUM_BLAKE2B_HOST_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | grep -oP 'src \K\S+' || hostname -I 2>/dev/null | awk '{print $1}')"
