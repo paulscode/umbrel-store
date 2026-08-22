@@ -47,7 +47,11 @@ website: https://github.com/paulscode/knots-blake2b-startos
 dependencies: []
 repo: https://github.com/paulscode/knots-blake2b-startos
 support: https://paulscode.com/c/bitcoin/8
-port: 3028
+# Not in the 3000s, where the app tiles crowd together: 3028 was already taken by
+# paulscode-agent-wallet on the author's own box, and a tile port that collides
+# fails the whole install with "port is already allocated". 7150 sits beside the
+# gateway app's 7152/7153, so the pair reads as a pair.
+port: 7150
 # Community stores must supply full URLs for icon and gallery — Umbrel's resolver
 # only auto-prefixes URLs for the official umbrel-app-store.
 icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-knots-blake2b/icon.png

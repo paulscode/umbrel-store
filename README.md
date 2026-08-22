@@ -105,10 +105,11 @@ mDNS resolver, so a `.local` pool address fails silently and the miner simply
 reports that the pool is not ready. This is the single most common reason a miner
 appears not to work.
 
-**Ports:** Stratum on **23336**, a compatibility-capture port on **23337**, and
-DATUM's dashboard on **7152**. These avoid the official
+**Ports:** Stratum on **23336**, a compatibility-capture port on **23337**,
+DATUM's dashboard on **7152**, and the two app tiles on **7150** (node) and
+**7153** (gateway). These avoid the official
 [Datum](https://apps.umbrel.com/app/datum) app's `23334`, so both can be installed
-on the same server.
+on the same server, and they stay out of the 3000s where app tiles crowd together.
 
 #### Reporting your hardware
 
