@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-knots-blake2b
 category: bitcoin
 name: Bitcoin Knots BLAKE2b
-version: "1.0.0"
+version: "1.0.1"
 tagline: A private test chain for the proposed BLAKE2b proof of work
 description: >-
   A Bitcoin Knots node built from the proposed BLAKE2b proof-of-work change
@@ -61,8 +61,9 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  First Umbrel release. Same image as the StartOS package, built for both x86_64
-  and aarch64. BLAKE2b activates at height 1, so the first block your miner finds
-  is already a BLAKE2b block.
+  Rebuilt against Knots fee27ccfe9. That branch was rebased rather than advanced,
+  so nothing that runs on your node changed; the commit we had pinned is simply no
+  longer reachable from any branch, and a pin should not depend on GitHub keeping
+  an orphaned commit around.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

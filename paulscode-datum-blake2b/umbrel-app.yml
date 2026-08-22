@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum Gateway BLAKE2b
-version: "1.0.1"
+version: "1.0.2"
 tagline: Mine a private Bitcoin test chain with a BLAKE2b ASIC you already own
 description: >-
   Bitcoin uses SHA256d today. There is an open proposal to change its proof of
@@ -81,9 +81,8 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes the Stratum address on the app's page, which was built from whatever
-  hostname the browser had used. Reached at a .local name it printed a .local
-  address, directly contradicting the warning underneath it not to use one. It now
-  shows the server's own LAN address.
+  Uses the upstream fix for the header-v2 h1 version bit, which now lives inside
+  the gateway's own commitment code rather than in a patch we carried. Verified by
+  mining: blocks are still accepted and headers are still 164 bytes.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
