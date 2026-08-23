@@ -119,6 +119,8 @@ Verified so far, both on stock firmware with no changes:
   receives BLAKE2b work, and the blocks it finds are accepted with no rejections.
 - **Bitmain Antminer A3** (CGminer 4.9.0), reported by a user — 158 of 161 shares
   accepted over a two-hour session.
+- **Goldshell SC5 Pro** (firmware 2.2.0), reported by a user — 166 of 190 shares
+  accepted over a 16 hour run.
 
 The second is the more useful data point, since the two share no manufacturer and
 no firmware lineage, and they spoke to the gateway identically. Other Sia BLAKE2b
