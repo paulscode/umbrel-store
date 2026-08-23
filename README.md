@@ -113,10 +113,16 @@ on the same server, and they stay out of the 3000s where app tiles crowd togethe
 
 #### Reporting your hardware
 
-Verified so far: **Goldshell HS-Box** (firmware 2.2.4) in Sia mode, on stock
-firmware, no changes — it connects, receives BLAKE2b work, and the blocks it finds
-are accepted with no rejections. Other Sia BLAKE2b miners are expected to work but
-have not been tried.
+Verified so far, both on stock firmware with no changes:
+
+- **Goldshell HS-Box** (firmware 2.2.4) in Sia mode, tested directly — it connects,
+  receives BLAKE2b work, and the blocks it finds are accepted with no rejections.
+- **Bitmain Antminer A3** (CGminer 4.9.0), reported by a user — 158 of 161 shares
+  accepted over a two-hour session.
+
+The second is the more useful data point, since the two share no manufacturer and
+no firmware lineage, and they spoke to the gateway identically. Other Sia BLAKE2b
+miners are expected to work but have not been tried.
 
 If yours is not on that list, point it at the capture port for a minute or two,
 then fill in the form on the gateway's page. It produces a short report you can

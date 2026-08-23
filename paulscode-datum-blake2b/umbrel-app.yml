@@ -48,7 +48,10 @@ description: >-
   REPORTING YOUR HARDWARE
 
 
-  Verified so far: Goldshell HS-Box on stock firmware, in Sia mode, no changes.
+  Verified so far, both on stock firmware with no changes: the Goldshell HS-Box in
+  Sia mode, tested directly, and a Bitmain Antminer A3 on CGminer 4.9.0 reported by
+  a user, which had 158 of 161 shares accepted over a two-hour session. They share
+  no manufacturer and no firmware lineage and spoke to the gateway identically.
   Other Sia BLAKE2b miners are expected to work but have not been tried.
 
 
