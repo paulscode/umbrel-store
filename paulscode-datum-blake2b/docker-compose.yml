@@ -9,7 +9,7 @@ services:
   # The DATUM Gateway itself: turns the node's block templates into Stratum work
   # a Sia-style BLAKE2b ASIC can mine. Same image as the StartOS package.
   gateway:
-    image: paulscode/datum-blake2b:1.0.2@sha256:892b126ac0972dccdaccc164c650a31657e97f89d642214de9fcfc76fc6c446f
+    image: paulscode/datum-blake2b:1.0.3@sha256:80bcc9e563a61713f49de2276d737018531bc1a231ff78a7f1d4d46e787b3581
     restart: on-failure
     stop_grace_period: 30s
     environment:
@@ -62,7 +62,7 @@ services:
   # Kept as a separate hop rather than a switch on the main port, so the mining
   # path never grows a mode that can be left switched on.
   capture:
-    image: paulscode/datum-blake2b:1.0.2@sha256:892b126ac0972dccdaccc164c650a31657e97f89d642214de9fcfc76fc6c446f
+    image: paulscode/datum-blake2b:1.0.3@sha256:80bcc9e563a61713f49de2276d737018531bc1a231ff78a7f1d4d46e787b3581
     restart: on-failure
     entrypoint: ["python3", "/usr/local/bin/stratumtap.py"]
     command:
@@ -85,7 +85,7 @@ services:
   # `docker exec` would mean nobody ever files one. So the page that opens is the
   # form, plus the Stratum address and a link through to the dashboard.
   report:
-    image: paulscode/datum-blake2b:1.0.2@sha256:892b126ac0972dccdaccc164c650a31657e97f89d642214de9fcfc76fc6c446f
+    image: paulscode/datum-blake2b:1.0.3@sha256:80bcc9e563a61713f49de2276d737018531bc1a231ff78a7f1d4d46e787b3581
     restart: on-failure
     entrypoint: ["python3", "/usr/local/bin/report_server.py"]
     command:
@@ -105,8 +105,15 @@ services:
       # will not work.
       - --host-ip
       - ${APP_DATUM_BLAKE2B_HOST_IP:-}
+    environment:
+      # Only the node can say whether a submitted block was accepted, and an
+      # accepted share is not a block. Same cookie and same URL the gateway uses;
+      # read-only, and the only call made is getblockheader.
+      RPC_URL: http://${APP_KNOTS_BLAKE2B_NODE_IP:-10.21.21.62}:${APP_KNOTS_BLAKE2B_RPC_PORT:-18443}
+      COOKIE_PATH: /knots/regtest/.cookie
     volumes:
       - ${APP_DATA_DIR}/data:/data
+      - ${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/data:/knots:ro
     networks:
       default:
         ipv4_address: $APP_DATUM_BLAKE2B_REPORT_IP
