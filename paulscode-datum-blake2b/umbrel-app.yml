@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum Gateway BLAKE2b
-version: "1.0.3"
+version: "1.0.4"
 tagline: Mine a private Bitcoin test chain with a BLAKE2b ASIC you already own
 description: >-
   Bitcoin uses SHA256d today. There is an open proposal to change its proof of
@@ -84,8 +84,7 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Compatibility reports now say whether your node accepted the blocks your miner
-  found, not only whether the gateway accepted its shares. Those are different
-  things: shares are the gateway's opinion, a block in the chain is the node's.
+  Compatibility reports now identify the exact build they came from, and no
+  longer credit one miner with blocks another miner found on the same gateway.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
