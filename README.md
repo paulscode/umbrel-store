@@ -124,6 +124,13 @@ The second is the more useful data point, since the two share no manufacturer an
 no firmware lineage, and they spoke to the gateway identically. Other Sia BLAKE2b
 miners are expected to work but have not been tried.
 
+**GPUs do not work yet.** `ccminer -a sia` computes exactly the right hash, but it
+speaks the other "Sia stratum" — the one the Sia pools use, with 4-byte time and
+nonce fields and a ready-made merkle root — while this gateway serves the dialect
+the ASICs speak. Tested directly on an RTX 3090 and a Quadro RTX 8000: it rejects
+the job and never starts hashing. A GPU miner is possible but would mean teaching
+one the other dialect, not finding the right flag.
+
 If yours is not on that list, point it at the capture port for a minute or two,
 then fill in the form on the gateway's page. It produces a short report you can
 share in the [Bitcoin section of the forum](https://paulscode.com/c/bitcoin/8)
