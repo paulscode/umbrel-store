@@ -121,8 +121,8 @@ Verified so far, both on stock firmware with no changes:
   accepted over a two-hour session.
 - **Goldshell SC5 Pro** (firmware 2.2.0), reported by a user — 166 of 190 shares
   accepted over a 16 hour run.
-- **Goldshell SC Box II** (firmware 2.2.2), reported by a user — 557 of 563 shares
-  accepted.
+- **Goldshell SC Box II** (firmware 2.2.2), reported by a user — 382 of 384 shares
+  accepted, and 346 of the 383 blocks it found accepted by the node.
 
 The second is the more useful data point, since the two share no manufacturer and
 no firmware lineage, and they spoke to the gateway identically. Other Sia BLAKE2b
