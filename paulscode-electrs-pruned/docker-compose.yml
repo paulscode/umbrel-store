@@ -112,10 +112,12 @@ services:
     volumes:
       - ${APP_DATA_DIR}/data:/data
     ports:
-      # Published so LAN wallets can connect. 50001 is the conventional Electrum
-      # port and is what the official Electrs app uses, so this app is not
-      # installable alongside it without changing one of them.
-      - "50001:50001"
+      # Published on 50201, not 50001. This app is built to run *alongside* the
+      # official Electrs app, not instead of it: the intended setup is one
+      # archival node with the official Electrs on 50001 and one pruned node
+      # with this on 50201, so both chains are reachable from one server.
+      # electrs-liquid in this store took 50101 for the same reason.
+      - "50201:50001"
     networks:
       default:
         ipv4_address: $APP_ELECTRS_PRUNED_SERVER_IP

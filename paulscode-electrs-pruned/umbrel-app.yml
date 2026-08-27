@@ -3,18 +3,23 @@ id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
 version: "0.11.1"
-tagline: An Electrum server that works with a pruned Bitcoin node
+tagline: A second Electrum server, for your pruned node
 description: >-
-  Run your own Electrum server against a pruned Bitcoin node. The official
-  Electrs app requires an archival node with transaction indexing, which means
-  keeping the whole chain on disk. This one does not: it indexes from a pruned
-  node and fetches the blocks your node has dropped from the peer-to-peer
+  Runs alongside the official Electrs app rather than replacing it. The intended
+  setup is two nodes on one server: an archival node with the official Electrs on
+  port 50001, and a pruned node with this on port 50201. Both chains stay
+  reachable from your own hardware without paying for the disk to hold two full
+  blockchains.
+
+
+  The official Electrs app requires an archival node with transaction indexing,
+  which means keeping the whole chain. This one does not: it indexes from a
+  pruned node and fetches the blocks your node has dropped from the peer-to-peer
   network, verifying each one against your node before using it.
 
 
   Your wallets query balances, transaction history and broadcast transactions
-  through your own node instead of somebody else's server, on a machine that does
-  not have room for the full chain.
+  through your own node instead of somebody else's server.
 
 
   HOW IT WORKS
@@ -48,10 +53,8 @@ description: >-
     and APP_ELECTRS_PRUNED_SERVER_PORT (internal Electrum port 50001).
 
   - Wallets on your LAN: point an Electrum-compatible wallet at your Umbrel's
-    address on port 50001.
-
-
-  Not installable alongside the official Electrs app, which uses the same port.
+    address on port 50201. The official Electrs app keeps 50001, so both can be
+    installed and both can be connected to at once.
 developer: Paul Lamb
 website: https://github.com/paulscode/electrs-pruned
 dependencies:
