@@ -22,7 +22,7 @@ services:
   # own private regtest chain. Same image as the StartOS package; the entrypoint
   # writes bitcoin.conf from this environment.
   node:
-    image: paulscode/knots-blake2b:1.0.1@sha256:fe905c0eea3a8b2550412df7102c7260ce2fbb7b606f142699cd38eeb38491b1
+    image: paulscode/knots-blake2b:1.0.2@sha256:e51c14967fc4c0f9395da1e4bca61f242fa93412612845e008087806a712f9dd
     restart: on-failure
     stop_grace_period: 1m
     environment:
