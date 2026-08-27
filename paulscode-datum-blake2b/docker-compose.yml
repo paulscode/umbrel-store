@@ -9,8 +9,8 @@ services:
   # The DATUM Gateway itself: turns the node's block templates into Stratum work
   # a Sia-style BLAKE2b ASIC can mine. Same image as the StartOS package.
   gateway:
-    image: paulscode/datum-blake2b:1.0.5@sha256:572a46ac9fdf3552739cc39c8f7e2bb6d0cf059f5b1c0391eedc374ede0bfbcd
-    restart: on-failure
+    image: paulscode/datum-blake2b:1.0.6@sha256:88955c659137807fdb41d93bdd330cc3cdde41f0847377c296c3167797feeb3d
+    restart: unless-stopped
     stop_grace_period: 30s
     environment:
       # The node app publishes these in its exports.sh, which umbrelOS injects
@@ -46,6 +46,8 @@ services:
       # The path follows from that app's id, so it is spelled out rather than
       # taken from an export that would say the same thing.
       - ${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/data:/knots:ro
+      # Read-only. The gateway follows the chain rather than choosing it.
+      - ${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/config:/config:ro
     ports:
       # Stratum, for the miner on your LAN.
       - "23336:23336"
@@ -62,8 +64,8 @@ services:
   # Kept as a separate hop rather than a switch on the main port, so the mining
   # path never grows a mode that can be left switched on.
   capture:
-    image: paulscode/datum-blake2b:1.0.5@sha256:572a46ac9fdf3552739cc39c8f7e2bb6d0cf059f5b1c0391eedc374ede0bfbcd
-    restart: on-failure
+    image: paulscode/datum-blake2b:1.0.6@sha256:88955c659137807fdb41d93bdd330cc3cdde41f0847377c296c3167797feeb3d
+    restart: unless-stopped
     entrypoint: ["python3", "/usr/local/bin/stratumtap.py"]
     command:
       - --listen
@@ -85,8 +87,8 @@ services:
   # `docker exec` would mean nobody ever files one. So the page that opens is the
   # form, plus the Stratum address and a link through to the dashboard.
   report:
-    image: paulscode/datum-blake2b:1.0.5@sha256:572a46ac9fdf3552739cc39c8f7e2bb6d0cf059f5b1c0391eedc374ede0bfbcd
-    restart: on-failure
+    image: paulscode/datum-blake2b:1.0.6@sha256:88955c659137807fdb41d93bdd330cc3cdde41f0847377c296c3167797feeb3d
+    restart: unless-stopped
     entrypoint: ["python3", "/usr/local/bin/report_server.py"]
     command:
       - --listen
@@ -105,6 +107,8 @@ services:
       # will not work.
       - --host-ip
       - ${APP_DATUM_BLAKE2B_HOST_IP:-}
+      - --settings-file
+      - /config/settings.json
     environment:
       # Only the node can say whether a submitted block was accepted, and an
       # accepted share is not a block. Same cookie and same URL the gateway uses;
@@ -114,6 +118,8 @@ services:
     volumes:
       - ${APP_DATA_DIR}/data:/data
       - ${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/data:/knots:ro
+      # The only writer. Lives with the node because the chain is its setting.
+      - ${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/config:/config
     networks:
       default:
         ipv4_address: $APP_DATUM_BLAKE2B_REPORT_IP

@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-knots-blake2b
 category: bitcoin
 name: Bitcoin Knots BLAKE2b
-version: "1.0.2"
+version: "1.0.3"
 tagline: A private test chain for the proposed BLAKE2b proof of work
 description: >-
   A Bitcoin Knots node built from the proposed BLAKE2b proof-of-work change
@@ -61,8 +61,9 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Rebuilt on the released Bitcoin Knots v29.4.1.knots20260508rc2 rather than a
-  development branch. The app still runs its own private regtest chain; the public
-  BLAKE2b test network is supported by the image but is not wired up here yet.
+  You can now choose between the private test chain and the public BLAKE2b test
+  network, from the Datum Gateway BLAKE2b app's page. Switching keeps both: each
+  chain has its own blocks, wallet and payout address, so switching back returns
+  you to where you left off.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

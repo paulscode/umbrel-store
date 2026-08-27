@@ -11,7 +11,7 @@ services:
   # next, which is more useful than a tile that opens nothing.
   web:
     image: nginx:1.27-alpine
-    restart: on-failure
+    restart: unless-stopped
     volumes:
       - ${APP_DATA_DIR}/web:/usr/share/nginx/html:ro
     networks:
@@ -22,8 +22,8 @@ services:
   # own private regtest chain. Same image as the StartOS package; the entrypoint
   # writes bitcoin.conf from this environment.
   node:
-    image: paulscode/knots-blake2b:1.0.2@sha256:e51c14967fc4c0f9395da1e4bca61f242fa93412612845e008087806a712f9dd
-    restart: on-failure
+    image: paulscode/knots-blake2b:1.0.3@sha256:a8afc0bdbea9077776060a3d2dd79b508ad7a60e1cd53775f76c4cc24b02d4a9
+    restart: unless-stopped
     stop_grace_period: 1m
     environment:
       CHAIN: regtest
@@ -48,6 +48,10 @@ services:
       PRUNE: "550"
     volumes:
       - ${APP_DATA_DIR}/data:/data
+      # Chain and payout address, written by the gateway app's page. The node
+      # reads and watches this, and restarts itself when it changes, which is why
+      # the restart policy above is unless-stopped rather than on-failure.
+      - ${APP_DATA_DIR}/config:/config:ro
     # RPC (18443) and P2P (18444) stay on the internal network. RPC authenticates
     # with the cookie the node writes itself, and this chain has no peers to find.
     networks:
