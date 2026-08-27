@@ -1,0 +1,121 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: $APP_ELECTRS_PRUNED_WEB_IP
+      APP_PORT: 80
+
+  # Small static page shown by the app's "Open" button: how to connect a wallet.
+  web:
+    image: nginx:1.27-alpine
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/web:/usr/share/nginx/html:ro
+    networks:
+      default:
+        ipv4_address: $APP_ELECTRS_PRUNED_WEB_IP
+
+  # btc-rpc-proxy sits between electrs and the Bitcoin Node, and is the whole
+  # reason this app can index a pruned node. electrs asks for blocks below the
+  # prune height with `getblock <hash> 0`; bitcoind no longer has them, and the
+  # proxy fetches them from the p2p network and verifies them against the node.
+  #
+  # On StartOS the bitcoind package runs this itself whenever pruning is enabled,
+  # so its dependents get it transparently. Umbrel has no equivalent, so the app
+  # brings its own.
+  #
+  # The image expects a config at a fixed path and has no environment interface,
+  # so the config is written at start from the variables Umbrel injects. umask
+  # 077 because it carries the RPC password, and the image's own entrypoint
+  # chmods 600 for the same reason.
+  #
+  # passthrough_rpcauth points at the node's bitcoin.conf, which carries an
+  # `rpcauth=umbrel:<salt>$<hash>` line. That makes the proxy accept exactly the
+  # credentials the node accepts, so electrs authenticates with the same user and
+  # password whether it is pointed at the node or at the proxy. It also means no
+  # second secret is generated, stored or shared by this app.
+  proxy:
+    image: ghcr.io/start9labs/btc-rpc-proxy:v0.8.0@sha256:3b80e74f2d2d3de207d2924832c02e61fb897a8885e21cfe76413225fd27bb41
+    restart: on-failure
+    environment:
+      BITCOIND_HOST: ${APP_BITCOIN_NODE_IP}
+      BITCOIND_PORT: ${APP_BITCOIN_RPC_PORT}
+      BITCOIND_USER: ${APP_BITCOIN_RPC_USER}
+      BITCOIND_PASS: ${APP_BITCOIN_RPC_PASS}
+    volumes:
+      - ${APP_BITCOIN_DATA_DIR}:/bitcoin:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -eu
+        umask 077
+        # The user and password come from the Bitcoin Node app and are not ours
+        # to constrain, so escape them for a TOML basic string rather than
+        # assume they are alphanumeric. An unescaped quote in the password ends
+        # the string early and the proxy reads a config that is not the one
+        # meant. Compose substitutes $VAR from the host, so container variables
+        # are written $$VAR to survive to the shell.
+        esc() { printf '%s' "$$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'; }
+        H=$$(esc "$${BITCOIND_HOST}")
+        U=$$(esc "$${BITCOIND_USER}")
+        P=$$(esc "$${BITCOIND_PASS}")
+        cat > /tmp/btc_rpc_proxy.toml <<EOF
+        bitcoind_address = "$$H"
+        bitcoind_port = $${BITCOIND_PORT}
+        bitcoind_user = "$$U"
+        bitcoind_password = "$$P"
+        bind_address = "0.0.0.0"
+        bind_port = 8332
+        passthrough_rpcauth = "/bitcoin/bitcoin.conf"
+        # Users derived from passthrough carry no fetch_blocks of their own, so
+        # this global switch is what grants them on-demand fetching of pruned
+        # blocks. Without it the proxy forwards every getblock straight to
+        # bitcoind and a pruned block still fails.
+        default_fetch_blocks = true
+        # Unset, the proxy asks every eligible peer for the same block at once
+        # and keeps the first valid answer, which is N copies of every fetch.
+        max_peer_concurrency = 3
+        # A verbose transaction lookup fetches the same block twice by itself,
+        # so the repeat should not go back to the network.
+        block_cache_size_mib = 64
+        EOF
+        exec /usr/bin/btc_rpc_proxy --conf /tmp/btc_rpc_proxy.toml
+    networks:
+      default:
+        ipv4_address: $APP_ELECTRS_PRUNED_PROXY_IP
+
+  # electrs, patched to index from a pruned node and to follow a chain whose
+  # block headers are not all 80 bytes. Same image as the StartOS package; the
+  # entrypoint builds electrs.toml from these variables because Umbrel has no
+  # settings form.
+  #
+  # daemon_rpc_addr points at the proxy, not the node, so pruned blocks resolve.
+  # daemon_p2p_addr points at the node directly, because that path only carries
+  # blocks the node still has and gains nothing from the detour.
+  server:
+    image: paulscode/electrs-pruned:0.11.1@sha256:ba922bbacaec7b719626c9163d079a0f441ec14fc37c432d7ee910676d16c8ac
+    restart: always
+    stop_grace_period: 5m
+    depends_on:
+      - proxy
+    environment:
+      ELECTRS_CONFIG_FROM_ENV: "1"
+      BITCOIN_RPC_HOST: ${APP_ELECTRS_PRUNED_PROXY_IP}
+      BITCOIN_RPC_PORT: "8332"
+      BITCOIN_P2P_HOST: ${APP_BITCOIN_NODE_IP}
+      BITCOIN_P2P_PORT: ${APP_BITCOIN_P2P_PORT}
+      BITCOIN_RPC_USER: ${APP_BITCOIN_RPC_USER}
+      BITCOIN_RPC_PASS: ${APP_BITCOIN_RPC_PASS}
+      ELECTRS_NETWORK: ${APP_BITCOIN_NETWORK_ELECTRS:-bitcoin}
+      ELECTRS_LOG_FILTERS: INFO
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+    ports:
+      # Published so LAN wallets can connect. 50001 is the conventional Electrum
+      # port and is what the official Electrs app uses, so this app is not
+      # installable alongside it without changing one of them.
+      - "50001:50001"
+    networks:
+      default:
+        ipv4_address: $APP_ELECTRS_PRUNED_SERVER_IP

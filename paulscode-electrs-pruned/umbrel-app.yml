@@ -1,0 +1,72 @@
+manifestVersion: 1.1
+id: paulscode-electrs-pruned
+category: bitcoin
+name: Electrs Pruned
+version: "0.11.1"
+tagline: An Electrum server that works with a pruned Bitcoin node
+description: >-
+  Run your own Electrum server against a pruned Bitcoin node. The official
+  Electrs app requires an archival node with transaction indexing, which means
+  keeping the whole chain on disk. This one does not: it indexes from a pruned
+  node and fetches the blocks your node has dropped from the peer-to-peer
+  network, verifying each one against your node before using it.
+
+
+  Your wallets query balances, transaction history and broadcast transactions
+  through your own node instead of somebody else's server, on a machine that does
+  not have room for the full chain.
+
+
+  HOW IT WORKS
+
+
+  The app runs two containers. The indexer is electrs, patched to route requests
+  for old blocks past the point where your node stopped keeping them. Alongside
+  it runs btc-rpc-proxy, which fetches those blocks over peer-to-peer and checks
+  them against your node, so nothing is trusted that your node has not confirmed.
+
+
+  Nothing is changed on your Bitcoin Node, and an archival node works too: the
+  routing only engages below the prune height, so if there is no prune height it
+  never engages.
+
+
+  WHAT TO EXPECT
+
+
+  A pruned node saves disk on blocks, but the address index is separate and still
+  has to be built and stored. Expect roughly 60 to 80 GB for the index on mainnet
+  and a first sync measured in hours. Fetching a dropped block costs a network
+  round trip, so a wallet asking about very old transactions is slower than it
+  would be against an archival node. Recent history is unaffected.
+
+
+  CONNECTING
+
+
+  - Other Umbrel apps: depend on this app and read APP_ELECTRS_PRUNED_SERVER_IP
+    and APP_ELECTRS_PRUNED_SERVER_PORT (internal Electrum port 50001).
+
+  - Wallets on your LAN: point an Electrum-compatible wallet at your Umbrel's
+    address on port 50001.
+
+
+  Not installable alongside the official Electrs app, which uses the same port.
+developer: Paul Lamb
+website: https://github.com/paulscode/electrs-pruned
+dependencies:
+  - bitcoin
+repo: https://github.com/paulscode/electrs-pruned-startos
+support: https://github.com/paulscode/electrs-pruned-startos/issues
+port: 3031
+# Community stores must supply full URLs for icon and gallery — Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-electrs-pruned/icon.png
+gallery:
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-electrs-pruned/gallery/1.png
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: ""
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store

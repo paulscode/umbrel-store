@@ -1,0 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Electrs Pruned</title>
+<style>
+  body { font: 16px/1.6 system-ui, sans-serif; max-width: 42rem; margin: 4rem auto; padding: 0 1.5rem; color: #1a1a1a; }
+  h1 { font-size: 1.5rem; margin-bottom: .25rem; }
+  p.sub { color: #666; margin-top: 0; }
+  code { background: #f2f2f2; padding: .15rem .35rem; border-radius: .2rem; }
+  pre { background: #f2f2f2; padding: .75rem 1rem; border-radius: .3rem; overflow-x: auto; }
+  h2 { font-size: 1.05rem; margin-top: 2rem; }
+</style>
+<h1>Electrs Pruned</h1>
+<p class="sub">An Electrum server indexing your pruned Bitcoin node.</p>
+
+<h2>Connect a wallet on your network</h2>
+<p>Point any Electrum-compatible wallet at your Umbrel, on port <code>50001</code>,
+   using plaintext TCP rather than SSL.</p>
+<pre>&lt;your-umbrel-address&gt;:50001:t</pre>
+<p>In Sparrow that is Preferences, then Server, then Private Electrum, with
+   "Use SSL" off. In Electrum it is the <code>host:50001:t</code> form above.</p>
+
+<h2>Connect another Umbrel app</h2>
+<p>Declare a dependency on this app and read the endpoint it exports:</p>
+<pre>APP_ELECTRS_PRUNED_SERVER_IP
+APP_ELECTRS_PRUNED_SERVER_PORT</pre>
+
+<h2>While it is indexing</h2>
+<p>The first sync builds an address index over the whole chain and takes hours.
+   Wallets can connect before it finishes, but balances are only correct once it
+   catches up.</p>
+<p>Blocks your node has pruned are fetched from the peer-to-peer network and
+   checked against your node before use, so a wallet asking about very old
+   transactions waits for a network round trip. Recent history is unaffected.</p>
