@@ -119,8 +119,8 @@ Verified so far, both on stock firmware with no changes:
   receives BLAKE2b work, and the blocks it finds are accepted with no rejections.
 - **Bitmain Antminer A3** (CGminer 4.9.0), reported by a user — 158 of 161 shares
   accepted over a two-hour session.
-- **Goldshell SC5 Pro** (firmware 2.2.0), reported by a user — 166 of 190 shares
-  accepted over a 16 hour run.
+- **Goldshell SC5 Pro** (firmware 2.2.0), reported by a user — 272 of 299 shares
+  accepted, and 199 of the 298 blocks it found accepted by the node.
 - **Goldshell SC Box II** (firmware 2.2.2), reported by a user — 382 of 384 shares
   accepted, and 346 of the 383 blocks it found accepted by the node.
 
