@@ -46,6 +46,27 @@ description: >-
   would be against an archival node. Recent history is unaffected.
 
 
+  PRIVACY
+
+
+  Blocks your node has dropped are fetched from the Bitcoin network, and a peer
+  that serves you a block learns you wanted it. During the first index that only
+  shows you are syncing. Afterwards a few requests can still reach for a block on
+  demand, such as the full details of an old transaction, and those follow from
+  something you asked for.
+
+
+  Ordinary wallet use does not fetch anything: balances, history and unspent
+  outputs come from the index this app builds, so your addresses never go to a
+  peer. If your Bitcoin Node runs over Tor, these fetches do too, which is slower
+  but does not reveal where the request came from.
+
+
+  An archival node with the official Electrs stores the whole chain and so never
+  fetches at all. That is the more private option, and it is the right one if this
+  tradeoff is not one you want.
+
+
   CONNECTING
 
 
