@@ -9,7 +9,7 @@ services:
   # The DATUM Gateway itself: turns the node's block templates into Stratum work
   # a Sia-style BLAKE2b ASIC can mine. Same image as the StartOS package.
   gateway:
-    image: paulscode/datum-blake2b:1.0.6@sha256:88955c659137807fdb41d93bdd330cc3cdde41f0847377c296c3167797feeb3d
+    image: paulscode/datum-blake2b:1.0.7@sha256:81de37c0b507a1dd779ab4e4b2a27467bb5c746c5af595f9f77fe4b62269e536
     restart: unless-stopped
     stop_grace_period: 30s
     environment:
@@ -64,7 +64,7 @@ services:
   # Kept as a separate hop rather than a switch on the main port, so the mining
   # path never grows a mode that can be left switched on.
   capture:
-    image: paulscode/datum-blake2b:1.0.6@sha256:88955c659137807fdb41d93bdd330cc3cdde41f0847377c296c3167797feeb3d
+    image: paulscode/datum-blake2b:1.0.7@sha256:81de37c0b507a1dd779ab4e4b2a27467bb5c746c5af595f9f77fe4b62269e536
     restart: unless-stopped
     entrypoint: ["python3", "/usr/local/bin/stratumtap.py"]
     command:
@@ -87,7 +87,7 @@ services:
   # `docker exec` would mean nobody ever files one. So the page that opens is the
   # form, plus the Stratum address and a link through to the dashboard.
   report:
-    image: paulscode/datum-blake2b:1.0.6@sha256:88955c659137807fdb41d93bdd330cc3cdde41f0847377c296c3167797feeb3d
+    image: paulscode/datum-blake2b:1.0.7@sha256:81de37c0b507a1dd779ab4e4b2a27467bb5c746c5af595f9f77fe4b62269e536
     restart: unless-stopped
     entrypoint: ["python3", "/usr/local/bin/report_server.py"]
     command:

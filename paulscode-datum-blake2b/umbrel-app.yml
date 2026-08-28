@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum Gateway BLAKE2b
-version: "1.0.6"
+version: "1.0.7"
 tagline: Mine a private Bitcoin test chain with a BLAKE2b ASIC you already own
 description: >-
   Bitcoin uses SHA256d today. There is an open proposal to change its proof of
@@ -84,6 +84,11 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  Fixes a confusing failure: when a regtest chain has mined past its last
+  halving, the block subsidy reaches zero and there is nothing to mine for.
+  The gateway reported that as missing data from the node and then sat on
+  "Initialising..." with no explanation. It now names the real cause on the
+  status page and in the log.
   The app's page now chooses the chain and the payout address, so neither needs a
   terminal. Switching chains restarts both apps by themselves. The payout address
   is remembered per chain, because each chain has its own wallet and an address
