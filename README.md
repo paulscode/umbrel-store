@@ -123,9 +123,13 @@ Verified so far, both on stock firmware with no changes:
   accepted, and 199 of the 298 blocks it found accepted by the node.
 - **Goldshell SC Box II** (firmware 2.2.2), reported by a user — 382 of 384 shares
   accepted, and 346 of the 383 blocks it found accepted by the node.
+- **Innosilicon S11** (firmware s11_20190424_095412), reported by a user — 60 of 61
+  shares accepted, and 48 of the 61 blocks it found accepted by the node.
 
-The second is the more useful data point, since the two share no manufacturer and
-no firmware lineage, and they spoke to the gateway identically. Other Sia BLAKE2b
+Five devices across three manufacturers and three mining stacks (`intminer`,
+`cgminer`, `sgminer`), all speaking to the gateway identically. That spread is what
+makes the result mean something: it is the Sia dialect, not one vendor's idea of
+it. Other Sia BLAKE2b
 miners are expected to work but have not been tried.
 
 **GPUs do not work yet.** `ccminer -a sia` computes exactly the right hash, but it
