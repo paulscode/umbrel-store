@@ -1,0 +1,114 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: $APP_MEMPOOL_PRUNED_IP
+      APP_PORT: $APP_MEMPOOL_PRUNED_PORT
+
+  web:
+    image: ghcr.io/paulscode/mempool-pruned-frontend:v3.3.1-pruned.2@sha256:97866380d4b8dc44a6eac455b0e9ed0168b63c6dc8d42dbad07e5a7378177a02
+    user: "1000:1000"
+    init: true
+    restart: on-failure
+    stop_grace_period: 1m
+    command: "./wait-for db:3306 --timeout=720 -- nginx -g 'daemon off;'"
+    environment:
+      FRONTEND_HTTP_PORT: $APP_MEMPOOL_PRUNED_PORT
+      BACKEND_MAINNET_HTTP_HOST: $APP_MEMPOOL_PRUNED_API_IP
+      BACKEND_MAINNET_HTTP_PORT: "8999"
+      NGINX_PORT: $APP_MEMPOOL_PRUNED_PORT
+      NGINX_HOSTNAME: $APP_MEMPOOL_PRUNED_API_IP
+    depends_on:
+      - api
+      - db
+    networks:
+      default:
+        ipv4_address: $APP_MEMPOOL_PRUNED_IP
+
+  api:
+    image: ghcr.io/paulscode/mempool-pruned-backend:v3.3.1-pruned.2@sha256:6e724605b62f12a9058c3e52f95e6bb21bdedf8c690ad3c18f05bcd544c51df6
+    user: "1000:1000"
+    init: true
+    restart: on-failure
+    stop_grace_period: 1m
+    command: "./wait-for-it.sh db:3306 --timeout=720 --strict -- ./start.sh"
+    environment:
+      # Core RPC points at the Electrs Pruned app's btc-rpc-proxy, not at the
+      # Bitcoin Node. Dropping txindex is what Electrum below is for, but it is
+      # not the whole story: Mempool still calls `getblock` for the block pages
+      # and for mining indexing, and a pruned node answers "Block not available
+      # (pruned data)" for anything below its prune height. The proxy answers
+      # those from the p2p network and verifies them, so this is the difference
+      # between an old block page being slow and it failing outright.
+      #
+      # On StartOS the bitcoind package runs the proxy itself when pruning is
+      # on, so pointing at the node is already pointing at the proxy there.
+      # Umbrel has no equivalent, hence the explicit address.
+      #
+      # The credentials are still the node's: the proxy runs with
+      # passthrough_rpcauth against the node's bitcoin.conf, so it accepts
+      # exactly what the node accepts and no second secret exists.
+      CORE_RPC_HOST: $APP_ELECTRS_PRUNED_PROXY_IP
+      CORE_RPC_PORT: $APP_ELECTRS_PRUNED_PROXY_PORT
+      CORE_RPC_USERNAME: $APP_BITCOIN_RPC_USER
+      CORE_RPC_PASSWORD: $APP_BITCOIN_RPC_PASS
+
+      # Electrs Pruned, not the official Electrs. That is the whole point: the
+      # official one requires an archival node with txindex, and this one indexes
+      # a pruned node by fetching dropped blocks from the peer-to-peer network.
+      ELECTRUM_HOST: $APP_ELECTRS_PRUNED_SERVER_IP
+      ELECTRUM_PORT: $APP_ELECTRS_PRUNED_SERVER_PORT
+      ELECTRUM_TLS: "false"
+
+      DATABASE_ENABLED: "true"
+      DATABASE_HOST: $APP_MEMPOOL_PRUNED_DB_IP
+      DATABASE_PORT: "3306"
+      DATABASE_DATABASE: "mempool"
+      DATABASE_USERNAME: "mempool"
+      DATABASE_PASSWORD: "mempool"
+
+      MEMPOOL_HTTP_PORT: "8999"
+      MEMPOOL_CACHE_DIR: "/backend/cache"
+      # electrum is what makes a pruned node workable. Do not set this to esplora
+      # or none: address lookups and confirmed transactions both route through it.
+      MEMPOOL_BACKEND: "electrum"
+      MEMPOOL_NETWORK: "mainnet"
+      MEMPOOL_CLEAR_PROTECTION_MINUTES: "20"
+      # A year of blocks, matching the StartOS package and upstream's default.
+      # On a pruned node every block below the prune height is a p2p fetch, so
+      # the first index is slow, and slower again if the node is behind Tor.
+      # Lower it to shorten that, or 0 to skip mining indexing entirely; the
+      # explorer itself does not depend on it. It is still a small fraction of
+      # what Electrs Pruned already fetched to build its own index.
+      MEMPOOL_INDEXING_BLOCKS_AMOUNT: "52560"
+      MEMPOOL_STDOUT_LOG_MIN_PRIORITY: "info"
+      MEMPOOL_AUTOMATIC_POOLS_UPDATE: "true"
+      MEMPOOL_RUST_GBT: "true"
+      MEMPOOL_CPFP_INDEXING: "false"
+      MEMPOOL_AUDIT: "false"
+      MEMPOOL_ALLOW_UNREACHABLE: "true"
+
+      MAXMIND_ENABLED: "false"
+
+      NODE_OPTIONS: "--max-old-space-size=2048"
+    depends_on:
+      - db
+    networks:
+      default:
+        ipv4_address: $APP_MEMPOOL_PRUNED_API_IP
+
+  db:
+    image: mariadb:10.5.21@sha256:dfcba5641bdbfd7cbf5b07eeed707e6a3672f46823695a0d3aba2e49bbd9b1dd
+    restart: on-failure
+    stop_grace_period: 1m
+    environment:
+      MYSQL_DATABASE: "mempool"
+      MYSQL_USER: "mempool"
+      MYSQL_PASSWORD: "mempool"
+      MYSQL_ROOT_PASSWORD: "moneyprintergobrrr"
+    volumes:
+      - ${APP_DATA_DIR}/mysql/data:/var/lib/mysql
+    networks:
+      default:
+        ipv4_address: $APP_MEMPOOL_PRUNED_DB_IP

@@ -1,0 +1,65 @@
+manifestVersion: 1.1
+id: paulscode-mempool-pruned
+category: bitcoin
+name: Mempool Pruned
+version: "3.3.1"
+tagline: A block explorer that works with a pruned Bitcoin node
+description: >-
+  Run your own mempool.space against a pruned node. The official Mempool app
+  requires an archival node with transaction indexing, which means keeping the
+  whole chain on disk. This one does not.
+
+
+  HOW IT WORKS
+
+
+  Mempool normally looks up a confirmed transaction by asking Bitcoin for it
+  directly, which only works if the node keeps a transaction index, and that
+  index cannot be built on a pruned node. This build asks the Electrum server
+  instead. That server has its own index, and fetches any block your node has
+  dropped from the peer-to-peer network, so the explorer sees a complete chain
+  on a node that is not keeping one.
+
+
+  REQUIREMENTS
+
+
+  Install Electrs Pruned first and let it finish indexing. The official Electrs
+  app will not do: it requires an archival node, which is the requirement this
+  app exists to remove.
+
+
+  Your Bitcoin Node may be pruned or archival. Nothing here asks you to change
+  it either way.
+
+
+  WHAT TO EXPECT
+
+
+  Blocks below your node's prune height are fetched from the network on demand,
+  so opening an old block page is slower than a recent one, and the page says so
+  while it works. Recent history is unaffected. The explorer keeps its own
+  database, which is separate from the chain and still needs room.
+
+
+  Installs alongside the official Mempool and the BIP-110 fork. All three keep
+  their own database, address and port, so you can run more than one.
+developer: Paul Lamb
+website: https://github.com/paulscode/mempool-pruned
+dependencies:
+  - bitcoin
+  - paulscode-electrs-pruned
+repo: https://github.com/paulscode/mempool-pruned-startos
+support: https://github.com/paulscode/mempool-pruned-startos/issues
+port: 3032
+# Community stores must supply full URLs for icon and gallery: Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-mempool-pruned/icon.png
+gallery:
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-mempool-pruned/gallery/1.png
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: ""
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store
