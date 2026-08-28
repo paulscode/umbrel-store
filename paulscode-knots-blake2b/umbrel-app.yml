@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-knots-blake2b
 category: bitcoin
 name: Bitcoin Knots BLAKE2b
-version: "1.0.3"
+version: "1.0.4"
 tagline: A private test chain for the proposed BLAKE2b proof of work
 description: >-
   A Bitcoin Knots node built from the proposed BLAKE2b proof-of-work change
@@ -61,9 +61,14 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  You can now choose between the private test chain and the public BLAKE2b test
-  network, from the Datum Gateway BLAKE2b app's page. Switching keeps both: each
-  chain has its own blocks, wallet and payout address, so switching back returns
-  you to where you left off.
+  Follows the public BLAKE2b test network as it now stands. That network was
+  restarted on a later Bitcoin Knots release candidate, which moved where BLAKE2b
+  begins and changed the value the first BLAKE2b block commits to. Both are
+  consensus rules, so the previous version could not follow the restarted chain:
+  it expected the switch at a height where the chain now has an ordinary block,
+  and stopped there. If you had selected the public test network, it will resume
+  on its own once this version starts. Nothing is deleted and there is nothing to
+  set. The private test chain is unaffected, since you choose its settings
+  yourself.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
