@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-mempool-pruned
 category: bitcoin
 name: Mempool Pruned
-version: "3.3.1"
+version: "3.3.1.4"
 tagline: A block explorer that works with a pruned Bitcoin node
 description: >-
   Run your own mempool.space against a pruned node. The official Mempool app
@@ -60,6 +60,12 @@ gallery:
 path: ""
 defaultUsername: ""
 defaultPassword: ""
-releaseNotes: ""
+releaseNotes: >-
+  Fixes indexing on the BLAKE2b chain. Blocks there carry a header that is longer
+  than a normal Bitcoin one, and the database column holding it was sized for
+  exactly the normal length, so the first block after the fork either failed to
+  store or was stored cut in half. The column is widened when this update starts.
+  Nothing you have set changes, and no re-index is needed. No other chain is
+  affected.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
