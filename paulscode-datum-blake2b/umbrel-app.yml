@@ -2,37 +2,39 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.0.8"
+version: "1.0.9"
 tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
-  Bitcoin uses SHA256d today. There is an open proposal to change its proof of
-  work to BLAKE2b, which is the algorithm Sia mines, so the ASICs built for Sia
-  would be able to mine Bitcoin blocks. This app lets you find out whether yours
-  can, on a private test chain, in about ten minutes.
+  Solo mine the BLAKE2b chain with a Sia-style ASIC. Bitcoin's mainnet split on
+  30 August 2026, and from block 961640 one of the two chains uses BLAKE2b for
+  proof of work instead of SHA256d. BLAKE2b is the algorithm Sia mines, so the
+  ASICs built for Sia can mine that chain. This app lets you point yours at it.
 
 
   It runs the DATUM Gateway built against the BLAKE2b branch. It takes block
-  templates from your **Bitcoin Knots BLAKE2b** node, turns them into Stratum
-  work in the dialect Sia miners speak, and hands that out on your LAN. Point
-  your miner at it and watch the blocks come in.
+  templates from your **Knots (BLAKE2b) Companion** node, turns them into
+  Stratum work in the dialect Sia miners speak, and hands that out on your LAN.
 
 
-  ⚠️ THIS IS A TEST CHAIN, NOT BITCOIN
+  SET YOUR PAYOUT ADDRESS BEFORE YOU MINE
 
 
-  The node it mines is `regtest`: a private chain that starts empty and has no
-  peers. The coins it mines are worthless by construction and cannot be sent
-  anywhere. BLAKE2b is a proposal that Bitcoin has not adopted. Nothing here
-  earns anything, and it is not a way to mine Bitcoin with a Sia miner today.
+  This is not a test chain, and that is a change from earlier versions of this
+  app. Solo mining means a block you find pays its whole subsidy to the address
+  configured here, so that address should be one whose keys you hold. Set it on
+  the settings page. The app can ask the node for one, but a wallet on the node
+  is only as safe as your backups of it.
+
+
+  Both sides of the 2026 split claim to be Bitcoin. Which one you mine is your
+  decision, and pointing hashrate at this makes it.
 
 
   HOW TO USE IT
 
 
-  1. Install **Bitcoin Knots BLAKE2b** first and let it start.
-
-  2. Install this and open it. It asks the node for a payout address on its own,
-     so there is nothing to configure.
+  1. Install **Knots (BLAKE2b) Companion** first and let it sync.
+  2. Install this, open it, and set your payout address.
 
   3. In your miner's own web interface, set the pool to the Stratum address the
      page shows you. The worker name and password are not used.
@@ -48,11 +50,12 @@ description: >-
   REPORTING YOUR HARDWARE
 
 
-  Verified so far, both on stock firmware with no changes: the Goldshell HS-Box in
-  Sia mode, tested directly, and a Bitmain Antminer A3 on CGminer 4.9.0 reported by
-  a user, which had 158 of 161 shares accepted over a two-hour session. They share
-  no manufacturer and no firmware lineage and spoke to the gateway identically.
-  Other Sia BLAKE2b miners are expected to work but have not been tried.
+  Verified so far, both on stock firmware with no changes: the Goldshell HS-Box
+  in Sia mode, tested directly, and a Bitmain Antminer A3 on CGminer 4.9.0
+  reported by a user, which had 158 of 161 shares accepted over a two-hour
+  session. They share no manufacturer and no firmware lineage and spoke to the
+  gateway identically. Other Sia BLAKE2b miners are expected to work but have
+  not been tried.
 
 
   If yours is not on that list, this app can record how it talks to the gateway
@@ -84,14 +87,17 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes a confusing failure: when a regtest chain has mined past its last
-  halving, the block subsidy reaches zero and there is nothing to mine for.
-  The gateway reported that as missing data from the node and then sat on
-  "Initialising..." with no explanation. It now names the real cause on the
-  status page and in the log.
-  The app's page now chooses the chain and the payout address, so neither needs a
-  terminal. Switching chains restarts both apps by themselves. The payout address
-  is remembered per chain, because each chain has its own wallet and an address
-  made on one belongs to a wallet the other never opens.
+  The settings page now shows mainnet when no chain has been chosen, matching what
+  the node actually runs. It showed the private chain, so the page and the node
+  could disagree, and saving the page would have moved the node to the chain the
+  page was showing rather than the one it was on.
+
+
+  The Compatibility Report also works on mainnet. It reports whether your node
+  accepted the blocks your miner found, and to ask the node that it needs the
+  node's credentials. It looked for them in a directory that only exists on a
+  private chain, so on mainnet it never found them and reported block acceptance
+  as "not checked". That is the one question the report exists to answer.
+  Reports made on mainnet before this update understated what your miner did.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

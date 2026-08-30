@@ -37,11 +37,13 @@ accepts. To actually mine, you need the other half:</p>
 </div>
 
 <div class="card warn">
-<p><strong>This is not Bitcoin.</strong> It is <code>regtest</code>: a private
-chain that starts empty and has no peers. The coins it mines are worthless by
-construction and cannot be sent anywhere. BLAKE2b is a proposal that Bitcoin has
-not adopted, and this app exists to answer a hardware question, not to mine
-anything of value.</p>
+<p><strong>This is a real chain with real block rewards.</strong> By default this
+node follows the BLAKE2b chain on <code>mainnet</code>, which split from SHA256d
+at block 961640 on 30 August 2026. Blocks mined here pay a real subsidy to a real
+address, so set a payout address whose keys you hold before you point hashrate at
+it. Both sides of the split claim to be Bitcoin; which one you follow is your
+decision. To run a private chain of your own instead, choose it on the gateway's
+settings page and save.</p>
 </div>
 
 <p style="opacity:.7;font-size:.9rem">

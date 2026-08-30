@@ -18,15 +18,20 @@ services:
       default:
         ipv4_address: $APP_KNOTS_BLAKE2B_WEB_IP
 
-  # Bitcoin Knots built from the BLAKE2b proof-of-work branch (PR #359), on its
-  # own private regtest chain. Same image as the StartOS package; the entrypoint
-  # writes bitcoin.conf from this environment.
+  # Bitcoin Knots built from the BLAKE2b proof-of-work branch (PR #359),
+  # following the public BLAKE2b chain on mainnet. Same image as the StartOS
+  # package; the entrypoint writes bitcoin.conf from this environment.
+  #
+  # CHAIN is set explicitly rather than left to the image default, so what this
+  # app runs is readable here. A chain chosen on the gateway's settings page is
+  # written to /config/settings.json and outranks this, which is how a user
+  # switches to the private chain without editing compose.
   node:
-    image: paulscode/knots-blake2b:1.0.5@sha256:b2cbe7e52f00cf9e03feda85aa1f1317b3e607258d3676bbbba38704865373aa
+    image: paulscode/knots-blake2b:1.0.6@sha256:cb9a337b9dff17920d327edaaa58c6fb7fd3830b02039428f1af5ca05121176b
     restart: unless-stopped
     stop_grace_period: 1m
     environment:
-      CHAIN: regtest
+      CHAIN: mainnet
 
       # Consensus-critical: the activation block's coinbase must contain this
       # string, and the gateway that builds that coinbase reads the same exported

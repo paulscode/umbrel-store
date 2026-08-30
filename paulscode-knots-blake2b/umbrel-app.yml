@@ -2,46 +2,48 @@ manifestVersion: 1.1
 id: paulscode-knots-blake2b
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.0.5"
+version: "1.0.6"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
-  A Bitcoin Knots node built from the proposed BLAKE2b proof-of-work change
-  (Knots PR #359), running its own private regtest chain so you can find out
-  whether a BLAKE2b ASIC you already own can mine Bitcoin blocks.
+  A Bitcoin Knots node built from the BLAKE2b proof-of-work change (Knots PR
+  #359), following the BLAKE2b chain on mainnet. Install it alongside your
+  existing Bitcoin node rather than in place of it: this one is pruned, so both
+  chains fit on one server without room for two full blockchains.
 
 
-  Bitcoin uses SHA256d today. There is an open proposal to change it to BLAKE2b,
-  which is the algorithm Sia mines, so the ASICs built for Sia would be able to
-  mine Bitcoin. This app runs a node that enforces the proposed rules. Install
-  **Datum Gateway BLAKE2b** next to it, point your miner at that, and you can see
-  for yourself whether your hardware works.
+  Bitcoin's mainnet split on 30 August 2026. The two chains part at block
+  961632, and from block 961640 one of them uses BLAKE2b for proof of work
+  instead of SHA256d. BLAKE2b is the algorithm Sia mines, so ASICs built for Sia
+  can mine this chain. This app runs a node that follows it and enforces its
+  rules.
 
 
-  ⚠️ THIS IS A TEST CHAIN, NOT BITCOIN
+  THIS IS A REAL CHAIN WITH REAL BLOCK REWARDS
 
 
-  It runs `regtest`: a private chain that starts empty, has no peers, and is
-  yours alone. The coins it mines are worthless by construction and cannot be
-  sent anywhere. Nothing here touches Bitcoin, and BLAKE2b is a proposal that
-  has not been adopted. This app exists to answer a hardware question, not to
-  mine anything of value.
+  This is not a test chain, and that is a change from earlier versions of this
+  app. Blocks you mine here pay a real subsidy to a real address, and the chain
+  has other participants. Both sides of the split claim to be Bitcoin; which one
+  you follow is your decision, and installing this makes it. If you want the old
+  behaviour, a private chain that starts empty and is yours alone, choose it on
+  the gateway's settings page and save.
 
 
   WHAT IT USES
 
 
-  Small. It is pruned to the minimum and the chain starts from nothing, so it is
-  a few hundred megabytes rather than the hundreds of gigabytes a real node
-  needs. RPC is served on the internal Docker network only and is never published
-  to your LAN.
+  About 5 GB of blocks by default rather than the whole chain, plus the node's
+  own data, which grows on its own. Change that on the same settings page. The
+  first sync downloads the chain from the network and takes a while. RPC is
+  served on the internal Docker network only and is never published to your LAN.
 
 
   NO WEB INTERFACE
 
 
   A Bitcoin node does not have one. Opening this app shows a short page telling
-  you what to do next; the mining dashboard lives in the Datum Gateway BLAKE2b
-  app.
+  you what to do next; the mining dashboard lives in the Datum (BLAKE2b)
+  Companion app.
 developer: Paul Lamb
 website: https://github.com/paulscode/knots-blake2b-startos
 dependencies: []
@@ -61,14 +63,20 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Follows the public BLAKE2b test network as it now stands. That network was
-  restarted on a later Bitcoin Knots release candidate, which moved where BLAKE2b
-  begins and changed the value the first BLAKE2b block commits to. Both are
-  consensus rules, so the previous version could not follow the restarted chain:
-  it expected the switch at a height where the chain now has an ordinary block,
-  and stopped there. If you had selected the public test network, it will resume
-  on its own once this version starts. Nothing is deleted and there is nothing to
-  set. The private test chain is unaffected, since you choose its settings
-  yourself.
+  This app now follows the public BLAKE2b chain on mainnet. It previously ran a
+  private chain of its own, which meant the thing this app exists for took an
+  extra step, and the uncommon case was the one you got by installing.
+
+
+  If you were running the private chain and had chosen it on the gateway's
+  settings page, that choice still wins and nothing moves. If you never chose a
+  chain, this update switches you to mainnet and the node begins downloading it.
+  To go back, pick the private chain on that page and save. No data is deleted
+  either way: each chain keeps its own, so switching returns you to where you
+  left off.
+
+
+  The node keeps about 5 GB of blocks by default rather than the whole chain, so
+  following mainnet costs gigabytes. The same page changes that.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
