@@ -22,7 +22,7 @@ services:
   # own private regtest chain. Same image as the StartOS package; the entrypoint
   # writes bitcoin.conf from this environment.
   node:
-    image: paulscode/knots-blake2b:1.0.4@sha256:09298ac785d9fc209457fa0346f519b40f7dc93bf87cb6296fb639c99621de2d
+    image: paulscode/knots-blake2b:1.0.5@sha256:b2cbe7e52f00cf9e03feda85aa1f1317b3e607258d3676bbbba38704865373aa
     restart: unless-stopped
     stop_grace_period: 1m
     environment:
@@ -43,9 +43,16 @@ services:
       # Umbrel's Docker network, not the 172.16/12 the image defaults to.
       RPC_ALLOW_IP: "10.21.0.0/16"
 
-      # A chain that starts empty does not need much, and pruning keeps it that
-      # way however long it is left running. 550 MiB is bitcoind's minimum.
-      PRUNE: "550"
+      # Pruned by default, and by a real margin rather than bitcoind's floor.
+      # 550 MiB is the minimum it accepts and is fine for a chain that starts
+      # empty, but this app can now be pointed at mainnet, where 550 is tight
+      # enough to be churning constantly. 5 GiB matches the StartOS package.
+      #
+      # Changeable without editing this file: the Datum Gateway app's page writes
+      # a settings file that both services watch, and the node entrypoint takes
+      # `prune` from it in preference to this. That page is also where a full
+      # node is chosen, which is the same setting at 0.
+      PRUNE: "5000"
     volumes:
       - ${APP_DATA_DIR}/data:/data
       # Chain and payout address, written by the gateway app's page. The node

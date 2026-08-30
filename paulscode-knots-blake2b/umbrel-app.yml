@@ -1,9 +1,9 @@
 manifestVersion: 1.1
 id: paulscode-knots-blake2b
 category: bitcoin
-name: Bitcoin Knots BLAKE2b
-version: "1.0.4"
-tagline: A private test chain for the proposed BLAKE2b proof of work
+name: Knots (BLAKE2b) Companion
+version: "1.0.5"
+tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the proposed BLAKE2b proof-of-work change
   (Knots PR #359), running its own private regtest chain so you can find out

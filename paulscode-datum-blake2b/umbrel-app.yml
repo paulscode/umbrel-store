@@ -1,9 +1,9 @@
 manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
-name: Datum Gateway BLAKE2b
-version: "1.0.7"
-tagline: Mine a private Bitcoin test chain with a BLAKE2b ASIC you already own
+name: Datum (BLAKE2b) Companion
+version: "1.0.8"
+tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   Bitcoin uses SHA256d today. There is an open proposal to change its proof of
   work to BLAKE2b, which is the algorithm Sia mines, so the ASICs built for Sia
