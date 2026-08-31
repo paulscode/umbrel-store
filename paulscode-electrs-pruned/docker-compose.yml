@@ -8,10 +8,21 @@ services:
 
   # Small static page shown by the app's "Open" button: how to connect a wallet.
   web:
-    image: nginx:1.27-alpine
+    # A stock python image rather than a built one: the page is a single script in
+    # this app's own directory, so there is nothing to build, publish or keep in step
+    # with the electrs image beside it.
+    image: python:3.12-alpine
     restart: on-failure
+    environment:
+      WEB_DIR: /web
+      SETTINGS_FILE: /config/settings.json
+      PORT: "80"
+    command: ["python3", "/web/settings_server.py"]
     volumes:
-      - ${APP_DATA_DIR}/web:/usr/share/nginx/html:ro
+      - ${APP_DATA_DIR}/web:/web:ro
+      # Writable: this is the one place the chosen node is recorded, and exports.sh
+      # reads it back on the host at the next app start.
+      - ${APP_DATA_DIR}/config:/config
     networks:
       default:
         ipv4_address: $APP_ELECTRS_PRUNED_WEB_IP
@@ -39,12 +50,12 @@ services:
     image: ghcr.io/start9labs/btc-rpc-proxy:v0.8.0@sha256:3b80e74f2d2d3de207d2924832c02e61fb897a8885e21cfe76413225fd27bb41
     restart: on-failure
     environment:
-      BITCOIND_HOST: ${APP_BITCOIN_NODE_IP}
-      BITCOIND_PORT: ${APP_BITCOIN_RPC_PORT}
-      BITCOIND_USER: ${APP_BITCOIN_RPC_USER}
-      BITCOIND_PASS: ${APP_BITCOIN_RPC_PASS}
+      BITCOIND_HOST: ${APP_ELECTRS_PRUNED_BACKEND_RPC_HOST}
+      BITCOIND_PORT: ${APP_ELECTRS_PRUNED_BACKEND_RPC_PORT}
+      BITCOIND_USER: ${APP_ELECTRS_PRUNED_BACKEND_RPC_USER}
+      BITCOIND_PASS: ${APP_ELECTRS_PRUNED_BACKEND_RPC_PASS}
     volumes:
-      - ${APP_BITCOIN_DATA_DIR}:/bitcoin:ro
+      - ${APP_ELECTRS_PRUNED_BACKEND_DATA_DIR}:/bitcoin:ro
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -60,14 +71,33 @@ services:
         H=$$(esc "$${BITCOIND_HOST}")
         U=$$(esc "$${BITCOIND_USER}")
         P=$$(esc "$${BITCOIND_PASS}")
+        # How the chosen node authenticates, which differs between them and is not a
+        # setting: the official Bitcoin Node uses rpcauth and exports a user and password,
+        # while the BLAKE2b companion uses the cookie it writes itself. An empty user is
+        # the signal for the second, and the cookie is located by probing the chain
+        # subdirectories bitcoind uses for anything but mainnet, exactly as the electrs
+        # entrypoint does.
+        if [ -n "$${BITCOIND_USER}" ]; then
+          AUTH=$$(printf 'bitcoind_user = "%s"\nbitcoind_password = "%s"\npassthrough_rpcauth = "/bitcoin/bitcoin.conf"' "$$U" "$$P")
+        else
+          COOKIE=""
+          for sub in regtest testnet4 testnet signet ""; do
+            if [ -n "$$sub" ]; then C="/bitcoin/$$sub/.cookie"; else C="/bitcoin/.cookie"; fi
+            if [ -r "$$C" ]; then COOKIE="$$C"; break; fi
+          done
+          if [ -z "$$COOKIE" ]; then
+            echo "proxy: no readable .cookie under /bitcoin; is the chosen node running?" >&2
+            exit 1
+          fi
+          echo "proxy: authenticating to the node with $$COOKIE"
+          AUTH=$$(printf 'cookie_file = "%s"\npassthrough_rpccookie = "%s"' "$$COOKIE" "$$COOKIE")
+        fi
         cat > /tmp/btc_rpc_proxy.toml <<EOF
         bitcoind_address = "$$H"
         bitcoind_port = $${BITCOIND_PORT}
-        bitcoind_user = "$$U"
-        bitcoind_password = "$$P"
+        $$AUTH
         bind_address = "0.0.0.0"
         bind_port = 8332
-        passthrough_rpcauth = "/bitcoin/bitcoin.conf"
         # Users derived from passthrough carry no fetch_blocks of their own, so
         # this global switch is what grants them on-demand fetching of pruned
         # blocks. Without it the proxy forwards every getblock straight to
@@ -103,10 +133,14 @@ services:
       ELECTRS_CONFIG_FROM_ENV: "1"
       BITCOIN_RPC_HOST: ${APP_ELECTRS_PRUNED_PROXY_IP}
       BITCOIN_RPC_PORT: "8332"
-      BITCOIN_P2P_HOST: ${APP_BITCOIN_NODE_IP}
-      BITCOIN_P2P_PORT: ${APP_BITCOIN_P2P_PORT}
-      BITCOIN_RPC_USER: ${APP_BITCOIN_RPC_USER}
-      BITCOIN_RPC_PASS: ${APP_BITCOIN_RPC_PASS}
+      BITCOIN_P2P_HOST: ${APP_ELECTRS_PRUNED_BACKEND_P2P_HOST}
+      BITCOIN_P2P_PORT: ${APP_ELECTRS_PRUNED_BACKEND_P2P_PORT}
+      BITCOIN_RPC_USER: ${APP_ELECTRS_PRUNED_BACKEND_RPC_USER}
+      BITCOIN_RPC_PASS: ${APP_ELECTRS_PRUNED_BACKEND_RPC_PASS}
+      # Empty above when the chosen node authenticates with a cookie instead; the
+      # entrypoint then falls through to this directory, probing it for the cookie and
+      # taking the chain from where it finds it.
+      BITCOIN_COOKIE_DIR: /backend
       ELECTRS_NETWORK: ${APP_BITCOIN_NETWORK_ELECTRS:-bitcoin}
       ELECTRS_LOG_FILTERS: INFO
 
@@ -129,6 +163,7 @@ services:
       HELPER_COOKIE_DIR: /helper
     volumes:
       - ${APP_DATA_DIR}/data:/data
+      - ${APP_ELECTRS_PRUNED_BACKEND_DATA_DIR}:/backend:ro
       # Read-only, and only for the cookie. Absent when that app is not installed, in which
       # case the cookie probe finds nothing and the helper is skipped.
       - ${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/data:/helper:ro

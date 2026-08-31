@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.2"
+version: "0.11.3"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
