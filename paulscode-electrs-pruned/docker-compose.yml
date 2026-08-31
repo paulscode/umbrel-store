@@ -11,9 +11,21 @@ services:
     image: nginx:1.27-alpine
     restart: on-failure
     volumes:
-      # Served from the image's own writable layer, because the poller below
-      # writes status.json next to the page and the app's files stay read-only.
-      - ${APP_DATA_DIR}/web:/srv/web:ro
+      # The page itself, mounted read-only over the image's own index.html. Just
+      # the one file, not a directory, so the poller can still write status.json
+      # beside it in the image's writable layer.
+      #
+      # It comes from `index.html.template`, and it lives at the app root rather
+      # than in a `web/` directory, because of what umbreld copies on an update.
+      # `copy_app_files` takes only `docker-compose.yml *.template exports.sh
+      # torrc hooks`, so a page under `web/` reaches a fresh install and is never
+      # seen again: an update would bring this compose file and leave the page it
+      # refers to at whatever version was first installed. That is exactly what
+      # happened with 0.11.6, where the poller shipped and the page that reads it
+      # did not. `template_app` also globs only the app root, so the `.template`
+      # cannot be nested either. The page contains no `$`, so `envsubst` passes
+      # it through unchanged.
+      - ${APP_DATA_DIR}/index.html:/usr/share/nginx/html/index.html:ro
       # Read-only, and only for the cookie, when the chosen node authenticates
       # that way. Needed because the indexing percentage is measured against the
       # node's own height, which means asking the node.
@@ -31,7 +43,6 @@ services:
     command:
       - |
         set -eu
-        cp -R /srv/web/. /usr/share/nginx/html/
         STATUS=/usr/share/nginx/html/status.json
         printf '{"node":null,"indexed":null,"at":0}' > "$$STATUS"
         (

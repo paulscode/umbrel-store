@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.7"
+version: "0.11.8"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
@@ -92,18 +92,13 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes Mempool Pruned against a BLAKE2b node, and detailed transaction lookups from this app. Any
-  request for a block in detail, rather than as raw bytes, failed for every block after the fork at
-  961640. Mempool Pruned could not show a block page at all.
+  Actually shows the indexing progress that 0.11.6 was meant to add. The part that measures progress
+  shipped and worked, but the page that displays it did not reach anyone who updated, so the app kept
+  showing the old page. A fresh install was fine, which is why this was not obvious.
 
 
-  The cause was the bundled RPC proxy, which reads each block it is asked about and could not read a
-  BLAKE2b header, which is longer than an ordinary one. It affected every block after the fork, not
-  only ones your node had pruned. Requests for raw blocks were unaffected, which is why indexing
-  worked throughout and this only showed up in the explorer.
-
-
-  The proxy is now a build that understands both header formats. Nothing to configure. If you run
-  Mempool Pruned, update this app first.
+  Umbrel replaces only certain files when an app updates, and the page was not one of them. It is now
+  delivered as a file Umbrel does replace, so this and future page changes arrive on an update rather
+  than only on a first install.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.0.9"
+version: "1.0.10"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change (Knots PR
@@ -65,12 +65,12 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  The app page now shows how far the node has synced, instead of saying there is nothing to see.
-  It reports the same percentage the node reports to itself, along with the block it is on and the
-  chain it is following, and refreshes on its own every ten seconds.
+  Makes sure the sync progress added in 1.0.9 reaches installs that update, rather than only fresh
+  ones. Umbrel replaces only certain files when an app updates, and the page showing progress was not
+  one of them, so an existing install kept the old page.
 
 
-  Nothing is exposed to do this. The page reads a status file written inside the app, and the node's
-  RPC port stays where it was, on the app's own network.
+  The page is now delivered as a file Umbrel does replace. If 1.0.9 did not show you sync progress,
+  this is the update that will.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
