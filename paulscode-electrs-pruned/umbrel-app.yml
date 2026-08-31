@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.4"
+version: "0.11.5"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
@@ -91,6 +91,13 @@ gallery:
 path: ""
 defaultUsername: ""
 defaultPassword: ""
-releaseNotes: ""
+releaseNotes: >-
+  The connect page now fills in this server's address instead of showing a placeholder to
+  substitute, and the connection string has a copy button next to it.
+
+
+  Umbrel is served over plain http, where the browser clipboard API is usually unavailable, so
+  the button falls back to the older copy method and, failing that, selects the string so one
+  Ctrl-C finishes it.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

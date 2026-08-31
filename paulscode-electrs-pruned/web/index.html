@@ -8,6 +8,21 @@
   code { background: #f2f2f2; padding: .15rem .35rem; border-radius: .2rem; }
   pre { background: #f2f2f2; padding: .75rem 1rem; border-radius: .3rem; overflow-x: auto; }
   h2 { font-size: 1.05rem; margin-top: 2rem; }
+
+  /* The connection string and its copy button share a row, so the button sits
+     against the value it copies rather than below it. */
+  .copyrow { display: flex; align-items: stretch; gap: .5rem; }
+  .copyrow pre { flex: 1; margin: 0; display: flex; align-items: center; }
+  .copybtn {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 2.75rem; background: #f2f2f2; border: 0; border-radius: .3rem;
+    color: #555; cursor: pointer; font: inherit;
+  }
+  .copybtn:hover { background: #e6e6e6; color: #1a1a1a; }
+  .copybtn:active { background: #dcdcdc; }
+  .copybtn svg { width: 1.05rem; height: 1.05rem; }
+  .feedback { display: none; align-self: center; color: #2a7d3f; font-size: .875rem; white-space: nowrap; }
+  .note { color: #666; font-size: .875rem; }
 </style>
 <h1>Electrs Pruned</h1>
 <p class="sub">An Electrum server indexing your pruned Bitcoin node.</p>
@@ -15,7 +30,22 @@
 <h2>Connect a wallet on your network</h2>
 <p>Point any Electrum-compatible wallet at your Umbrel, on port <code>50201</code>,
    using plaintext TCP rather than SSL.</p>
-<pre>&lt;your-umbrel-address&gt;:50201:t</pre>
+
+<div class="copyrow">
+  <pre id="conn">&lt;your-umbrel-address&gt;:50201:t</pre>
+  <button id="copybtn" class="copybtn" type="button" title="Copy" aria-label="Copy connection string">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+  </button>
+  <span id="copyfeedback" class="feedback">Copied</span>
+</div>
+<p id="connnote" class="note" style="display:none">
+  Substitute the address you use to reach this Umbrel.
+</p>
+
 <p>In Sparrow that is Preferences, then Server, then Private Electrum, with
    "Use SSL" off. In Electrum it is the <code>host:50201:t</code> form above.</p>
 
@@ -31,3 +61,88 @@ APP_ELECTRS_PRUNED_SERVER_PORT</pre>
 <p>Blocks your node has pruned are fetched from the peer-to-peer network and
    checked against your node before use, so a wallet asking about very old
    transactions waits for a network round trip. Recent history is unaffected.</p>
+
+<script>
+(function () {
+  var connEl = document.getElementById('conn');
+  var noteEl = document.getElementById('connnote');
+  var btnEl = document.getElementById('copybtn');
+  var feedbackEl = document.getElementById('copyfeedback');
+
+  // The browser reached this page through the Umbrel it is asking about, so its
+  // own address is the one a wallet needs. Whatever form that took is the right
+  // answer to show: a .local name, a bare IP and a Tailscale name are all
+  // equally usable as an Electrum host, so unlike a server name there is nothing
+  // to parse out of it. Filling it in beats asking someone to substitute a
+  // placeholder they have to go and look up.
+  //
+  // The placeholder stays only when the hostname is genuinely unknowable, which
+  // is a page opened from a file rather than served. `localhost` is left alone
+  // rather than rejected: it is correct from the machine doing the browsing,
+  // which is the only place that string is being read.
+  var host = String(location.hostname || '');
+  if (host) {
+    connEl.textContent = host + ':50201:t';
+  } else {
+    noteEl.style.display = 'block';
+  }
+
+  // Umbrel is served over plain http, so this is not a secure context and
+  // navigator.clipboard is usually absent. Three paths, most capable first:
+  //   1. navigator.clipboard.writeText, for the cases where it is available
+  //   2. execCommand('copy') via an offscreen textarea, the legacy path that
+  //      does work over http
+  //   3. select the string so one Ctrl-C finishes the job, and say so
+  // Same ladder as HashGG uses, for the same reason.
+  function flash(msg) {
+    var original = feedbackEl.textContent;
+    if (msg) feedbackEl.textContent = msg;
+    feedbackEl.style.display = 'inline-block';
+    setTimeout(function () {
+      feedbackEl.style.display = 'none';
+      if (msg) feedbackEl.textContent = original;
+    }, 3000);
+  }
+
+  function tryExec(text) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function selectSource() {
+    var range = document.createRange();
+    range.selectNodeContents(connEl);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  btnEl.addEventListener('click', function () {
+    var text = connEl.textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        flash();
+      }).catch(function () {
+        if (tryExec(text)) flash();
+        else { selectSource(); flash('Select & Ctrl-C'); }
+      });
+    } else if (tryExec(text)) {
+      flash();
+    } else {
+      selectSource();
+      flash('Select & Ctrl-C');
+    }
+  });
+})();
+</script>
