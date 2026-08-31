@@ -23,50 +23,21 @@ export APP_ELECTRS_PRUNED_SERVER_PORT="50001"
 export APP_ELECTRS_PRUNED_PROXY_PORT="8332"
 
 # ---------------------------------------------------------------------------
-# Which node this app indexes.
+# Which node this app indexes is Umbrel's choice, not ours.
 #
-# Umbrel has no per-app settings form, so the choice is written by this app's own
-# page to config/settings.json and resolved here, on the host, at app start. That
-# is why changing it needs a restart: the addresses below are baked into the
-# containers when they start and cannot change under them.
+# `dependencies: [bitcoin]` in umbrel-app.yml makes Umbrel offer every installed app
+# declaring `implements: [bitcoin]` and set APP_BITCOIN_* from the one selected. That
+# now includes Knots (BLAKE2b) Companion, so the BLAKE2b chain is reachable through
+# the same picker as every other node rather than through a second selector of ours.
 #
-# Read with sed rather than jq, which is not guaranteed present on the host. The
-# file is written by this app alone and holds one flat object, so a line-oriented
-# read of it is sufficient and has no dependency to go missing.
-BACKEND="$(sed -n 's/.*"backend"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    "${APP_DATA_DIR:-.}/config/settings.json" 2>/dev/null | head -1)"
-
-case "$BACKEND" in
-  knots-blake2b)
-    # The BLAKE2b companion node. Authenticates with the cookie it writes itself,
-    # so there is no user or password to pass, and its data directory is mounted
-    # read-only for the proxy to read that cookie.
-    #
-    # P2P is 18445, not 18444. 18444 is the ordinary listener shared with inbound
-    # peers, where a connection earns no permissions and can be evicted to seat
-    # another peer; 18445 is the node's whitebind listener, which grants noban and
-    # download. electrs does not reconnect its p2p connection, so one eviction is a
-    # restart, and under load a restart loop.
-    export APP_ELECTRS_PRUNED_BACKEND_ID="knots-blake2b"
-    export APP_ELECTRS_PRUNED_BACKEND_RPC_HOST="${APP_KNOTS_BLAKE2B_NODE_IP:-}"
-    export APP_ELECTRS_PRUNED_BACKEND_RPC_PORT="${APP_KNOTS_BLAKE2B_RPC_PORT:-18443}"
-    export APP_ELECTRS_PRUNED_BACKEND_P2P_HOST="${APP_KNOTS_BLAKE2B_NODE_IP:-}"
-    export APP_ELECTRS_PRUNED_BACKEND_P2P_PORT="18445"
-    export APP_ELECTRS_PRUNED_BACKEND_DATA_DIR="${APP_KNOTS_BLAKE2B_DATA_DIR:-${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/data}"
-    export APP_ELECTRS_PRUNED_BACKEND_RPC_USER=""
-    export APP_ELECTRS_PRUNED_BACKEND_RPC_PASS=""
-    ;;
-  *)
-    # The official Bitcoin Node, and the default. It authenticates with rpcauth
-    # rather than a cookie, which is why the user and password are carried here and
-    # the cookie path is not.
-    export APP_ELECTRS_PRUNED_BACKEND_ID="bitcoin"
-    export APP_ELECTRS_PRUNED_BACKEND_RPC_HOST="${APP_BITCOIN_NODE_IP:-}"
-    export APP_ELECTRS_PRUNED_BACKEND_RPC_PORT="${APP_BITCOIN_RPC_PORT:-8332}"
-    export APP_ELECTRS_PRUNED_BACKEND_P2P_HOST="${APP_BITCOIN_NODE_IP:-}"
-    export APP_ELECTRS_PRUNED_BACKEND_P2P_PORT="${APP_BITCOIN_P2P_PORT:-8333}"
-    export APP_ELECTRS_PRUNED_BACKEND_DATA_DIR="${APP_BITCOIN_DATA_DIR:-${UMBREL_ROOT}/app-data/bitcoin/data}"
-    export APP_ELECTRS_PRUNED_BACKEND_RPC_USER="${APP_BITCOIN_RPC_USER:-}"
-    export APP_ELECTRS_PRUNED_BACKEND_RPC_PASS="${APP_BITCOIN_RPC_PASS:-}"
-    ;;
-esac
+# This app therefore reads APP_BITCOIN_* directly and resolves nothing itself. An
+# earlier version served its own settings page for this, written before Umbrel's
+# alternatives mechanism was found; it is gone, and the native picker is the one
+# place the choice is made.
+#
+# The p2p port is the whitebind one where the selected node publishes it. 18444-style
+# ordinary listeners are shared with inbound peers, where a connection earns no
+# permissions and can be evicted to seat another; the whitebind listener grants noban
+# and download. electrs does not reconnect its p2p connection, so an eviction ends the
+# process, and under a busy wallet that is a restart loop.
+export APP_ELECTRS_PRUNED_BACKEND_P2P_PORT="${APP_BITCOIN_P2P_WHITEBIND_PORT:-${APP_BITCOIN_P2P_PORT}}"

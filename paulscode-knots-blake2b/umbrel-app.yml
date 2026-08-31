@@ -1,8 +1,10 @@
 manifestVersion: 1.1
 id: paulscode-knots-blake2b
+implements:
+  - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.0.6"
+version: "1.0.7"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change (Knots PR
@@ -63,20 +65,19 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  This app now follows the public BLAKE2b chain on mainnet. It previously ran a
-  private chain of its own, which meant the thing this app exists for took an
-  extra step, and the uncommon case was the one you got by installing.
+  Can now be selected as the Bitcoin node for other apps, from Umbrel's own picker. Electrs Pruned
+  is the first to use it, which is what gives the BLAKE2b chain an Electrum server and so a wallet
+  on this server.
 
 
-  If you were running the private chain and had chosen it on the gateway's
-  settings page, that choice still wins and nothing moves. If you never chose a
-  chain, this update switches you to mainnet and the node begins downloading it.
-  To go back, pick the private chain on that page and save. No data is deleted
-  either way: each chain keeps its own, so switching returns you to where you
-  left off.
+  Worth being clear about what that means. Bitcoin Knots and Libre Relay in that picker are other
+  implementations of the same chain. This is not: it follows the BLAKE2b chain, which parted from
+  the other in August 2026 and has its own blocks and its own proof of work. Choose it where you
+  want that chain. Do not choose it for a Lightning node, a payment processor, or anything holding
+  value on the other chain, which would read every balance and confirmation from the wrong place.
 
 
-  The node keeps about 5 GB of blocks by default rather than the whole chain, so
-  following mainnet costs gigabytes. The same page changes that.
+  It also does not offer rpcauth or ZMQ, so an app needing either will not work with it and should
+  not select it.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
