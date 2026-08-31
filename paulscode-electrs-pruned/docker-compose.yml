@@ -90,7 +90,14 @@ services:
   # password whether it is pointed at the node or at the proxy. It also means no
   # second secret is generated, stored or shared by this app.
   proxy:
-    image: ghcr.io/start9labs/btc-rpc-proxy:v0.8.0@sha256:3b80e74f2d2d3de207d2924832c02e61fb897a8885e21cfe76413225fd27bb41
+    # Our build of v0.8.0, carrying PR #33. Stock v0.8.0 cannot parse a 164-byte
+    # BLAKE2b header, and it parses the block for any request it intercepts, so
+    # every verbose `getblock` and every intercepted `getrawtransaction` above
+    # block 961640 came back "IO error: failed to fill whole buffer". That is
+    # Mempool Pruned's entire block path and this app's own verbose transaction
+    # lookups. Not a pruning problem: it failed on blocks the node still had.
+    # Swap back to ghcr.io/start9labs/btc-rpc-proxy once #33 is merged upstream.
+    image: paulscode/btc-rpc-proxy:v0.8.0-blake2b.1@sha256:84f236b9d8ad87b5dced11ce1e85bab33d7b51e64b4dc0f86e79ab1746a56bfc
     restart: on-failure
     environment:
       BITCOIND_HOST: ${APP_BITCOIN_NODE_IP}
