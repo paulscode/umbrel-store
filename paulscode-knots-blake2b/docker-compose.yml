@@ -13,7 +13,53 @@ services:
     image: nginx:1.27-alpine
     restart: unless-stopped
     volumes:
-      - ${APP_DATA_DIR}/web:/usr/share/nginx/html:ro
+      # Served from the image's own writable layer rather than straight from here,
+      # because the poller below writes status.json alongside the page and the
+      # app's own files should stay read-only.
+      - ${APP_DATA_DIR}/web:/srv/web:ro
+      # Read-only, and only for the cookie. The page reports the node's sync
+      # progress, which means asking the node, which means authenticating as it
+      # does. Nothing else in this container reads the chain.
+      - ${APP_DATA_DIR}/data:/bitcoin:ro
+    # A background poller writes the node's own getblockchaininfo to a file nginx
+    # serves, and the page fetches that. Done here rather than in the browser
+    # because the RPC needs the cookie, which is not the browser's to hold, and
+    # bitcoind speaks no CORS. Writing the reply verbatim keeps this out of the
+    # business of parsing JSON in shell: the page reads the fields it wants.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        cp -R /srv/web/. /usr/share/nginx/html/
+        STATUS=/usr/share/nginx/html/status.json
+        printf '{"node":null,"at":0}' > "$$STATUS"
+        (
+          while true; do
+            COOKIE=""
+            for sub in regtest testnet4 testnet signet ""; do
+              if [ -n "$$sub" ]; then C="/bitcoin/$$sub/.cookie"; else C="/bitcoin/.cookie"; fi
+              if [ -r "$$C" ]; then COOKIE="$$C"; break; fi
+            done
+            NODE=null
+            if [ -n "$$COOKIE" ]; then
+              # Re-read every poll, so a node restart that rewrites the cookie is
+              # picked up without restarting this container.
+              AUTH=$$(tr -d '\r\n' < "$$COOKIE" | base64 | tr -d '\n')
+              R=$$(wget -q -O - -T 10 \
+                    --header "Authorization: Basic $$AUTH" \
+                    --header "Content-Type: text/plain" \
+                    --post-data '{"jsonrpc":"1.0","id":"s","method":"getblockchaininfo","params":[]}' \
+                    "http://$APP_KNOTS_BLAKE2B_NODE_IP:$APP_KNOTS_BLAKE2B_RPC_PORT/" 2>/dev/null) || R=""
+              # Only accept something that at least looks like the object it should
+              # be, so a proxy error page never lands in the file as raw text.
+              case "$$R" in '{'*) NODE="$$R" ;; esac
+            fi
+            printf '{"node":%s,"at":%s}\n' "$$NODE" "$$(date +%s)" > "$$STATUS.tmp"
+            mv "$$STATUS.tmp" "$$STATUS"
+            sleep 10
+          done
+        ) &
+        exec nginx -g 'daemon off;'
     networks:
       default:
         ipv4_address: $APP_KNOTS_BLAKE2B_WEB_IP

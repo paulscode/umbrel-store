@@ -11,7 +11,61 @@ services:
     image: nginx:1.27-alpine
     restart: on-failure
     volumes:
-      - ${APP_DATA_DIR}/web:/usr/share/nginx/html:ro
+      # Served from the image's own writable layer, because the poller below
+      # writes status.json next to the page and the app's files stay read-only.
+      - ${APP_DATA_DIR}/web:/srv/web:ro
+      # Read-only, and only for the cookie, when the chosen node authenticates
+      # that way. Needed because the indexing percentage is measured against the
+      # node's own height, which means asking the node.
+      - ${APP_BITCOIN_DATA_DIR}:/bitcoin:ro
+    environment:
+      NODE_RPC: http://${APP_BITCOIN_NODE_IP}:${APP_BITCOIN_RPC_PORT}/
+      # Empty when the node authenticates by cookie, which is the signal to probe
+      # for one. Same split as the proxy and the electrs entrypoint.
+      NODE_USER: ${APP_BITCOIN_RPC_USER}
+      NODE_PASS: ${APP_BITCOIN_RPC_PASS}
+      ELECTRS_METRICS: http://${APP_ELECTRS_PRUNED_SERVER_IP}:4224/metrics
+    # Two sources, because neither alone is a percentage: electrs publishes how
+    # far it has indexed, and only the node knows how far there is to go.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        cp -R /srv/web/. /usr/share/nginx/html/
+        STATUS=/usr/share/nginx/html/status.json
+        printf '{"node":null,"indexed":null,"at":0}' > "$$STATUS"
+        (
+          while true; do
+            AUTH=""
+            if [ -n "$${NODE_USER:-}" ]; then
+              AUTH=$$(printf '%s:%s' "$$NODE_USER" "$$NODE_PASS" | base64 | tr -d '\n')
+            else
+              for sub in regtest testnet4 testnet signet ""; do
+                if [ -n "$$sub" ]; then C="/bitcoin/$$sub/.cookie"; else C="/bitcoin/.cookie"; fi
+                # Re-read every poll, so a node restart that rewrites it is picked up.
+                if [ -r "$$C" ]; then AUTH=$$(tr -d '\r\n' < "$$C" | base64 | tr -d '\n'); break; fi
+              done
+            fi
+            NODE=null
+            if [ -n "$$AUTH" ]; then
+              R=$$(wget -q -O - -T 10 \
+                    --header "Authorization: Basic $$AUTH" \
+                    --header "Content-Type: text/plain" \
+                    --post-data '{"jsonrpc":"1.0","id":"s","method":"getblockchaininfo","params":[]}' \
+                    "$$NODE_RPC" 2>/dev/null) || R=""
+              case "$$R" in '{'*) NODE="$$R" ;; esac
+            fi
+            # electrs sets this gauge for each block as it indexes it, so it moves
+            # during the build rather than only at the end.
+            IDX=$$(wget -q -O - -T 10 "$$ELECTRS_METRICS" 2>/dev/null \
+                   | awk '$$1 == "electrs_index_height{type=\"tip\"}" {print $$2}' | tail -1) || IDX=""
+            case "$$IDX" in ''|*[!0-9.eE+-]*) IDX=null ;; esac
+            printf '{"node":%s,"indexed":%s,"at":%s}\n' "$$NODE" "$$IDX" "$$(date +%s)" > "$$STATUS.tmp"
+            mv "$$STATUS.tmp" "$$STATUS"
+            sleep 10
+          done
+        ) &
+        exec nginx -g 'daemon off;'
     networks:
       default:
         ipv4_address: $APP_ELECTRS_PRUNED_WEB_IP
@@ -132,6 +186,16 @@ services:
       BITCOIN_COOKIE_DIR: /backend
       ELECTRS_NETWORK: ${APP_BITCOIN_NETWORK_ELECTRS:-bitcoin}
       ELECTRS_LOG_FILTERS: INFO
+
+      # Prometheus metrics, which is where the connect page reads indexing
+      # progress from. electrs binds this to 127.0.0.1 by default, which is
+      # container-local and so unreachable from the page's container.
+      #
+      # Read by electrs itself rather than by the entrypoint: electrs uses
+      # configure_me with env_prefix "ELECTRS", so every setting has an
+      # ELECTRS_-prefixed variable and this one needs no config file entry.
+      # Internal to the app's network and never published to the host.
+      ELECTRS_MONITORING_ADDR: 0.0.0.0:4224
 
       # An archival node to read pruned blocks from, when one is installed.
       #

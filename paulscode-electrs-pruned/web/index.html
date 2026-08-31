@@ -23,9 +23,24 @@
   .copybtn svg { width: 1.05rem; height: 1.05rem; }
   .feedback { display: none; align-self: center; color: #2a7d3f; font-size: .875rem; white-space: nowrap; }
   .note { color: #666; font-size: .875rem; }
+
+  .card { border: 1px solid #e0e0e0; border-radius: .5rem; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+  .status { font-size: 1.1rem; font-weight: 600; margin: 0 0 .6rem; }
+  .bar { height: .5rem; border-radius: .25rem; overflow: hidden; background: #e6e6e6; }
+  .bar > i { display: block; height: 100%; width: 0; background: #2a7d3f; transition: width .6s ease; }
+  .bar.indeterminate > i { width: 100% !important; opacity: .35; }
+  .detail { color: #666; font-size: .9rem; margin: .6rem 0 0; }
+  .stale { color: #a06000; font-size: .85rem; margin: .35rem 0 0; }
 </style>
 <h1>Electrs Pruned</h1>
 <p class="sub">An Electrum server indexing your pruned Bitcoin node.</p>
+
+<div class="card">
+<p class="status" id="status">Checking the index</p>
+<div class="bar indeterminate" id="bar"><i id="fill"></i></div>
+<p class="detail" id="detail">Asking the server how far it has got.</p>
+<p class="stale" id="stale" hidden></p>
+</div>
 
 <h2>Connect a wallet on your network</h2>
 <p>Point any Electrum-compatible wallet at your Umbrel, on port <code>50201</code>,
@@ -144,5 +159,90 @@ APP_ELECTRS_PRUNED_SERVER_PORT</pre>
       flash('Select & Ctrl-C');
     }
   });
+})();
+</script>
+
+<script>
+(function () {
+  var elStatus = document.getElementById('status');
+  var elBar = document.getElementById('bar');
+  var elFill = document.getElementById('fill');
+  var elDetail = document.getElementById('detail');
+  var elStale = document.getElementById('stale');
+
+  function num(n) { return typeof n === 'number' ? n.toLocaleString() : '?'; }
+
+  function paint(state, detail, fraction) {
+    elStatus.textContent = state;
+    elDetail.textContent = detail;
+    if (fraction === null) {
+      elBar.classList.add('indeterminate');
+      elFill.style.width = '100%';
+    } else {
+      elBar.classList.remove('indeterminate');
+      elFill.style.width = (Math.max(0, Math.min(1, fraction)) * 100) + '%';
+    }
+  }
+
+  function render(d) {
+    var now = Math.floor(Date.now() / 1000);
+    // nginx keeps serving the last file the poller wrote, so a number that has
+    // stopped moving needs to be distinguishable from an index that has.
+    if (d && d.at && now - d.at > 60) {
+      elStale.textContent = 'Last updated ' + (now - d.at) + ' seconds ago.';
+      elStale.hidden = false;
+    } else {
+      elStale.hidden = true;
+    }
+
+    var indexed = d && typeof d.indexed === 'number' ? d.indexed : null;
+    var node = d && d.node && d.node.result ? d.node.result : null;
+
+    if (indexed === null) {
+      paint('Starting up',
+            'The server is not reporting progress yet. It publishes this once it ' +
+            'has opened its database, which takes a moment after a start.', null);
+      return;
+    }
+
+    // Without the node there is no target, so an honest height beats a made-up
+    // percentage. This is the case where the node is down or still starting.
+    if (!node || typeof node.blocks !== 'number') {
+      paint('Indexing',
+            'Indexed to block ' + num(indexed) + '. The percentage needs the ' +
+            'node’s height too, and the node is not answering yet.', null);
+      return;
+    }
+
+    var target = node.blocks;
+    var detail = 'Indexed block ' + num(indexed) + ' of ' + num(target) + '.';
+    // The node being mid-sync is worth saying, because it means the finish line
+    // is still moving and the percentage can go down as well as up.
+    if (node.initialblockdownload) {
+      detail += ' Your node is still syncing, so this target is still rising.';
+    }
+
+    // One block of slack: electrs and the node are polled separately, so a new
+    // block can land between the two reads and make a finished index look behind.
+    if (indexed >= target - 1) {
+      paint('Up to date', detail, 1);
+    } else {
+      paint('Indexing ' + (target > 0 ? (indexed / target * 100).toFixed(2) : '0.00') + '%',
+            detail, target > 0 ? indexed / target : null);
+    }
+  }
+
+  function tick() {
+    fetch('status.json', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(render)
+      .catch(function () {
+        paint('Cannot read the status',
+              'The page could not fetch status.json from this app.', null);
+      });
+  }
+
+  tick();
+  setInterval(tick, 10000);
 })();
 </script>
