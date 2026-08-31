@@ -65,15 +65,30 @@ export APP_KNOTS_BLAKE2B_P2P_WHITEBIND_PORT="18445"
 # same settings file the node's own entrypoint reads, so a node switched between
 # chains is followed rather than described by a stale constant. Mainnet is the
 # default, matching the node's own.
-_kb_chain="$(sed -n 's/.*"chain"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    "${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/config/settings.json" 2>/dev/null | head -1)"
+#
+# This read must not be able to fail. umbreld sources this file from `app-script`,
+# which runs under `set -euo pipefail`, and it sources it for every app that
+# depends on this one as well as for this one. The settings file does not exist
+# until the node has started once, and `sed` on a missing file exits 2, which
+# `pipefail` carries through `head` and `set -e` turns into an abort of the whole
+# script. With stderr sent to /dev/null that abort is silent: the observed symptom
+# was an update that removed this app's containers, failed `post-patch-update` with
+# exit 2 and no message, and left the app stopped, plus any dependent stuck part
+# way through installing. Hence the readability guard, and `|| true` behind it so
+# that anything else `sed` might object to is still only a missing value.
+_kb_settings="${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/config/settings.json"
+_kb_chain=""
+if [ -r "${_kb_settings}" ]; then
+  _kb_chain="$(sed -n 's/.*"chain"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+      "${_kb_settings}" 2>/dev/null | head -1 || true)"
+fi
 case "$_kb_chain" in
   regtest) export APP_KNOTS_BLAKE2B_NETWORK="regtest"
            export APP_KNOTS_BLAKE2B_NETWORK_ELECTRS="regtest" ;;
   *)       export APP_KNOTS_BLAKE2B_NETWORK="mainnet"
            export APP_KNOTS_BLAKE2B_NETWORK_ELECTRS="bitcoin" ;;
 esac
-unset _kb_chain
+unset _kb_chain _kb_settings
 
 # The alias every `implements: bitcoin` app performs, in the form the official
 # ones use. `:=` and not plain assignment: umbreld sets APP_BITCOIN_* from the

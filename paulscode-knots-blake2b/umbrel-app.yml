@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.0.7"
+version: "1.0.8"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change (Knots PR
@@ -65,6 +65,15 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  Fixes an update to 1.0.7 that could stop this app and leave it stopped. Updating ran a step that
+  reads which chain the node is on, and that step failed when the file it reads had not been written
+  yet, which is the case until the node has started once. The failure was silent and it stopped the
+  update after the containers had been removed, so the app stayed down and anything being installed
+  against it stayed part way through. The read no longer fails when the file is absent; it falls back
+  to mainnet, which is the default anyway. If 1.0.7 left this app stopped, updating to 1.0.8 and
+  starting it is the fix.
+
+
   Can now be selected as the Bitcoin node for other apps, from Umbrel's own picker. Electrs Pruned
   is the first to use it, which is what gives the BLAKE2b chain an Electrum server and so a wallet
   on this server.
