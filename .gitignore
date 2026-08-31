@@ -6,3 +6,7 @@ Thumbs.db
 *.swo
 *.bak
 .env
+
+# Byte-cache from running the settings server locally; never wanted in an app directory.
+__pycache__/
+*.pyc
