@@ -94,7 +94,7 @@ services:
   # daemon_p2p_addr points at the node directly, because that path only carries
   # blocks the node still has and gains nothing from the detour.
   server:
-    image: paulscode/electrs-pruned:0.11.1@sha256:ba922bbacaec7b719626c9163d079a0f441ec14fc37c432d7ee910676d16c8ac
+    image: paulscode/electrs-pruned:0.11.2@sha256:48ee6a0a869c6181d490e0866ba9918ba78cf643e0b9e2b0519b2a59d06c6ddd
     restart: always
     stop_grace_period: 5m
     depends_on:
@@ -109,8 +109,29 @@ services:
       BITCOIN_RPC_PASS: ${APP_BITCOIN_RPC_PASS}
       ELECTRS_NETWORK: ${APP_BITCOIN_NETWORK_ELECTRS:-bitcoin}
       ELECTRS_LOG_FILTERS: INFO
+
+      # An archival node to read pruned blocks from, when one is installed.
+      #
+      # Every block below the 2026 chain split is identical on both sides, so a full node of
+      # either chain already holds almost everything a pruned node has discarded. Reading those
+      # from its disk is far cheaper than fetching them from the network one at a time, which
+      # is what this app otherwise does for the whole history below the prune height.
+      #
+      # Knots (BLAKE2b) Companion is the candidate, being the second node this store expects
+      # alongside the official one. It is not a dependency: uninstalled, these expand to
+      # nothing and no helper is configured, which is the ordinary single-node case.
+      #
+      # Installed is not sufficient. It also has to be archival and synced far enough, which
+      # electrs checks against the node itself and reports in its log if it declines. That app
+      # keeps only recent blocks by default, so it must be set to keep the whole chain first.
+      HELPER_RPC_HOST: ${APP_KNOTS_BLAKE2B_NODE_IP:-}
+      HELPER_RPC_PORT: ${APP_KNOTS_BLAKE2B_RPC_PORT:-}
+      HELPER_COOKIE_DIR: /helper
     volumes:
       - ${APP_DATA_DIR}/data:/data
+      # Read-only, and only for the cookie. Absent when that app is not installed, in which
+      # case the cookie probe finds nothing and the helper is skipped.
+      - ${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/data:/helper:ro
     ports:
       # Published on 50201, not 50001. This app is built to run *alongside* the
       # official Electrs app, not instead of it: the intended setup is one
