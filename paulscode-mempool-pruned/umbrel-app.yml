@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-mempool-pruned
 category: bitcoin
 name: Mempool Pruned
-version: "3.3.1.4"
+version: "3.3.1.5"
 tagline: A block explorer that works with a pruned Bitcoin node
 description: >-
   Run your own mempool.space against a pruned node. The official Mempool app
@@ -33,6 +33,13 @@ description: >-
   it either way.
 
 
+  Umbrel asks which Bitcoin node to use when you install this. Pick the same one
+  you picked for Electrs Pruned. This explorer reads its blocks through that app,
+  so pointing the two at different nodes gives you an explorer describing a chain
+  it is not reading. Either node works, including the BLAKE2b companion, as long
+  as both apps agree.
+
+
   WHAT TO EXPECT
 
 
@@ -61,11 +68,14 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes indexing on the BLAKE2b chain. Blocks there carry a header that is longer
-  than a normal Bitcoin one, and the database column holding it was sized for
-  exactly the normal length, so the first block after the fork either failed to
-  store or was stored cut in half. The column is widened when this update starts.
-  Nothing you have set changes, and no re-index is needed. No other chain is
-  affected.
+  Works with a Bitcoin node that authenticates using a cookie instead of a username and password,
+  which is what the BLAKE2b companion node does. Selecting that node previously left this app with
+  no credentials, and the backend quietly substituted its own defaults, so every lookup was rejected
+  and the explorer reported the node as unreachable. It now reads the node's cookie, and says so in
+  the log rather than guessing when it cannot find one.
+
+
+  The install prompt asks which Bitcoin node to use. Pick the same one you picked for Electrs Pruned,
+  since this explorer reads its blocks through that app.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

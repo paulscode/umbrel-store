@@ -32,7 +32,41 @@ services:
     init: true
     restart: on-failure
     stop_grace_period: 1m
-    command: "./wait-for-it.sh db:3306 --timeout=720 --strict -- ./start.sh"
+    # How the chosen node authenticates differs between nodes and is not a setting.
+    # The official Bitcoin Node uses rpcauth and exports a user and password; the
+    # BLAKE2b companion uses the cookie it writes itself and deliberately exports
+    # neither. An empty user is the signal for the second.
+    #
+    # It has to be detected here rather than left to the backend. `start.sh` assigns
+    # its defaults with `:=`, which treats empty exactly like unset, so an empty user
+    # silently becomes `mempool`/`mempool` and every Core RPC call is rejected by the
+    # proxy. Failing loudly on a missing cookie beats authenticating as the wrong
+    # user and reporting it as the node being unreachable.
+    #
+    # The cookie is located by probing the chain subdirectories bitcoind uses for
+    # anything but mainnet, exactly as the electrs and proxy entrypoints do. The
+    # backend re-reads the file when auth fails, so a node restart that rewrites the
+    # cookie recovers on its own.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        if [ -z "$${CORE_RPC_USERNAME:-}" ]; then
+          COOKIE=""
+          for sub in regtest testnet4 testnet signet ""; do
+            if [ -n "$$sub" ]; then C="/bitcoin/$$sub/.cookie"; else C="/bitcoin/.cookie"; fi
+            if [ -r "$$C" ]; then COOKIE="$$C"; break; fi
+          done
+          if [ -z "$$COOKIE" ]; then
+            echo "api: the selected Bitcoin node exports no RPC user, so cookie auth is expected," >&2
+            echo "api: but no readable .cookie was found under /bitcoin. Is that node running?" >&2
+            exit 1
+          fi
+          echo "api: authenticating to the proxy with $$COOKIE"
+          export CORE_RPC_COOKIE=true
+          export CORE_RPC_COOKIE_PATH="$$COOKIE"
+        fi
+        exec ./wait-for-it.sh db:3306 --timeout=720 --strict -- ./start.sh
     environment:
       # Core RPC points at the Electrs Pruned app's btc-rpc-proxy, not at the
       # Bitcoin Node. Dropping txindex is what Electrum below is for, but it is
@@ -51,6 +85,9 @@ services:
       # exactly what the node accepts and no second secret exists.
       CORE_RPC_HOST: $APP_ELECTRS_PRUNED_PROXY_IP
       CORE_RPC_PORT: $APP_ELECTRS_PRUNED_PROXY_PORT
+      # Empty when the chosen node authenticates with the cookie it writes itself
+      # rather than with rpcauth, which is what the BLAKE2b companion does. The
+      # command below detects that and switches to cookie auth; see there.
       CORE_RPC_USERNAME: $APP_BITCOIN_RPC_USER
       CORE_RPC_PASSWORD: $APP_BITCOIN_RPC_PASS
 
@@ -92,6 +129,12 @@ services:
       MAXMIND_ENABLED: "false"
 
       NODE_OPTIONS: "--max-old-space-size=2048"
+    volumes:
+      # Read-only, and only for the cookie, which is the sole thing needed from the
+      # node itself: every block and transaction lookup goes through the proxy and
+      # the Electrum server, not through this mount. Mounted at /bitcoin rather than
+      # /backend, which is where the application itself lives.
+      - ${APP_BITCOIN_DATA_DIR}:/bitcoin:ro
     depends_on:
       - db
     networks:
