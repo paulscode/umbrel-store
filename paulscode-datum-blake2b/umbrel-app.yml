@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.0.9"
+version: "1.0.10"
 tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   Solo mine the BLAKE2b chain with a Sia-style ASIC. Bitcoin's mainnet split on
@@ -87,17 +87,26 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  The settings page now shows mainnet when no chain has been chosen, matching what
-  the node actually runs. It showed the private chain, so the page and the node
-  could disagree, and saving the page would have moved the node to the chain the
-  page was showing rather than the one it was on.
+  Lets a miner ask for the share difficulty it should run at, by putting it in the Stratum password.
+  Send "d=8192" and the gateway starts that miner there and holds it as a floor; send "fd=8192" and it
+  holds exactly there and does not vary it. Anything the gateway does not recognise is ignored, so the
+  "x" that almost every miner sends means what it always did and no existing miner changes difficulty
+  when you update.
 
 
-  The Compatibility Report also works on mainnet. It reports whether your node
-  accepted the blocks your miner found, and to ask the node that it needs the
-  node's credentials. It looked for them in a directory that only exists on a
-  private chain, so on mainnet it never found them and reported block acceptance
-  as "not checked". That is the one question the report exists to answer.
-  Reports made on mainnet before this update understated what your miner did.
+  This exists because the password is often the only field an operator can set. Rental marketplaces
+  and some firmware let you configure a pool host, port, worker name and password and nothing else,
+  with no way to make the miner negotiate difficulty through the protocol itself. A small miner left
+  on a difficulty meant for a large one produces very few shares, which is what makes rented hashrate
+  look like it is underdelivering when it is not.
+
+
+  The request sets a floor and not merely a starting point, because difficulty is adjusted downward by
+  halving with a clamp, and setting only the starting value would be undone at the first adjustment.
+
+
+  A request cannot lower difficulty past the limits that are not preferences: a new
+  "stratum.vardiff_client_min" setting, below which no miner may ask, the compatibility floor of a
+  miner recognised as needing one, and the minimum the pool itself declares when mining pooled.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

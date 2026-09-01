@@ -81,7 +81,7 @@ services:
   # written to /config/settings.json and outranks this, which is how a user
   # switches to the private chain without editing compose.
   node:
-    image: paulscode/knots-blake2b:1.0.6@sha256:cb9a337b9dff17920d327edaaa58c6fb7fd3830b02039428f1af5ca05121176b
+    image: paulscode/knots-blake2b:1.0.7@sha256:49b5ce648666ce885467c3647164f1945ab29be17866451294868de674fb4b6e
     restart: unless-stopped
     stop_grace_period: 1m
     environment:

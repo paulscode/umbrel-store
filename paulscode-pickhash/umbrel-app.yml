@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-pickhash
 category: bitcoin
 name: Pickhash
-version: "0.1.3.0"
+version: "0.1.4.0"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
   Pickhash rents SHA-256 (AsicBoost) hashrate from MiningRigRentals and points
@@ -73,16 +73,24 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
-  Adds BLAKE2b. Pickhash can now rent either SHA256 AsicBoost or Blake2B hashrate, chosen in Settings or during setup, so it works against a BLAKE2b node as well as a Bitcoin one.
+  Each rented rig now runs at a share difficulty suited to its own size.
 
-  The two markets are kept apart. Prices, available hashrate, spend ceilings, your saved endpoint, the display unit and which HashGG the endpoint comes from are all per algorithm, because a TH of BLAKE2b costs roughly 5,400 times a TH of SHA256 on a market a million times smaller. A limit set for one means nothing for the other, so nothing is shared and nothing is mixed into one chart or one total.
 
-  Which algorithm is active is shown in the header on every screen, and again on both screens that spend, so a rental cannot be confirmed without it being visible. Switching is refused while a session is running, since the rentals already paid for on the other market would go unmanaged.
+  MiningRigRentals scores a rental on the hashrate it measures, and it measures that from accepted
+  shares. A rig left at a difficulty far above its own size produces too few shares to measure well,
+  so a rental that really did deliver can read as underdelivering and a refund claim on it gets
+  declined. Every rental used to be sent the same difficulty whatever its size: measured on the live
+  market, the BLAKE2b rigs listed wanted difficulties from 873 to 20,955, which no single value serves.
 
-  Three things that would have quietly cost money on BLAKE2b are fixed. The protective per-rig price cap sent to MiningRigRentals was always expressed per PH, which on a market quoted per TH would have been a thousand times higher than intended. The Ocean fallback pool is SHA256 only and defaulted to on; it is now unavailable on BLAKE2b rather than failing hashrate over to a pool that cannot mine it. And the endpoint test only checked the username you typed, not the one rentals actually send, so a stratum server that accepted one and refused the other passed setup and failed every rental.
 
-  Autopilot now says why it cannot cover a target rather than only how much it can, naming the rigs it passed over and the reason. It also no longer rejects a rig for a reason the rig cannot escape: an unrented rig reports no hashrate, which was read as wild instability rather than as nothing measured yet, so on a young market every rig was refused forever. Whether to rent rigs with no delivery history is now a setting, on by default for BLAKE2b and off for SHA256.
+  The difficulty comes from the rig's own published optimal range rather than from a calculation on its
+  advertised hashrate, because that range is what the marketplace's own scoring expects, and that
+  scoring is what decides a refund. It travels in the Stratum password, the only field a rental passes
+  through to the pool untouched.
 
-  Existing installs are unaffected. Everything already recorded is labelled SHA256 AsicBoost, which is what it was, and no re-index is needed.
+
+  Whether your endpoint honours the request is detected rather than assumed. The endpoint test now says
+  which it is, and says so plainly when a gateway ignores it, in which case rentals behave exactly as
+  they always did. Datum Gateway (BLAKE2b) Companion 1.0.10 honours it.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

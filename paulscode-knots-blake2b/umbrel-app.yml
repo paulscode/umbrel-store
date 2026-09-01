@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.0.10"
+version: "1.0.11"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change (Knots PR
@@ -65,12 +65,20 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Makes sure the sync progress added in 1.0.9 reaches installs that update, rather than only fresh
-  ones. Umbrel replaces only certain files when an app updates, and the page showing progress was not
-  one of them, so an existing install kept the old page.
+  Fixes a way to end up on mainnet without the headline mainnet requires. The chain can be written as
+  either "mainnet" or "main", and only the first spelling reached the step that supplies the consensus
+  headline for that chain. A node started as "main" therefore ran on mainnet with whatever headline it
+  had been given, and since that headline is checked at the fork height, it would reject block 961640
+  and every block after it. That looks like a peer problem rather than a misconfiguration: the node
+  sits one block below the fork, fully connected, and never moves.
 
 
-  The page is now delivered as a file Umbrel does replace. If 1.0.9 did not show you sync progress,
-  this is the update that will.
+  The spelling is now settled before anything reads it, so both forms behave the same. This app sets
+  "mainnet", so an install left as it shipped was not affected.
+
+
+  On the private test chain the activation height is now always written alongside the headline, rather
+  than only when one was supplied. Without a height that chain never actually activates BLAKE2b, and a
+  coming upstream release refuses to start when the two are separated.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
