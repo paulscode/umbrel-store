@@ -3,11 +3,17 @@ id: paulscode-hashgg-companion
 category: bitcoin
 name: HashGG Companion
 version: "0.7.2.1"
-tagline: Sovereign hash routing for the BLAKE2b chain
+tagline: Sovereign hash routing for your Companion Datum Gateway
 description: >-
   HashGG Companion exposes the stratum port of Datum (BLAKE2b) Companion to the
   public internet, so any miner, anywhere, can connect to your node and mine
-  blocks you built on the BLAKE2b chain.
+  blocks you built.
+
+
+  The difference from the ordinary HashGG is which gateway it pairs with, not
+  which chain it is for. HashGG pairs with the Datum Gateway app, whatever chain
+  that build follows. This one pairs with the separate Companion package, which
+  exists so a second gateway can run beside the first.
 
 
   It installs and runs beside the ordinary HashGG rather than replacing it. One
@@ -62,12 +68,12 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  First release. This is HashGG pointed at the BLAKE2b side of your setup,
+  First release. This is HashGG paired with the Companion Datum Gateway,
   installed beside the ordinary one rather than replacing it.
 
 
-  Until now HashGG could only reach the official Datum Gateway. The BLAKE2b
-  gateway is a different app on a different port, so there was no way to expose
-  it to miners on Umbrel at all. This closes that.
+  Until now HashGG could only reach the Datum Gateway app. The Companion gateway
+  is a separate app on a separate port, so there was no way to expose it to
+  miners on Umbrel at all. This closes that.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
