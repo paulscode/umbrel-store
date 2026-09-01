@@ -1,0 +1,52 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      # Umbrel container naming: <app-id>_<service>_<n>
+      APP_HOST: paulscode-hashgg-companion_web_1
+      APP_PORT: 3000
+
+  web:
+    # The same image as the ordinary HashGG. The two differ only by
+    # HASHGG_VARIANT below, which the application reads at start to decide its
+    # playit.gg tunnel names and which node it offers to make reachable. Running
+    # one image keeps a fix from having to be made twice.
+    image: paulscode/hashgg:0.7.2.1
+    restart: on-failure
+    environment:
+      # Selects the companion build. Without it this would behave as the ordinary
+      # HashGG: same tunnel names as the other installation, and the main Bitcoin
+      # node as its reachability target.
+      HASHGG_VARIANT: companion
+
+      # The BLAKE2b gateway, not the ordinary one. 23336 rather than 23334 is
+      # deliberate on that app's side so both gateways can run at once, and it is
+      # exported, so unlike the ordinary HashGG this does not have to hardcode it.
+      DATUM_HOST: ${APP_DATUM_BLAKE2B_GATEWAY_IP:-paulscode-datum-blake2b_gateway_1}
+      DATUM_STRATUM_PORT: ${APP_DATUM_BLAKE2B_STRATUM_PORT:-23336}
+
+      # Declared rather than inferred: without it HashGG guesses the platform,
+      # and the guess decides which instructions the Bitcoin reachability
+      # feature shows for editing the node's configuration.
+      HASHGG_PLATFORM: umbrel
+
+      # The BLAKE2b node, never the main one. 18444 is the PLAIN bind; 18445 is
+      # the whitebind listener, and forwarding that to the internet would grant
+      # every anonymous peer noban and download on the user's node. Declaring the
+      # right port is the protection; the whitebind port is named only so it can
+      # be refused.
+      BITCOIN_P2P_HOST: ${APP_KNOTS_BLAKE2B_NODE_IP:-10.21.21.62}
+      BITCOIN_P2P_PORT: ${APP_KNOTS_BLAKE2B_P2P_PORT:-18444}
+      BITCOIN_P2P_WHITEBIND_PORT: ${APP_KNOTS_BLAKE2B_P2P_WHITEBIND_PORT:-18445}
+
+      # Read-only RPC, used only to confirm the node picked up the address it was
+      # told to advertise. The BLAKE2b node authenticates with the cookie it
+      # writes itself and exports no user or password, so these are deliberately
+      # empty: the feature degrades to "cannot see it" rather than failing.
+      BITCOIN_RPC_HOST: ${APP_KNOTS_BLAKE2B_NODE_IP:-10.21.21.62}
+      BITCOIN_RPC_PORT: ${APP_KNOTS_BLAKE2B_RPC_PORT:-18443}
+      BITCOIN_RPC_USER: ""
+      BITCOIN_RPC_PASS: ""
+    volumes:
+      - ${APP_DATA_DIR}/data:/root/data

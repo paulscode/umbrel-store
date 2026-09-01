@@ -1,0 +1,73 @@
+manifestVersion: 1.1
+id: paulscode-hashgg-companion
+category: bitcoin
+name: HashGG Companion
+version: "0.7.2.1"
+tagline: Sovereign hash routing for the BLAKE2b chain
+description: >-
+  HashGG Companion exposes the stratum port of Datum (BLAKE2b) Companion to the
+  public internet, so any miner, anywhere, can connect to your node and mine
+  blocks you built on the BLAKE2b chain.
+
+
+  It installs and runs beside the ordinary HashGG rather than replacing it. One
+  server can expose both gateways at once, and the two keep separate settings,
+  separate playit.gg tunnels, and separate access to any VPS they share, so
+  setting one up never disturbs the other. If you run both, the tile with
+  COMPANION across the bottom of the icon is this one.
+
+
+  Choose between two tunnel options directly in the web UI:
+
+
+    - playit.gg, easiest setup, a managed service
+
+    - VPS SSH tunnel, privacy focused, with no third party on the data path
+
+
+  WHICH NODE IT MAKES REACHABLE
+
+
+  The optional "make your Bitcoin node reachable" feature offers your BLAKE2b
+  node here. It never touches the main Bitcoin package, which is the ordinary
+  HashGG's job. That separation is why the two can run together without one
+  advertising an address for the other's chain.
+
+
+  BEFORE YOUR NODE HAS SYNCED
+
+
+  A Datum Gateway does not open its stratum port until it has its first block
+  template, and it cannot get one from a node that is still catching up. Until
+  then this app has nothing to forward and will say it is waiting. On a fresh
+  node that is hours, and it needs no action.
+
+
+  For more information: https://github.com/paulscode/hashgg
+developer: Paul Lamb
+website: https://github.com/paulscode/hashgg
+dependencies:
+  - paulscode-datum-blake2b
+repo: https://github.com/paulscode/hashgg
+support: https://github.com/paulscode/hashgg/issues
+# Not 3000, which the ordinary HashGG holds. The two are designed to be installed
+# together, so a shared port would make that impossible on the one platform where
+# a collision fails the whole install.
+port: 3033
+# Community stores must supply full URLs for icon and gallery: Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-hashgg-companion/icon.png
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: >-
+  First release. This is HashGG pointed at the BLAKE2b side of your setup,
+  installed beside the ordinary one rather than replacing it.
+
+
+  Until now HashGG could only reach the official Datum Gateway. The BLAKE2b
+  gateway is a different app on a different port, so there was no way to expose
+  it to miners on Umbrel at all. This closes that.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store
