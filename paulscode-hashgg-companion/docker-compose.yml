@@ -12,7 +12,10 @@ services:
     # HASHGG_VARIANT below, which the application reads at start to decide its
     # playit.gg tunnel names and which node it offers to make reachable. Running
     # one image keeps a fix from having to be made twice.
-    image: paulscode/hashgg:0.7.2.1
+    # Pinned by digest, like every other app in this store. A bare tag is mutable:
+    # pushing over it would change what an install resolves to without any version
+    # here moving, which is the one thing a store entry exists to prevent.
+    image: paulscode/hashgg:0.7.2.1@sha256:a88dbc3d7baa29cd98d9a930472d8906b1cb3243abfb0103589bfb0a48d18972
     restart: on-failure
     environment:
       # Selects the companion build. Without it this would behave as the ordinary
