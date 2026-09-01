@@ -27,5 +27,12 @@ services:
       # entry in umbrel-app.yml, which would force HashGG to be installed).
       HASHGG_HOST: paulscode-hashgg_web_1
       HASHGG_PORT: "3000"
+      # HashGG Companion exposes the separate BLAKE2b Datum Gateway. Both can be installed
+      # at once, and which one an endpoint comes from decides which chain the rented
+      # hashrate mines, so Pickhash chooses per algorithm rather than taking whichever
+      # answers. The Companion's tile is on 3033, but that is the host-facing port only:
+      # APP_PORT inside its container is 3000, so 3000 is what answers from here.
+      HASHGG_COMPANION_HOST: paulscode-hashgg-companion_web_1
+      HASHGG_COMPANION_PORT: "3000"
     volumes:
       - ${APP_DATA_DIR}/data:/root/data
