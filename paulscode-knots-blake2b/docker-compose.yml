@@ -91,6 +91,14 @@ services:
       # string, and the gateway that builds that coinbase reads the same exported
       # value. Change it in exports.sh, not here, or the two will disagree and the
       # node will reject the block with `bad-headline`.
+      #
+      # That applies to the private chain, where this pair mines the activation
+      # block themselves. On mainnet block 961640 was mined long before either of
+      # them existed and carries a string neither can choose, so the entrypoint
+      # ignores this value there and uses the real one. Which is why the exported
+      # value can stay the lab headline while CHAIN is mainnet: it is not the one
+      # in force. Do not "correct" it to the mainnet string, or the private chain
+      # loses the only headline it can actually agree on.
       BLAKE2B_HEADLINE: ${APP_KNOTS_BLAKE2B_HEADLINE}
 
       # Where SHA256d stops and BLAKE2b begins. 1 means the first block mined is
