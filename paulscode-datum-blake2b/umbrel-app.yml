@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.0.10"
+version: "1.0.11"
 tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   Solo mine the BLAKE2b chain with a Sia-style ASIC. Bitcoin's mainnet split on
@@ -87,26 +87,27 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Lets a miner ask for the share difficulty it should run at, by putting it in the Stratum password.
-  Send "d=8192" and the gateway starts that miner there and holds it as a floor; send "fd=8192" and it
-  holds exactly there and does not vary it. Anything the gateway does not recognise is ignored, so the
-  "x" that almost every miner sends means what it always did and no existing miner changes difficulty
-  when you update.
+  Hardens the difficulty request added in 1.0.10, from a review done while preparing the change to
+  send upstream. Three things came out of it.
 
 
-  This exists because the password is often the only field an operator can set. Rental marketplaces
-  and some firmware let you configure a pool host, port, worker name and password and nothing else,
-  with no way to make the miner negotiate difficulty through the protocol itself. A small miner left
-  on a difficulty meant for a large one produces very few shares, which is what makes rented hashrate
-  look like it is underdelivering when it is not.
+  The password was read on every authorize, and a miner may send that more than once on one
+  connection. Since a changed difficulty sends fresh work, a miner alternating between two values
+  could make the gateway build and send a full job per request, where it used to reply with a small
+  acknowledgement. It is now read once per connection. This is the one worth updating for if you point
+  rented hashrate at this gateway, because the miners doing so are not yours.
 
 
-  The request sets a floor and not merely a starting point, because difficulty is adjusted downward by
-  halving with a clamp, and setting only the starting value would be undone at the first adjustment.
+  A request is now bounded. The number was parsed in a way that saturates rather than failing, so a
+  long enough run of digits arrived as the largest 64-bit value and went into the difficulty and share
+  target maths unchecked. Requests beyond anything usable are ignored rather than clamped, because the
+  request is a floor and a value too high for the miner cannot be walked back down.
 
 
-  A request cannot lower difficulty past the limits that are not preferences: a new
-  "stratum.vardiff_client_min" setting, below which no miner may ask, the compatibility floor of a
-  miner recognised as needing one, and the minimum the pool itself declares when mining pooled.
+  Setting the new client difficulty floor to 0 reached an undefined shift before the check that
+  rejects it. It is now rejected first, with a clear message.
+
+
+  No miner that was working is affected, and nothing about how a request is honoured has changed.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
