@@ -8,7 +8,10 @@ services:
       APP_PORT: 3000
 
   web:
-    image: paulscode/hashgg:0.7.2.0
+    # Digest-pinned, like the rest of this store. A bare tag is mutable: pushing
+    # over it changes what an existing install resolves to with no version here
+    # moving, which is the one thing a store entry exists to prevent.
+    image: paulscode/hashgg:0.7.2.2@sha256:60b19afd539db91780c0bb83ae6901752c08787b0e3799d5f49945a9cb0548b2
     restart: on-failure
     environment:
       # Datum has no exports.sh, so there's no APP_DATUM_STRATUM_PORT —

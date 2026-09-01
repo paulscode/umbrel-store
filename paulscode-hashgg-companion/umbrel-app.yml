@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-hashgg-companion
 category: bitcoin
 name: HashGG Companion
-version: "0.7.2.1"
+version: "0.7.2.2"
 tagline: Sovereign hash routing for your Companion Datum Gateway
 description: >-
   HashGG Companion exposes the stratum port of Datum (BLAKE2b) Companion to the
@@ -68,12 +68,12 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  First release. This is HashGG paired with the Companion Datum Gateway,
-  installed beside the ordinary one rather than replacing it.
+  First release. This is HashGG paired with the Companion Datum Gateway, installed beside the
+  ordinary one rather than replacing it.
 
 
-  Until now HashGG could only reach the Datum Gateway app. The Companion gateway
-  is a separate app on a separate port, so there was no way to expose it to
-  miners on Umbrel at all. This closes that.
+  Until now HashGG could only reach the Datum Gateway app. The Companion gateway is a separate
+  app on a separate port, so there was no way to expose it to miners on Umbrel at all. This
+  closes that.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

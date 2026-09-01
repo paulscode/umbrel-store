@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.8"
+version: "0.11.9"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
@@ -82,7 +82,7 @@ dependencies:
   - bitcoin
 repo: https://github.com/paulscode/electrs-pruned-startos
 support: https://github.com/paulscode/electrs-pruned-startos/issues
-port: 3031
+port: 3034
 # Community stores must supply full URLs for icon and gallery — Umbrel's resolver
 # only auto-prefixes URLs for the official umbrel-app-store.
 icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-electrs-pruned/icon.png
@@ -92,13 +92,12 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Actually shows the indexing progress that 0.11.6 was meant to add. The part that measures progress
-  shipped and worked, but the page that displays it did not reach anyone who updated, so the app kept
-  showing the old page. A fresh install was fine, which is why this was not obvious.
+  Moves off port 3031, which the official AnythingLLM app also uses. Umbrel gives each app its
+  own port and refuses to install one whose port is already taken, so anyone running that app
+  could not install this one, and the failure said only that the port was allocated.
 
 
-  Umbrel replaces only certain files when an app updates, and the page was not one of them. It is now
-  delivered as a file Umbrel does replace, so this and future page changes arrive on an update rather
-  than only on a first install.
+  If you already have this installed, the address you use to open it changes from 3031 to 3034.
+  Nothing else changes, and your index is untouched.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

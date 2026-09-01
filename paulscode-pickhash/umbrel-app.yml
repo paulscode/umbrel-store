@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-pickhash
 category: bitcoin
 name: Pickhash
-version: "0.1.2.1"
+version: "0.1.2.2"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
   Pickhash rents SHA-256 (AsicBoost) hashrate from MiningRigRentals and points
@@ -59,7 +59,7 @@ developer: Paul Lamb
 website: https://github.com/paulscode/pickhash
 repo: https://github.com/paulscode/pickhash
 support: https://github.com/paulscode/pickhash/issues
-port: 3030
+port: 3035
 # Community stores must supply full URLs for icon and gallery — Umbrel's
 # resolver only auto-prefixes URLs for the official `umbrel-app-store`.
 icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-pickhash/icon.svg
@@ -73,13 +73,12 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
-  The Ocean fallback pool now connects to Ocean's BIP110 stratum endpoint
-  (bip110.mine.ocean.xyz:3110) instead of the general one, so hashrate that fails
-  over is mining the block templates you'd want it on. Everything else about the
-  fallback is unchanged: it only engages if your own endpoint drops (or when a
-  stuck rig is rerouted), it mines to your same Bitcoin address, and its worker is
-  still tagged .fallback so fallback hashrate is easy to spot on Ocean. Existing
-  rentals keep whatever fallback they were created with; new rentals get the new
-  endpoint.
+  Moves off port 3030, which the official Grafana app also uses. Umbrel gives each app its own
+  port and refuses to install one whose port is already taken, so anyone running Grafana could
+  not install this one, and the failure said only that the port was allocated.
+
+
+  If you already have this installed, the address you use to open it changes from 3030 to 3035.
+  Nothing else changes.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

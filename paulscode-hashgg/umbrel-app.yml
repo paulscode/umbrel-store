@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-hashgg
 category: bitcoin
 name: HashGG
-version: "0.7.2.1"
+version: "0.7.2.2"
 tagline: Sovereign hash routing for your Bitcoin miners
 description: >-
   HashGG exposes your Datum Gateway stratum port to the public internet —
@@ -84,35 +84,11 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  You can now make your Bitcoin node reachable without setting up mining. It is
-  offered on the first screen alongside the tunnel choices, and if you stop
-  there the dashboard treats mining as a choice you have not made rather than
-  something wrong.
+  Pins the exact image this app runs rather than a movable tag, and moves to the image built
+  from 0.7.2.2. Nothing about how the app behaves changes.
 
 
-  One server can carry both jobs whichever order you set them up in, and a
-  second HashGG installation on another machine can share it too. That last part
-  used to be quietly destructive: setting up a second machine against a server
-  another was already using replaced the first one's access, and its tunnel
-  stopped at the next reconnect — hours later, with nothing to connect the two
-  events. Each installation now keeps its own access, and removing one leaves
-  the others working.
-
-
-  If a port is already taken on that server, HashGG says which one and offers a
-  free alternative in one click, instead of failing with a message from ssh. Two
-  nodes can share one server on different ports.
-
-
-  The reachability setup is clearer throughout: it no longer walks past a
-  connection that failed to come up, it says why when there is nothing to show
-  you yet, and when the address it gave you changes it tells you exactly which
-  line to replace in your node's settings. The box holding that line can no
-  longer show anything that would break your node if pasted.
-
-
-  Also fixes a dashboard row that always reported Datum Gateway as reachable
-  without checking, which hid the one thing that would explain a hashrate of
-  zero.
+  A tag can be pushed over. Pinning the digest means an install can only ever resolve to the
+  bytes reviewed here, and any change has to come through a version in the app store.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
