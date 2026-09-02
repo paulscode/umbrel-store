@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.0.11"
+version: "1.0.12"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change (Knots PR
@@ -65,20 +65,25 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes a way to end up on mainnet without the headline mainnet requires. The chain can be written as
-  either "mainnet" or "main", and only the first spelling reached the step that supplies the consensus
-  headline for that chain. A node started as "main" therefore ran on mainnet with whatever headline it
-  had been given, and since that headline is checked at the fork height, it would reject block 961640
-  and every block after it. That looks like a peer problem rather than a misconfiguration: the node
-  sits one block below the fork, fully connected, and never moves.
+  Moves to the final Bitcoin Knots 29.4.1 release. Every version of this app so far has been built
+  from a release candidate, because there was no release to build from. There is now.
 
 
-  The spelling is now settled before anything reads it, so both forms behave the same. This app sets
-  "mainnet", so an install left as it shipped was not affected.
+  The consensus rules do not change. The activation height stays 961640, the difficulty shift at that
+  height stays the same, and the opt-in signature hash that gives replay protection is the one already
+  shipped. A node running the previous version is on the same chain as one running this, so updating
+  is not urgent for correctness.
 
 
-  On the private test chain the activation height is now always written alongside the headline, rather
-  than only when one was supplied. Without a height that chain never actually activates BLAKE2b, and a
-  coming upstream release refuses to start when the two are separated.
+  What it brings is better peer selection. The node now prefers peers that advertise the fork for its
+  first outbound connections, and paces its use of DNS seeds by how many such peers it already has.
+  Finding peers on this chain has been the awkward part of running it: both chains share a port and a
+  message prefix, so a node that dials ordinary peers stalls one block below the fork while looking
+  perfectly healthy. This release addresses that in the node itself.
+
+
+  It also carries a checkpoint at the first BLAKE2b block, and takes its assumed-valid block and
+  minimum chain work from this chain rather than the one it parted from, which makes a fresh sync
+  faster and harder to mislead.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
