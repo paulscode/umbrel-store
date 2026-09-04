@@ -1,0 +1,112 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: $APP_KNOTS_SHA256_NODE_IP
+      APP_PORT: 3000
+
+  # The node, and the web interface that manages it.
+  #
+  # This is Retropex's published image, the same one the official Bitcoin Knots
+  # app runs, used unmodified. It ships ten bitcoind builds and lets the Version
+  # setting choose between them, and one of those is v29.3.knots20260507 — the
+  # last release before BIP-110 (RDTS) enforcement, and the exact build Start9's
+  # pre-RDTS package pins.
+  #
+  # So this app is that image plus a seeded settings.json. No fork, no third
+  # image to keep in step with upstream. The BLAKE2b companion needed a fork
+  # because no published image contains a BLAKE2b bitcoind; this one does not.
+  #
+  # THE SEED REACHES A FRESH INSTALL ONLY. umbreld's `copy_app_files` takes
+  # `docker-compose.yml`, `*.template`, `exports.sh`, `torrc` and `hooks` on an
+  # update, and not `data/`. So `data/app/settings.json` lands once, on install,
+  # and is then the user's: their Version and pruning choices survive every app
+  # update, and a change to the seeded pin in this store will NOT reach anyone
+  # who already installed. Moving the pin later means release notes telling
+  # people to change it themselves, or a hook that rewrites it.
+  #
+  # THE VERSION SETTING IS LOAD-BEARING HERE. The image's own default is
+  # v29.4.1.knots20260508, which enforces RDTS. `data/app/settings.json` pins
+  # v29.3.knots20260507 instead, and that pin is the entire difference between
+  # this app and the official one. Changing it in Settings → Version to a newer
+  # build turns this into an ordinary enforcing node, which during a BIP-110
+  # split means changing which chain it follows.
+  app:
+    image: ghcr.io/retropex/umbrel-bitcoin-knots:1.2.16@sha256:6564271b2214c1eb1883b2d406e6aee3383966037960113673dd73a7ad98f69d
+    user: "1000:1000"
+    restart: on-failure
+    # bitcoind flushes its chainstate on shutdown, and a stop that does not wait
+    # for it throws away everything since the last flush.
+    stop_grace_period: 15m30s
+    ports:
+      - "${APP_KNOTS_SHA256_P2P_PORT}:${APP_KNOTS_SHA256_P2P_PORT}"
+      - "${APP_KNOTS_SHA256_RPC_PORT}:${APP_KNOTS_SHA256_RPC_PORT}"
+    volumes:
+      - ${APP_DATA_DIR}/data:/data # data/app and data/bitcoin
+    environment:
+      # BITCOIND BINARY SETTINGS
+      # comma-delimited list of extra startup flags to pass to bitcoind
+      BITCOIND_EXTRA_ARGS: ''
+
+      # BITCOIND CONF FILE SETTINGS
+      APPS_SUBNET: "${NETWORK_IP}/16" # used for rpcallowip
+      P2P_PORT: "${APP_KNOTS_SHA256_P2P_PORT}"
+      # Additional inbound P2P listener granting whitelisted permissions
+      # (whitebind) to this port; for trusted internal apps only; do not publish
+      # externally. An Electrum server pulling whole historical blocks needs it.
+      P2P_WHITEBIND_PORT: "${APP_KNOTS_SHA256_P2P_WHITEBIND_PORT}"
+      RPC_PORT: "${APP_KNOTS_SHA256_RPC_PORT}"
+      TOR_PORT: "${APP_KNOTS_SHA256_TOR_PORT}"
+      ZMQ_RAWBLOCK_PORT: "${APP_KNOTS_SHA256_ZMQ_RAWBLOCK_PORT}"
+      ZMQ_RAWTX_PORT: "${APP_KNOTS_SHA256_ZMQ_RAWTX_PORT}"
+      ZMQ_HASHBLOCK_PORT: "${APP_KNOTS_SHA256_ZMQ_HASHBLOCK_PORT}"
+      ZMQ_SEQUENCE_PORT: "${APP_KNOTS_SHA256_ZMQ_SEQUENCE_PORT}"
+      ZMQ_HASHTX_PORT: "${APP_KNOTS_SHA256_ZMQ_HASHTX_PORT}"
+      TOR_HOST: "${APP_KNOTS_SHA256_TOR_PROXY_IP}"
+      TOR_SOCKS_PORT: "9050"
+      TOR_CONTROL_PORT: "9051"
+      TOR_CONTROL_PASSWORD: "moneyprintergobrrr"
+      I2P_HOST: "${APP_KNOTS_SHA256_I2P_DAEMON_IP}"
+      I2P_SAM_PORT: "7656"
+
+      # RPC CLIENT SETTINGS
+      BITCOIND_IP: "${APP_KNOTS_SHA256_NODE_IP}"
+      # Written into bitcoin.conf as a salted `rpcauth=` line, and shown in the
+      # connect modal. bitcoind still writes its .cookie alongside, because
+      # neither `rpcpassword` nor `rpcuser` is set, so apps that authenticate by
+      # cookie keep working.
+      RPC_USER: "${APP_KNOTS_SHA256_RPC_USER}"
+      RPC_PASS: "${APP_KNOTS_SHA256_RPC_PASS}"
+
+      # CONNECTION DETAILS (shown to the user in the connect modal)
+      DEVICE_DOMAIN_NAME: "${DEVICE_DOMAIN_NAME}"
+      P2P_HIDDEN_SERVICE: "${APP_KNOTS_SHA256_P2P_HIDDEN_SERVICE}"
+      RPC_HIDDEN_SERVICE: "${APP_KNOTS_SHA256_RPC_HIDDEN_SERVICE}"
+    networks:
+      default:
+        ipv4_address: $APP_KNOTS_SHA256_NODE_IP
+
+  tor:
+    image: getumbrel/tor:0.4.7.8@sha256:2ace83f22501f58857fa9b403009f595137fa2e7986c4fda79d82a8119072b6a
+    user: "1000:1000"
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/torrc:/etc/tor/torrc:ro
+      - ${TOR_DATA_DIR}:/data
+    environment:
+      HOME: "/tmp"
+    networks:
+      default:
+        ipv4_address: "${APP_KNOTS_SHA256_TOR_PROXY_IP}"
+
+  i2pd_daemon:
+    image: purplei2p/i2pd:release-2.44.0@sha256:d154a599793c393cf9c91f8549ba7ece0bb40e5728e1813aa6dd4c210aa606f6
+    user: "root"
+    command: --sam.enabled=true --sam.address=0.0.0.0 --sam.port=7656 --loglevel=error
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/data/i2pd:/home/i2pd/data
+    networks:
+      default:
+        ipv4_address: "${APP_KNOTS_SHA256_I2P_DAEMON_IP}"

@@ -1,0 +1,116 @@
+manifestVersion: 1.1
+id: paulscode-knots-sha256
+implements:
+  - bitcoin
+category: bitcoin
+name: Knots (SHA256) Companion
+version: "1.0.0"
+tagline: A Bitcoin Knots node that never enforces BIP-110, to run beside your main one
+description: >-
+  A Bitcoin Knots node on the SHA256 chain: the same chain your Bitcoin or
+  Bitcoin Knots app already follows. What makes this one different is what it
+  does not do. Knots ships the BIP-110 softfork, known as RDTS, and this node
+  never enforces it, so if the network ever splits over BIP-110 this one stays
+  on the side that does not require it.
+
+
+  WHY YOU WOULD RUN IT
+
+
+  Install it alongside your existing node, not instead of it. Then you have one
+  node that enforces BIP-110 and one that does not, at the same time, and you
+  can point each app at whichever chain it should follow. If you only want one
+  Bitcoin node, the official Bitcoin Knots app is the one to install.
+
+
+  HOW IT WORKS
+
+
+  It runs the same web interface the official Bitcoin Knots app runs, from the
+  same image, so the dashboard, block and peer lists, connect modal, Advanced
+  Settings and widgets are all the ones you already know. The only difference is
+  a setting: it is pinned to Bitcoin Knots v29.3.knots20260507, the last release
+  before RDTS enforcement.
+
+
+  THAT PIN IS THE WHOLE POINT. It is on the Version tab under Advanced Settings.
+  Changing it to a newer build makes this an ordinary enforcing node and removes
+  the reason to have installed it, which during a BIP-110 split means changing
+  which chain it follows.
+
+
+  WHAT IT USES
+
+
+  About 5 GB of blocks by default rather than the whole chain, plus the node's
+  own data. Change that under Advanced Settings. The first sync downloads the
+  chain from the network and takes a while: this node does not share data with
+  your existing one, which is the cost of being able to run both at once.
+developer: Paul Lamb
+website: https://github.com/paulscode/knots-prerdts-startos
+dependencies: []
+repo: https://github.com/paulscode/knots-prerdts-startos
+support: https://paulscode.com/c/bitcoin/8
+# 7150 is the BLAKE2b companion's and 7153 its gateway's, so the SHA256 pair
+# takes 7151 and 7155. Not in the 3000s, where the app tiles crowd together and
+# a collision fails the whole install with "port is already allocated".
+port: 7151
+# Community stores must supply full URLs for icon and gallery — Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-knots-sha256/icon.png
+gallery:
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-knots-sha256/gallery/1.png
+path: ""
+defaultPassword: ""
+releaseNotes: >-
+  First release. A Bitcoin Knots node pinned to v29.3.knots20260507, the last release before
+  BIP-110 (RDTS) enforcement, running the same web interface as the official Bitcoin Knots app.
+
+
+  It installs alongside your existing node rather than replacing it, with its own ports and its own
+  data, so you can run an enforcing node and a non-enforcing one at the same time.
+
+
+  Pruned to about 5 GB by default, since the reason to run a second node is rarely to keep a second
+  full copy of the chain. Both settings are on the Advanced Settings page.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store
+widgets:
+  - id: "stats"
+    type: "four-stats"
+    refresh: "5s"
+    endpoint: "app:3000/api/widget/stats"
+    link: ""
+    example:
+      type: "four-stats"
+      link: ""
+      items:
+        - title: "Connections"
+          text: "11"
+          subtext: "peers"
+        - title: "Mempool"
+          text: "257"
+          subtext: "MB"
+        - title: "Hashrate"
+          text: "590"
+          subtext: "EH/s"
+        - title: "Blockchain size"
+          text: "5"
+          subtext: "GB"
+  - id: "sync"
+    type: "text-with-progress"
+    refresh: "2s"
+    endpoint: "app:3000/api/widget/sync"
+    link: ""
+    example:
+      type: "text-with-progress"
+      link: ""
+      title: "Blockchain sync"
+      text: "83%"
+      progressLabel: "In progress"
+      progress: 0.83
+backupIgnore:
+  - data/bitcoin/blocks
+  - data/bitcoin/chainstate
+  - data/bitcoin/indexes
+  - data/i2pd

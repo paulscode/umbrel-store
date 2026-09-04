@@ -1,0 +1,45 @@
+version: "3.7"
+
+services:
+  # Opening this app opens the DATUM Gateway dashboard, which is what the
+  # official Datum app does.
+  app_proxy:
+    environment:
+      APP_HOST: $APP_DATUM_SHA256_GATEWAY_IP
+      APP_PORT: 7152
+
+  # The DATUM Gateway. Same image as the BLAKE2b companion and as this project's
+  # StartOS packages, and that is not a shortcut: the DATUM fork it builds from
+  # carries nothing of its own, it is a mirror of OCEAN upstream, and upstream
+  # DATUM speaks both algorithms. `pow_algorithm` is left at `auto`, which takes
+  # the algorithm from the node's template, and against this node that always
+  # resolves to SHA256d.
+  #
+  # `entrypoint` and `command` override the image's own entrypoint deliberately.
+  # That entrypoint regenerates the config from the environment on every start,
+  # which is right on StartOS where the settings live in actions. Here the
+  # dashboard's Config page is the only settings form there is, so the config
+  # file has to be the thing that persists. Running the gateway directly against
+  # a file the pre-start hook patches is what the official Umbrel Datum app does,
+  # and it is what lets api.modify_conf be true.
+  gateway:
+    # PIN THIS BY DIGEST BEFORE RELEASING. Every other image in this store is
+    # `<tag>@sha256:<digest>`; a tag alone can be moved. The digest goes in once
+    # the image is published, because it does not exist until then.
+    image: paulscode/datum-blake2b:1.0.12
+    entrypoint: ["/usr/local/bin/datum_gateway"]
+    command: ["-c", "/app/conf/datum_gateway_config.json"]
+    user: 1000:1000
+    restart: on-failure
+    stop_grace_period: 30s
+    volumes:
+      # The config the dashboard reads and writes. Seeded from this app's `data`
+      # directory and patched on every start by hooks/pre-start with the node's
+      # RPC details and this app's Umbrel password.
+      - ${APP_DATA_DIR}/data/settings/:/app/conf/
+    ports:
+      # Stratum, for the miner on your LAN.
+      - "23340:23340"
+    networks:
+      default:
+        ipv4_address: $APP_DATUM_SHA256_GATEWAY_IP

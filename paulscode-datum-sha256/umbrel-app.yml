@@ -1,0 +1,136 @@
+manifestVersion: 1.1
+id: paulscode-datum-sha256
+category: bitcoin
+name: Datum (SHA256) Companion
+version: "1.0.0"
+tagline: Mine with your own block templates, on a node that never enforces BIP-110
+description: >-
+  ⚙️ Please read the important setup instructions at the bottom of this page.
+
+
+  DATUM builds block templates on your own node and hands them to your miner as
+  Stratum work. Mining to a pool normally means mining the pool's template: they
+  choose which transactions go in the block, you supply the hashing. DATUM turns
+  that around. Your node builds the template and your miner works on it, whether
+  you are mining solo or to a pool.
+
+
+  This one runs against **Knots (SHA256) Companion**, and that pairing is the
+  point. That node never enforces BIP-110, so if the network splits over that
+  rule, the blocks this gateway builds follow the side that does not require it.
+
+
+  It installs alongside the official DATUM app rather than replacing it, on its
+  own port, so you can run one gateway against your primary node and this one
+  against the companion.
+
+
+  🛠️ SET-UP INSTRUCTIONS
+
+
+  ### Bitcoin node
+
+
+  This app connects automatically to your Knots (SHA256) Companion app on
+  install. That node is pruned by default, which is fine for mining: a gateway
+  needs the current tip, not history.
+
+
+  ### Configuring the gateway
+
+
+  Open this app and set your Bitcoin address under the **Config** tab. That is
+  the address your mining rewards are paid to, and nothing is mined until it is
+  set.
+
+
+  The credentials for changing settings are on your umbrelOS home screen:
+  right-click the app icon and choose "Show default credentials". The username is
+  `admin`.
+
+
+  ### Solo or pooled
+
+
+  Leave the **DATUM Pool** settings empty and you are mining solo: a block you
+  find pays its whole subsidy to your address, and you will very probably never
+  find one unless you have substantial hashrate.
+
+
+  Fill them in and you mine to a pool, receiving a share of its rewards, while
+  still building your own block templates. That is the arrangement DATUM exists
+  for.
+
+
+  ### Connecting your miner
+
+
+  In your miner's own web interface, set the pool to your server's IP address on
+  port 23340:
+
+    - Stratum URL: `stratum+tcp://192.168.1.50:23340`
+
+    - Username/Worker: anything readable when mining solo. When mining to a pool,
+    whatever that pool expects.
+
+    - Password: leave blank, or use `d=1024` to ask for a starting share
+    difficulty if you are renting hashrate.
+
+
+  **Use your server's IP address, not a `.local` name.** Most ASIC firmware has
+  no mDNS resolver, so a `.local` address fails silently and the miner just
+  reports that the pool is not ready.
+
+
+  Port 23340 is used rather than the official DATUM app's 23334, so both can be
+  installed on one server.
+developer: Paul Lamb
+website: https://github.com/paulscode/datum-sha256-startos
+dependencies:
+  - paulscode-knots-sha256
+repo: https://github.com/paulscode/datum-sha256-startos
+support: https://paulscode.com/c/bitcoin/8
+port: 7155
+# Community stores must supply full URLs for icon and gallery — Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-datum-sha256/icon.png
+gallery:
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-datum-sha256/gallery/1.png
+path: ""
+defaultUsername: "admin"
+deterministicPassword: true
+releaseNotes: >-
+  First release. A DATUM Gateway paired with Knots (SHA256) Companion, the node that never enforces
+  BIP-110.
+
+
+  Opening the app opens the gateway dashboard, behind umbrelOS's proxy, with a working admin login
+  from "Show default credentials" on the app icon. The Config tab is live: your payout address,
+  coinbase tags, stratum and vardiff settings, pool settings and logging, and changes survive a
+  restart.
+
+
+  Set a payout address before you mine. There is no default, because a default would mean sending
+  your block rewards to somebody else.
+
+
+  Solo and pooled mining both work. Unlike the BLAKE2b companion, where no pool can validate a
+  share, this gateway builds SHA256d templates and every DATUM pool understands them.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store
+widgets:
+  - id: "stats"
+    type: "three-stats"
+    refresh: "30s"
+    endpoint: "gateway:7152/umbrel-api"
+    link: ""
+    example:
+      type: "three-stats"
+      link: ""
+      items:
+        - title: "Connections"
+          text: "2"
+          subtext: "Worker"
+        - title: "Hashrate"
+          text: "1.8"
+          subtext: "TH/s"

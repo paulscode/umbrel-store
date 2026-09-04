@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+# Patch datum_gateway_config.json with the things only the host knows: the node's
+# RPC details, and this app's Umbrel password for the dashboard's admin pages.
+#
+# Same shape as the official Umbrel Datum app's hook, and the same reason for
+# existing. The gateway runs directly against this file rather than through the
+# image's entrypoint, so that the dashboard's Config page can write to it and have
+# the change survive a restart. Anything the host has to supply therefore has to
+# be merged in here, before the container starts.
+#
+# Everything else in the file is the user's. This only ever sets the four keys
+# below, so a setting changed in the dashboard is not undone on the next start.
+
+set -euo pipefail
+
+APP_DATA_DIR="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/..")"
+DATUM_CONFIG_FILE="${APP_DATA_DIR}/data/settings/datum_gateway_config.json"
+DESIRED_OWNER="1000:1000"
+
+if [ ! -f "${DATUM_CONFIG_FILE}" ]; then
+  echo "DATUM configuration file not found. Installation incomplete."
+  exit 1
+fi
+
+# The node app exports these. Empty means it is not installed or its exports
+# failed, and there is nothing useful to do with a gateway that cannot reach a
+# node, so say which one is missing rather than writing an empty credential and
+# leaving the gateway to fail with a 401 nobody can trace.
+for var in APP_KNOTS_SHA256_RPC_USER APP_KNOTS_SHA256_RPC_PASS \
+           APP_KNOTS_SHA256_NODE_IP APP_KNOTS_SHA256_RPC_PORT; do
+  if [ -z "${!var:-}" ]; then
+    echo "Missing ${var} from the Knots (SHA256) Companion app. Exiting."
+    exit 1
+  fi
+done
+
+echo "Pointing DATUM at the SHA256 node."
+
+jq --arg user "$APP_KNOTS_SHA256_RPC_USER" \
+   --arg pass "$APP_KNOTS_SHA256_RPC_PASS" \
+   --arg url "${APP_KNOTS_SHA256_NODE_IP}:${APP_KNOTS_SHA256_RPC_PORT}" \
+   '.bitcoind.rpcuser = $user |
+    .bitcoind.rpcpassword = $pass |
+    .bitcoind.rpcurl = $url' \
+   "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+
+# The dashboard's admin pages are gated on this, and without it the page that
+# lists your connected miners returns 401 with no way to authenticate. Set to this
+# app's Umbrel password, which the user can read from the app icon's context menu
+# under "Show default credentials". The username is `admin`, which DATUM hardcodes.
+#
+# Only replaced while it is still the seeded placeholder, so a password the user
+# has since changed in the dashboard is left alone.
+if jq -e '.api.admin_password == "umbrel"' "$DATUM_CONFIG_FILE" > /dev/null; then
+  jq --arg password "$APP_PASSWORD" '.api.admin_password = $password' \
+     "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+fi
+
+# Let the dashboard write this file. Without it the Config page appears to work
+# and every save is discarded.
+if ! jq -e '.api.modify_conf' "$DATUM_CONFIG_FILE" > /dev/null; then
+  jq '.api.modify_conf = true' \
+     "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+fi
+
+# A payout address that is not one. Earlier versions of this app asked the node
+# for an address on first start; this one leaves it empty and the dashboard asks,
+# which is what the official app does. Clear the upstream placeholder if a config
+# from that app is ever dropped in here.
+if jq -e '.mining.pool_address | select(. == "enter your bitcoin address")' "$DATUM_CONFIG_FILE" > /dev/null; then
+  jq '.mining.pool_address = ""' \
+     "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+fi
+
+# The gateway runs as 1000:1000 and has to be able to rewrite this file, which is
+# the whole point of modify_conf.
+chown "${DESIRED_OWNER}" "$DATUM_CONFIG_FILE"
+
+echo "DATUM configuration updated successfully."
