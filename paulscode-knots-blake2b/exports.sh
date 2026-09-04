@@ -2,35 +2,95 @@
 
 # Bitcoin Knots BLAKE2b exports.
 #
-# Static IPs for this app's containers, and the things the Datum Gateway BLAKE2b
-# app needs in order to talk to this node. 10.21.21.62 / 10.21.22.62 sit next to
+# READ THIS BEFORE EDITING. umbreld sources this file from `app-script` under
+# `set -euo pipefail`, and it sources it for every app that depends on this one as
+# well as for this one. A single command that exits non-zero here takes down this
+# app and every dependent, during an update, with no message. That has happened:
+# a `sed` on a file that did not exist yet exited 2, `pipefail` carried it through
+# `head`, and an update removed this app's containers, failed `post-patch-update`,
+# and left the app stopped along with a dependent stuck part way through
+# installing. Guard every read, and put `|| true` behind anything that can fail.
+
+# Static IPs for this app's containers. 10.21.21.62 / 10.21.22.62-63 sit next to
 # forktower's .61 and clear of the official apps (bitcoin-knots 10.21.21.7,
 # lightning 10.21.21.9, electrs 10.21.21.10, mempool 10.21.21.26-28,
 # electrs-liquid 10.21.21.50, agent-wallet 10.21.21.60, fulcrum 10.21.21.200,
 # mempool-bip110 10.21.21.240-242).
-
-export APP_KNOTS_BLAKE2B_NODE_IP="10.21.21.62"
-export APP_KNOTS_BLAKE2B_WEB_IP="10.21.22.62"
-
-# The regtest RPC port, inside the network only. It is deliberately not published
-# to the host: this node has no authentication a user configured, it authenticates
-# with the cookie file it writes itself, and a chain with no value is still not a
-# thing to leave open on a LAN.
-export APP_KNOTS_BLAKE2B_RPC_PORT="18443"
-
-# The dependent reads the cookie straight off this app's data directory, the same
-# way the StartOS package reads it from a read-only mount of the node's volume.
-# No RPC secret is generated, stored or shared by either app.
-export APP_KNOTS_BLAKE2B_DATA_DIR="${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/data"
-
-# Consensus-critical, and must be identical on the node and on the gateway that
-# builds the activation block's coinbase. Exported here so there is one source of
-# truth: the gateway app reads this value rather than carrying its own copy.
 #
-# An empty value would be worse than a wrong one. It satisfies the node's startup
-# check but makes the rule unenforceable, because a substring search for an empty
-# needle always matches. Both entrypoints refuse to start on empty.
-export APP_KNOTS_BLAKE2B_HEADLINE="BLAKE2b lab 2026-08-21"
+# NODE_IP keeps the address it has always had. Dependents carry it as a fallback
+# default, so moving it would silently point them at nothing.
+export APP_KNOTS_BLAKE2B_NODE_IP="10.21.21.62"
+export APP_KNOTS_BLAKE2B_TOR_PROXY_IP="10.21.22.62"
+export APP_KNOTS_BLAKE2B_I2P_DAEMON_IP="10.21.22.63"
+
+# Ports. These are bitcoind's regtest defaults, inherited from when this app ran a
+# private chain, and kept because they are the contract dependents resolve.
+export APP_KNOTS_BLAKE2B_RPC_PORT="18443"
+export APP_KNOTS_BLAKE2B_P2P_PORT="18444"
+# A second inbound P2P listener granting whitelisted permissions (whitebind).
+# An indexer pulling whole historical blocks needs it: on the plain port it is
+# subject to inbound eviction and, on a pruned node, to NODE_NETWORK_LIMITED,
+# which disconnects it for asking about a block more than 288 deep. For trusted
+# internal apps only; deliberately not published to the host.
+export APP_KNOTS_BLAKE2B_P2P_WHITEBIND_PORT="18445"
+export APP_KNOTS_BLAKE2B_TOR_PORT="18334"
+export APP_KNOTS_BLAKE2B_ZMQ_RAWBLOCK_PORT="48342"
+export APP_KNOTS_BLAKE2B_ZMQ_RAWTX_PORT="48343"
+export APP_KNOTS_BLAKE2B_ZMQ_HASHBLOCK_PORT="48344"
+export APP_KNOTS_BLAKE2B_ZMQ_SEQUENCE_PORT="48345"
+export APP_KNOTS_BLAKE2B_ZMQ_HASHTX_PORT="48346"
+
+# The bitcoind data directory, as the host sees it. Dependents mount it read-only
+# to read the RPC cookie.
+#
+# `data` rather than `data/bitcoin`, which is where the official Bitcoin apps put
+# it. That is deliberate: this app's chain data has been at `data` since it
+# shipped, and the node app reads BITCOIN_DIR from its environment, so it is
+# pointed at the existing directory rather than moving ~5 GB of blocks to match a
+# convention. See docker-compose.yml.
+export APP_KNOTS_BLAKE2B_DATA_DIR="${EXPORTS_APP_DIR}/data"
+
+# One chain. BLAKE2b activated on mainnet at block 961640 on 2026-08-30, and this
+# app follows that chain and nothing else. It used to read a chain out of a
+# settings file written by the gateway app's page; both are gone.
+export APP_KNOTS_BLAKE2B_NETWORK="mainnet"
+export APP_KNOTS_BLAKE2B_NETWORK_ELECTRS="bitcoin"
+
+# ---------------------------------------------------------------------------
+# RPC credentials.
+#
+# Generated once, on first run, and kept in this app's own .env. The node writes
+# an `rpcauth=` line from them, which means it ALSO still writes its `.cookie`:
+# bitcoind only skips the cookie when `rpcpassword` is set, and this sets neither
+# `rpcpassword` nor `rpcuser`. So dependents that authenticate by cookie keep
+# working unchanged, and the connect modal in the node's own UI has real
+# credentials to show.
+#
+# Same shape as the official Bitcoin Knots app, including generating the salted
+# hash with its `rpcauth.py`.
+BITCOIN_ENV_FILE="${EXPORTS_APP_DIR}/.env"
+
+if [[ ! -f "${BITCOIN_ENV_FILE}" ]]; then
+	if [[ -z ${BITCOIN_RPC_USER+x} ]] || [[ -z ${BITCOIN_RPC_PASS+x} ]]; then
+		BITCOIN_RPC_USER="umbrel"
+		BITCOIN_RPC_DETAILS=$("${EXPORTS_APP_DIR}/scripts/rpcauth.py" "${BITCOIN_RPC_USER}")
+		BITCOIN_RPC_PASS=$(echo "$BITCOIN_RPC_DETAILS" | tail -1)
+	fi
+
+	echo "export APP_KNOTS_BLAKE2B_RPC_USER='${BITCOIN_RPC_USER}'"	>> "${BITCOIN_ENV_FILE}"
+	echo "export APP_KNOTS_BLAKE2B_RPC_PASS='${BITCOIN_RPC_PASS}'"	>> "${BITCOIN_ENV_FILE}"
+fi
+
+# shellcheck disable=SC1090
+. "${BITCOIN_ENV_FILE}"
+
+# Tor hidden services, for the connect modal. `2>/dev/null || echo` because these
+# files do not exist until Tor has published, which is minutes after a fresh
+# install, and a bare `cat` on a missing file would abort this whole script.
+rpc_hidden_service_file="${EXPORTS_TOR_DATA_DIR}/app-${EXPORTS_APP_ID}-rpc/hostname"
+p2p_hidden_service_file="${EXPORTS_TOR_DATA_DIR}/app-${EXPORTS_APP_ID}-p2p/hostname"
+export APP_KNOTS_BLAKE2B_RPC_HIDDEN_SERVICE="$(cat "${rpc_hidden_service_file}" 2>/dev/null || echo "notyetset.onion")"
+export APP_KNOTS_BLAKE2B_P2P_HIDDEN_SERVICE="$(cat "${p2p_hidden_service_file}" 2>/dev/null || echo "notyetset.onion")"
 
 # ---------------------------------------------------------------------------
 # Offered as an implementation of `bitcoin`, so any app that depends on a Bitcoin
@@ -45,63 +105,29 @@ export APP_KNOTS_BLAKE2B_HEADLINE="BLAKE2b lab 2026-08-21"
 # for a BLAKE2b Electrum server or explorer, and the wrong one for a Lightning
 # node, a payment processor, or anything holding value on the other chain.
 #
-# Two things this genuinely does not provide, so a dependent needing either will
-# not work and should not select it:
-#   - rpcauth. It authenticates with the cookie it writes itself, so RPC_USER and
-#     RPC_PASS are deliberately absent rather than empty-but-present.
-#   - ZMQ. The node does not publish it, so anything subscribing will get nothing.
-
-# p2p, and separately the whitebind listener.
-#
-# 18444 is the ordinary listener, shared with inbound peers, where a connection
-# earns no permissions and can be evicted to seat another peer. 18445 is the
-# whitebind one, granting noban and download. An indexer pulling whole blocks
-# wants the second: electrs, for one, does not reconnect its p2p connection, so a
-# single eviction ends the process.
-export APP_KNOTS_BLAKE2B_P2P_PORT="18444"
-export APP_KNOTS_BLAKE2B_P2P_WHITEBIND_PORT="18445"
-
-# The chain this node is on, in the two spellings dependents use. Read from the
-# same settings file the node's own entrypoint reads, so a node switched between
-# chains is followed rather than described by a stale constant. Mainnet is the
-# default, matching the node's own.
-#
-# This read must not be able to fail. umbreld sources this file from `app-script`,
-# which runs under `set -euo pipefail`, and it sources it for every app that
-# depends on this one as well as for this one. The settings file does not exist
-# until the node has started once, and `sed` on a missing file exits 2, which
-# `pipefail` carries through `head` and `set -e` turns into an abort of the whole
-# script. With stderr sent to /dev/null that abort is silent: the observed symptom
-# was an update that removed this app's containers, failed `post-patch-update` with
-# exit 2 and no message, and left the app stopped, plus any dependent stuck part
-# way through installing. Hence the readability guard, and `|| true` behind it so
-# that anything else `sed` might object to is still only a missing value.
-_kb_settings="${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/config/settings.json"
-_kb_chain=""
-if [ -r "${_kb_settings}" ]; then
-  _kb_chain="$(sed -n 's/.*"chain"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-      "${_kb_settings}" 2>/dev/null | head -1 || true)"
-fi
-case "$_kb_chain" in
-  regtest) export APP_KNOTS_BLAKE2B_NETWORK="regtest"
-           export APP_KNOTS_BLAKE2B_NETWORK_ELECTRS="regtest" ;;
-  *)       export APP_KNOTS_BLAKE2B_NETWORK="mainnet"
-           export APP_KNOTS_BLAKE2B_NETWORK_ELECTRS="bitcoin" ;;
-esac
-unset _kb_chain _kb_settings
-
-# The alias every `implements: bitcoin` app performs, in the form the official
-# ones use. `:=` and not plain assignment: umbreld sets APP_BITCOIN_* from the
+# `:=` and not plain assignment: umbreld sets APP_BITCOIN_* from the
 # implementation the user actually selected, and this only fills what is still
 # unset. Overwriting would let this node answer for a dependent that chose a
 # different one.
 for var in \
     NODE_IP \
+    TOR_PROXY_IP \
+    I2P_DAEMON_IP \
     DATA_DIR \
     RPC_PORT \
     P2P_PORT \
     P2P_WHITEBIND_PORT \
+    TOR_PORT \
+    ZMQ_RAWBLOCK_PORT \
+    ZMQ_RAWTX_PORT \
+    ZMQ_HASHBLOCK_PORT \
+    ZMQ_SEQUENCE_PORT \
+    ZMQ_HASHTX_PORT \
     NETWORK \
+    RPC_USER \
+    RPC_PASS \
+    RPC_HIDDEN_SERVICE \
+    P2P_HIDDEN_SERVICE \
     NETWORK_ELECTRS
 do
     bitcoin_var="APP_BITCOIN_${var}"

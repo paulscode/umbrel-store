@@ -4,13 +4,13 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.0.12"
+version: "1.1.0"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
-  A Bitcoin Knots node built from the BLAKE2b proof-of-work change (Knots PR
-  #359), following the BLAKE2b chain on mainnet. Install it alongside your
-  existing Bitcoin node rather than in place of it: this one is pruned, so both
-  chains fit on one server without room for two full blockchains.
+  A Bitcoin Knots node built from the BLAKE2b proof-of-work change, following the
+  BLAKE2b chain on mainnet. Install it alongside your existing Bitcoin node
+  rather than in place of it: this one is pruned, so both chains fit on one
+  server without room for two full blockchains.
 
 
   Bitcoin's mainnet split on 30 August 2026. The two chains part at block
@@ -23,38 +23,40 @@ description: >-
   THIS IS A REAL CHAIN WITH REAL BLOCK REWARDS
 
 
-  This is not a test chain, and that is a change from earlier versions of this
-  app. Blocks you mine here pay a real subsidy to a real address, and the chain
-  has other participants. Both sides of the split claim to be Bitcoin; which one
-  you follow is your decision, and installing this makes it. If you want the old
-  behaviour, a private chain that starts empty and is yours alone, choose it on
-  the gateway's settings page and save.
+  Blocks you mine here pay a real subsidy to a real address, and the chain has
+  other participants. Both sides of the split claim to be Bitcoin; which one you
+  follow is your decision, and installing this makes it.
 
 
   WHAT IT USES
 
 
   About 5 GB of blocks by default rather than the whole chain, plus the node's
-  own data, which grows on its own. Change that on the same settings page. The
-  first sync downloads the chain from the network and takes a while. RPC is
-  served on the internal Docker network only and is never published to your LAN.
+  own data, which grows on its own. Change that under Advanced Settings, along
+  with everything else the official Bitcoin Node app lets you change. The first
+  sync downloads the chain from the network and takes a while.
 
 
-  NO WEB INTERFACE
+  IT LOOKS AND WORKS LIKE THE OFFICIAL NODE APP
 
 
-  A Bitcoin node does not have one. Opening this app shows a short page with the
-  node's sync progress and what to do next; the mining dashboard lives in the
-  Datum (BLAKE2b) Companion app.
+  Opening it gives you the same dashboard: sync progress, block and peer lists, a
+  connect modal with your node's addresses and RPC credentials, and the full
+  settings page. Two home-screen widgets as well. It is a fork of the app the
+  official Bitcoin Knots app runs, with one thing changed, which is which
+  bitcoind it starts.
+
+
+  To mine this chain, install Datum (BLAKE2b) Companion as well.
 developer: Paul Lamb
 website: https://github.com/paulscode/knots-blake2b-startos
 dependencies: []
-repo: https://github.com/paulscode/knots-blake2b-startos
+repo: https://github.com/paulscode/umbrel-bitcoin-blake2b
 support: https://paulscode.com/c/bitcoin/8
 # Not in the 3000s, where the app tiles crowd together: 3028 was already taken by
 # paulscode-agent-wallet on the author's own box, and a tile port that collides
 # fails the whole install with "port is already allocated". 7150 sits beside the
-# gateway app's 7152/7153, so the pair reads as a pair.
+# gateway app's 7153, so the pair reads as a pair.
 port: 7150
 # Community stores must supply full URLs for icon and gallery — Umbrel's resolver
 # only auto-prefixes URLs for the official umbrel-app-store.
@@ -62,28 +64,75 @@ icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-
 gallery:
   - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-knots-blake2b/gallery/1.png
 path: ""
-defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Moves to the final Bitcoin Knots 29.4.1 release. Every version of this app so far has been built
-  from a release candidate, because there was no release to build from. There is now.
+  This app now has a web interface, and it is the same one the official Bitcoin Node app has:
+  sync progress, block and peer lists, a connect modal with your node's addresses and RPC
+  credentials, the full Advanced Settings page, and two home-screen widgets. It used to open a
+  static page reporting sync progress and little else, on the reasoning that a Bitcoin node has no
+  web interface. That was true of bitcoind and not true of the app around it.
 
 
-  The consensus rules do not change. The activation height stays 961640, the difficulty shift at that
-  height stays the same, and the opt-in signature hash that gives replay protection is the one already
-  shipped. A node running the previous version is on the same chain as one running this, so updating
-  is not urgent for correctness.
+  It is a fork of the app the official Bitcoin Knots app runs, with one thing changed: which
+  bitcoind it starts. So the settings, the layout and the behaviour are upstream's, and it keeps
+  getting upstream's fixes.
 
 
-  What it brings is better peer selection. The node now prefers peers that advertise the fork for its
-  first outbound connections, and paces its use of DNS seeds by how many such peers it already has.
-  Finding peers on this chain has been the awkward part of running it: both chains share a port and a
-  message prefix, so a node that dials ordinary peers stalls one block below the fork while looking
-  perfectly healthy. This release addresses that in the node itself.
+  YOUR CHAIN DATA STAYS WHERE IT IS. There is no resync. The node is pointed at the directory it
+  has always used rather than being moved to match the layout the official apps use.
 
 
-  It also carries a checkpoint at the first BLAKE2b block, and takes its assumed-valid block and
-  minimum chain work from this chain rather than the one it parted from, which makes a fresh sync
-  faster and harder to mislead.
+  Settings now live in the app. Pruning, peers, networks, mempool limits and the rest are on the
+  settings page. Pruning still defaults to about 5 GB, which is the point of this app: it exists so
+  a second chain fits beside your first.
+
+
+  THE PRIVATE TEST CHAIN IS GONE, along with the settings page in the gateway app that chose it.
+  Those existed to prove the fork worked before it had a public chain to run on; it has had one
+  since August 2026. If you were running the private chain, this node starts syncing mainnet. That
+  data is still on disk and still in your backups, but there is no longer a way to select it.
+
+
+  The node also gains an RPC username and password, shown in the connect modal, so a wallet on
+  your network can reach it. Apps that authenticate by reading the node's cookie file keep working
+  unchanged.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
+widgets:
+  - id: "stats"
+    type: "four-stats"
+    refresh: "5s"
+    endpoint: "app:3000/api/widget/stats"
+    link: ""
+    example:
+      type: "four-stats"
+      link: ""
+      items:
+        - title: "Connections"
+          text: "11"
+          subtext: "peers"
+        - title: "Mempool"
+          text: "257"
+          subtext: "MB"
+        - title: "Hashrate"
+          text: "590"
+          subtext: "EH/s"
+        - title: "Blockchain size"
+          text: "5"
+          subtext: "GB"
+  - id: "sync"
+    type: "text-with-progress"
+    refresh: "2s"
+    endpoint: "app:3000/api/widget/sync"
+    link: ""
+    example:
+      type: "text-with-progress"
+      link: ""
+      title: "Blockchain sync"
+      text: "83%"
+      progressLabel: "In progress"
+      progress: 0.83
+backupIgnore:
+  - data/blocks
+  - data/chainstate
+  - data/indexes

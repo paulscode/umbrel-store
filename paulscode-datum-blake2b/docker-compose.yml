@@ -1,125 +1,49 @@
 version: "3.7"
 
 services:
+  # Opening this app opens the DATUM Gateway dashboard, which is what the official
+  # Datum app does. It used to open a page this project wrote, carrying a
+  # compatibility-report form, with the dashboard published raw on host port 7152
+  # behind nothing at all. Both are gone: the dashboard is the app now, and it is
+  # behind Umbrel's proxy like every other app's web interface.
   app_proxy:
     environment:
-      APP_HOST: $APP_DATUM_BLAKE2B_REPORT_IP
-      APP_PORT: 7154
+      APP_HOST: $APP_DATUM_BLAKE2B_GATEWAY_IP
+      APP_PORT: 7152
 
   # The DATUM Gateway itself: turns the node's block templates into Stratum work
   # a Sia-style BLAKE2b ASIC can mine. Same image as the StartOS package.
+  #
+  # `entrypoint` and `command` override the image's own entrypoint deliberately,
+  # and this is the one place the two platforms differ on purpose.
+  #
+  # That entrypoint regenerates datum_gateway_config.json from the environment on
+  # every start, which is right on StartOS where the settings live in actions and
+  # the config file is an output. Here the dashboard's own Config page is the only
+  # settings form there is, so the config file has to be the thing that persists.
+  # Running the gateway directly against a file the pre-start hook patches is
+  # exactly what the official Umbrel Datum app does, and it is what lets
+  # api.modify_conf be true.
   gateway:
-    image: paulscode/datum-blake2b:1.0.11@sha256:4e190af37f455f074917302ceb5ffe582343d1b526730926972e32ebe139bbe0
-    restart: unless-stopped
+    # PIN THIS BY DIGEST BEFORE RELEASING. Every other image in this store is
+    # `<tag>@sha256:<digest>`; a tag alone can be moved, and Umbrel will happily
+    # pull whatever it points at on a later install. The digest goes in once the
+    # image is published, because it does not exist until then.
+    image: paulscode/datum-blake2b:1.0.12
+    entrypoint: ["/usr/local/bin/datum_gateway"]
+    command: ["-c", "/app/conf/datum_gateway_config.json"]
+    user: 1000:1000
+    restart: on-failure
     stop_grace_period: 30s
-    environment:
-      # The node app publishes these in its exports.sh, which umbrelOS injects
-      # into a dependent's environment. The defaults repeat the values it
-      # exports, so a missing or renamed export degrades to a stale address
-      # rather than to an empty one, which fails in a way nobody can read.
-      RPC_URL: http://${APP_KNOTS_BLAKE2B_NODE_IP:-10.21.21.62}:${APP_KNOTS_BLAKE2B_RPC_PORT:-18443}
-
-      # Authenticate with the cookie the node writes itself, read straight off
-      # its data directory. This is what the StartOS package does through a
-      # read-only mount of the node's volume, and it means no RPC secret is
-      # generated, stored or shared by either app.
-      COOKIE_PATH: /knots/regtest/.cookie
-
-      # Consensus-critical and must match the node exactly: the gateway puts this
-      # in the activation block's coinbase and the node checks for it there.
-      BLAKE2B_HEADLINE: ${APP_KNOTS_BLAKE2B_HEADLINE:-BLAKE2b lab 2026-08-21}
-
-      # StartOS asks for a payout address with an action and refuses to start
-      # without one. Umbrel has no equivalent, so ask the node instead and keep
-      # the first address it gives. It is the user's own node and their own
-      # wallet; this saves a step rather than inventing an address.
-      AUTO_PAYOUT_FROM_NODE: "1"
-
-      # 23334 and 7152 are the official Datum app's ports. The gateway keeps 7152
-      # internally for its dashboard but takes 23336 for Stratum, so both apps can
-      # be installed on the same server.
-      STRATUM_PORT: "23336"
-      API_PORT: "7152"
     volumes:
-      - ${APP_DATA_DIR}/data:/data
-      # The node's data directory, read-only, for its cookie. Nothing is written.
-      # The path follows from that app's id, so it is spelled out rather than
-      # taken from an export that would say the same thing.
-      - ${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/data:/knots:ro
-      # Read-only. The gateway follows the chain rather than choosing it.
-      - ${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/config:/config:ro
+      # The config the dashboard reads and writes. Seeded from this app's `data`
+      # directory and patched on every start by hooks/pre-start with the node's
+      # RPC details and this app's Umbrel password.
+      - ${APP_DATA_DIR}/data/settings/:/app/conf/
     ports:
-      # Stratum, for the miner on your LAN.
+      # Stratum, for the miner on your LAN. 23336 rather than the official Datum
+      # app's 23334, so both can be installed on one server.
       - "23336:23336"
-      # DATUM's own dashboard. Published so the landing page can link to it;
-      # unlike the landing page it does not sit behind Umbrel's app proxy, so
-      # treat it as visible to anything on your network.
-      - "7152:7152"
     networks:
       default:
         ipv4_address: $APP_DATUM_BLAKE2B_GATEWAY_IP
-
-  # The opt-in compatibility-test port. A miner pointed here is proxied to the
-  # gateway with its conversation written down; the normal port records nothing.
-  # Kept as a separate hop rather than a switch on the main port, so the mining
-  # path never grows a mode that can be left switched on.
-  capture:
-    image: paulscode/datum-blake2b:1.0.11@sha256:4e190af37f455f074917302ceb5ffe582343d1b526730926972e32ebe139bbe0
-    restart: unless-stopped
-    entrypoint: ["python3", "/usr/local/bin/stratumtap.py"]
-    command:
-      - --listen
-      - 0.0.0.0:23337
-      - --upstream
-      - ${APP_DATUM_BLAKE2B_GATEWAY_IP:-10.21.21.63}:23336
-      - --log
-      - /data/capture/wire.jsonl
-    volumes:
-      - ${APP_DATA_DIR}/data:/data
-    ports:
-      - "23337:23337"
-    networks:
-      default:
-        ipv4_address: $APP_DATUM_BLAKE2B_CAPTURE_IP
-
-  # This app's tile. StartOS puts the compatibility report behind an action with a
-  # form; Umbrel has nothing equivalent, and telling a non-technical user to run
-  # `docker exec` would mean nobody ever files one. So the page that opens is the
-  # form, plus the Stratum address and a link through to the dashboard.
-  report:
-    image: paulscode/datum-blake2b:1.0.11@sha256:4e190af37f455f074917302ceb5ffe582343d1b526730926972e32ebe139bbe0
-    restart: unless-stopped
-    entrypoint: ["python3", "/usr/local/bin/report_server.py"]
-    command:
-      - --listen
-      - 0.0.0.0:7154
-      - --capture-log
-      - /data/capture/wire.jsonl
-      - --stratum-port
-      - "23336"
-      - --capture-port
-      - "23337"
-      - --dashboard-port
-      - "7152"
-      # The address a miner has to be pointed at. Worked out on the host in
-      # exports.sh, because a container cannot see it. Empty is handled: the page
-      # then says to substitute the server's IP rather than printing a name that
-      # will not work.
-      - --host-ip
-      - ${APP_DATUM_BLAKE2B_HOST_IP:-}
-      - --settings-file
-      - /config/settings.json
-    environment:
-      # Only the node can say whether a submitted block was accepted, and an
-      # accepted share is not a block. Same cookie and same URL the gateway uses;
-      # read-only, and the only call made is getblockheader.
-      RPC_URL: http://${APP_KNOTS_BLAKE2B_NODE_IP:-10.21.21.62}:${APP_KNOTS_BLAKE2B_RPC_PORT:-18443}
-      COOKIE_PATH: /knots/regtest/.cookie
-    volumes:
-      - ${APP_DATA_DIR}/data:/data
-      - ${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/data:/knots:ro
-      # The only writer. Lives with the node because the chain is its setting.
-      - ${UMBREL_ROOT}/app-data/paulscode-knots-blake2b/config:/config
-    networks:
-      default:
-        ipv4_address: $APP_DATUM_BLAKE2B_REPORT_IP

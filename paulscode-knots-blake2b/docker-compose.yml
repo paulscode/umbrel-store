@@ -3,131 +3,118 @@ version: "3.7"
 services:
   app_proxy:
     environment:
-      APP_HOST: $APP_KNOTS_BLAKE2B_WEB_IP
-      APP_PORT: 80
+      APP_HOST: $APP_KNOTS_BLAKE2B_NODE_IP
+      APP_PORT: 3000
 
-  # A node has no web interface, and every Umbrel app needs something behind its
-  # Open button. This is a static page saying what the app is and what to install
-  # next, which is more useful than a tile that opens nothing.
-  web:
-    image: nginx:1.27-alpine
-    restart: unless-stopped
-    volumes:
-      # The page itself, mounted read-only over the image's own index.html. Just
-      # the one file, not a directory, so the poller can still write status.json
-      # beside it in the image's writable layer.
-      #
-      # It comes from `index.html.template`, and it lives at the app root rather
-      # than in a `web/` directory, because of what umbreld copies on an update.
-      # `copy_app_files` takes only `docker-compose.yml *.template exports.sh
-      # torrc hooks`, so a page under `web/` reaches a fresh install and is never
-      # updated again: the compose file would arrive and the page it refers to
-      # would stay at whatever version was first installed. `template_app` also
-      # globs only the app root, so the `.template` cannot be nested either. The
-      # page contains no `$`, so `envsubst` passes it through unchanged.
-      - ${APP_DATA_DIR}/index.html:/usr/share/nginx/html/index.html:ro
-      # Read-only, and only for the cookie. The page reports the node's sync
-      # progress, which means asking the node, which means authenticating as it
-      # does. Nothing else in this container reads the chain.
-      - ${APP_DATA_DIR}/data:/bitcoin:ro
-    # A background poller writes the node's own getblockchaininfo to a file nginx
-    # serves, and the page fetches that. Done here rather than in the browser
-    # because the RPC needs the cookie, which is not the browser's to hold, and
-    # bitcoind speaks no CORS. Writing the reply verbatim keeps this out of the
-    # business of parsing JSON in shell: the page reads the fields it wants.
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        set -eu
-        STATUS=/usr/share/nginx/html/status.json
-        printf '{"node":null,"at":0}' > "$$STATUS"
-        (
-          while true; do
-            COOKIE=""
-            for sub in regtest testnet4 testnet signet ""; do
-              if [ -n "$$sub" ]; then C="/bitcoin/$$sub/.cookie"; else C="/bitcoin/.cookie"; fi
-              if [ -r "$$C" ]; then COOKIE="$$C"; break; fi
-            done
-            NODE=null
-            if [ -n "$$COOKIE" ]; then
-              # Re-read every poll, so a node restart that rewrites the cookie is
-              # picked up without restarting this container.
-              AUTH=$$(tr -d '\r\n' < "$$COOKIE" | base64 | tr -d '\n')
-              R=$$(wget -q -O - -T 10 \
-                    --header "Authorization: Basic $$AUTH" \
-                    --header "Content-Type: text/plain" \
-                    --post-data '{"jsonrpc":"1.0","id":"s","method":"getblockchaininfo","params":[]}' \
-                    "http://$APP_KNOTS_BLAKE2B_NODE_IP:$APP_KNOTS_BLAKE2B_RPC_PORT/" 2>/dev/null) || R=""
-              # Only accept something that at least looks like the object it should
-              # be, so a proxy error page never lands in the file as raw text.
-              case "$$R" in '{'*) NODE="$$R" ;; esac
-            fi
-            printf '{"node":%s,"at":%s}\n' "$$NODE" "$$(date +%s)" > "$$STATUS.tmp"
-            mv "$$STATUS.tmp" "$$STATUS"
-            sleep 10
-          done
-        ) &
-        exec nginx -g 'daemon off;'
-    networks:
-      default:
-        ipv4_address: $APP_KNOTS_BLAKE2B_WEB_IP
-
-  # Bitcoin Knots built from the BLAKE2b proof-of-work branch (PR #359),
-  # following the public BLAKE2b chain on mainnet. Same image as the StartOS
-  # package; the entrypoint writes bitcoin.conf from this environment.
+  # The node, and the web interface that manages it.
   #
-  # CHAIN is set explicitly rather than left to the image default, so what this
-  # app runs is readable here. A chain chosen on the gateway's settings page is
-  # written to /config/settings.json and outranks this, which is how a user
-  # switches to the private chain without editing compose.
-  node:
-    image: paulscode/knots-blake2b:1.0.8@sha256:2ed3acd1c0cbec68b2f7278e7f9aade75dcba59ceba2f1509d2b7e80bf627ded
-    restart: unless-stopped
-    stop_grace_period: 1m
-    environment:
-      CHAIN: mainnet
-
-      # Consensus-critical: the activation block's coinbase must contain this
-      # string, and the gateway that builds that coinbase reads the same exported
-      # value. Change it in exports.sh, not here, or the two will disagree and the
-      # node will reject the block with `bad-headline`.
-      #
-      # That applies to the private chain, where this pair mines the activation
-      # block themselves. On mainnet block 961640 was mined long before either of
-      # them existed and carries a string neither can choose, so the entrypoint
-      # ignores this value there and uses the real one. Which is why the exported
-      # value can stay the lab headline while CHAIN is mainnet: it is not the one
-      # in force. Do not "correct" it to the mainnet string, or the private chain
-      # loses the only headline it can actually agree on.
-      BLAKE2B_HEADLINE: ${APP_KNOTS_BLAKE2B_HEADLINE}
-
-      # Where SHA256d stops and BLAKE2b begins. 1 means the first block mined is
-      # already BLAKE2b, which is the point of the app: a Sia ASIC cannot mine
-      # SHA256d at all, so any higher value would leave a miner connected,
-      # receiving work it cannot use, with nothing to show why.
-      BLAKE2B_ACTIVATION_HEIGHT: "1"
-
-      # Umbrel's Docker network, not the 172.16/12 the image defaults to.
-      RPC_ALLOW_IP: "10.21.0.0/16"
-
-      # Pruned by default, and by a real margin rather than bitcoind's floor.
-      # 550 MiB is the minimum it accepts and is fine for a chain that starts
-      # empty, but this app can now be pointed at mainnet, where 550 is tight
-      # enough to be churning constantly. 5 GiB matches the StartOS package.
-      #
-      # Changeable without editing this file: the Datum Gateway app's page writes
-      # a settings file that both services watch, and the node entrypoint takes
-      # `prune` from it in preference to this. That page is also where a full
-      # node is chosen, which is the same setting at 0.
-      PRUNE: "5000"
+  # This is our fork of the app the official Bitcoin Knots app runs, with one
+  # bitcoind swapped in: Knots carrying the BLAKE2b proof-of-work change. So this
+  # app now has the dashboard, sync progress, peer list, connect modal, advanced
+  # settings and home-screen widgets that the official node app has, rather than
+  # the static page it used to serve because "a node has no web interface".
+  #
+  # The fork is small on purpose: the bitcoind source stage, the version list, the
+  # network list, the prune default, and where blocknotify points. Everything else
+  # is upstream's, so it keeps getting upstream's fixes.
+  app:
+    # PIN THIS BY DIGEST BEFORE RELEASING. Every other image in this store is
+    # `<tag>@sha256:<digest>`; a tag alone can be moved, and Umbrel will happily
+    # pull whatever it points at on a later install. The digest goes in once the
+    # image is published, because it does not exist until then.
+    image: paulscode/umbrel-bitcoin-blake2b:1.0.0
+    user: "1000:1000"
+    restart: on-failure
+    # bitcoind flushes its chainstate on shutdown, and a stop that does not wait
+    # for it throws away everything since the last flush. Measured during an
+    # initial sync: stopping at height 84900 came back at 327.
+    stop_grace_period: 15m30s
+    ports:
+      - "${APP_KNOTS_BLAKE2B_P2P_PORT}:${APP_KNOTS_BLAKE2B_P2P_PORT}"
+      - "${APP_KNOTS_BLAKE2B_RPC_PORT}:${APP_KNOTS_BLAKE2B_RPC_PORT}"
     volumes:
       - ${APP_DATA_DIR}/data:/data
-      # Chain and payout address, written by the gateway app's page. The node
-      # reads and watches this, and restarts itself when it changes, which is why
-      # the restart policy above is unless-stopped rather than on-failure.
-      - ${APP_DATA_DIR}/config:/config:ro
-    # RPC (18443) and P2P (18444) stay on the internal network. RPC authenticates
-    # with the cookie the node writes itself, and this chain has no peers to find.
+    environment:
+      # WHERE THE CHAIN LIVES, AND WHY IT IS NOT data/bitcoin.
+      #
+      # The image defaults to /data/bitcoin, which is where the official Bitcoin
+      # apps keep it. This app has kept its chain at /data since it shipped, and
+      # both of these are read from the environment by the node app, so it is
+      # pointed at the existing directory. The alternative was asking every
+      # existing install to move several gigabytes of blocks, or to resync, to
+      # match a convention that buys nothing here.
+      #
+      # /data/app sits inside the bitcoind data directory as a result. bitcoind
+      # ignores subdirectories it does not know, so this is untidy rather than
+      # harmful.
+      BITCOIN_DIR: /data
+      APP_STATE_DIR: /data/app
+
+      # BITCOIND BINARY SETTINGS
+      # comma-delimited list of extra startup flags to pass to bitcoind
+      BITCOIND_EXTRA_ARGS: ''
+
+      # BITCOIND CONF FILE SETTINGS
+      APPS_SUBNET: "${NETWORK_IP}/16" # used for rpcallowip
+      P2P_PORT: "${APP_KNOTS_BLAKE2B_P2P_PORT}"
+      # Additional inbound P2P listener granting whitelisted permissions
+      # (whitebind) to this port; for trusted internal apps only; do not publish
+      # externally. An Electrum server pulling whole historical blocks needs it:
+      # on the plain port it is subject to inbound eviction and, on a pruned node,
+      # to NODE_NETWORK_LIMITED, which disconnects it for asking about a block
+      # more than 288 deep.
+      P2P_WHITEBIND_PORT: "${APP_KNOTS_BLAKE2B_P2P_WHITEBIND_PORT}"
+      RPC_PORT: "${APP_KNOTS_BLAKE2B_RPC_PORT}"
+      TOR_PORT: "${APP_KNOTS_BLAKE2B_TOR_PORT}"
+      ZMQ_RAWBLOCK_PORT: "${APP_KNOTS_BLAKE2B_ZMQ_RAWBLOCK_PORT}"
+      ZMQ_RAWTX_PORT: "${APP_KNOTS_BLAKE2B_ZMQ_RAWTX_PORT}"
+      ZMQ_HASHBLOCK_PORT: "${APP_KNOTS_BLAKE2B_ZMQ_HASHBLOCK_PORT}"
+      ZMQ_SEQUENCE_PORT: "${APP_KNOTS_BLAKE2B_ZMQ_SEQUENCE_PORT}"
+      ZMQ_HASHTX_PORT: "${APP_KNOTS_BLAKE2B_ZMQ_HASHTX_PORT}"
+      TOR_HOST: "${APP_KNOTS_BLAKE2B_TOR_PROXY_IP}"
+      TOR_SOCKS_PORT: "9050"
+      TOR_CONTROL_PORT: "9051"
+      TOR_CONTROL_PASSWORD: "moneyprintergobrrr"
+      I2P_HOST: "${APP_KNOTS_BLAKE2B_I2P_DAEMON_IP}"
+      I2P_SAM_PORT: "7656"
+
+      # RPC CLIENT SETTINGS
+      BITCOIND_IP: "${APP_KNOTS_BLAKE2B_NODE_IP}"
+      # Written into bitcoin.conf as a salted `rpcauth=` line, and shown in the
+      # connect modal. bitcoind still writes its .cookie alongside, because
+      # neither `rpcpassword` nor `rpcuser` is set, so apps that authenticate by
+      # cookie keep working unchanged.
+      RPC_USER: "${APP_KNOTS_BLAKE2B_RPC_USER}"
+      RPC_PASS: "${APP_KNOTS_BLAKE2B_RPC_PASS}"
+
+      # CONNECTION DETAILS (shown to the user in the connect modal)
+      DEVICE_DOMAIN_NAME: "${DEVICE_DOMAIN_NAME}"
+      P2P_HIDDEN_SERVICE: "${APP_KNOTS_BLAKE2B_P2P_HIDDEN_SERVICE}"
+      RPC_HIDDEN_SERVICE: "${APP_KNOTS_BLAKE2B_RPC_HIDDEN_SERVICE}"
     networks:
       default:
         ipv4_address: $APP_KNOTS_BLAKE2B_NODE_IP
+
+  tor:
+    image: getumbrel/tor:0.4.7.8@sha256:2ace83f22501f58857fa9b403009f595137fa2e7986c4fda79d82a8119072b6a
+    user: "1000:1000"
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/torrc:/etc/tor/torrc:ro
+      - ${TOR_DATA_DIR}:/data
+    environment:
+      HOME: "/tmp"
+    networks:
+      default:
+        ipv4_address: "${APP_KNOTS_BLAKE2B_TOR_PROXY_IP}"
+
+  i2pd_daemon:
+    image: purplei2p/i2pd:release-2.44.0@sha256:d154a599793c393cf9c91f8549ba7ece0bb40e5728e1813aa6dd4c210aa606f6
+    user: "root"
+    command: --sam.enabled=true --sam.address=0.0.0.0 --sam.port=7656 --loglevel=error
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/data/i2pd:/home/i2pd/data
+    networks:
+      default:
+        ipv4_address: "${APP_KNOTS_BLAKE2B_I2P_DAEMON_IP}"

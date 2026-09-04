@@ -2,9 +2,12 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.0.11"
+version: "1.1.0"
 tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
+  ⚙️ Please read the important setup instructions at the bottom of this page.
+
+
   Solo mine the BLAKE2b chain with a Sia-style ASIC. Bitcoin's mainnet split on
   30 August 2026, and from block 961640 one of the two chains uses BLAKE2b for
   proof of work instead of SHA256d. BLAKE2b is the algorithm Sia mines, so the
@@ -16,61 +19,65 @@ description: >-
   Stratum work in the dialect Sia miners speak, and hands that out on your LAN.
 
 
-  SET YOUR PAYOUT ADDRESS BEFORE YOU MINE
-
-
-  This is not a test chain, and that is a change from earlier versions of this
-  app. Solo mining means a block you find pays its whole subsidy to the address
-  configured here, so that address should be one whose keys you hold. Set it on
-  the settings page. The app can ask the node for one, but a wallet on the node
-  is only as safe as your backups of it.
-
-
   Both sides of the 2026 split claim to be Bitcoin. Which one you mine is your
   decision, and pointing hashrate at this makes it.
 
 
-  HOW TO USE IT
+  🛠️ SET-UP INSTRUCTIONS
 
 
-  1. Install **Knots (BLAKE2b) Companion** first and let it sync.
-  2. Install this, open it, and set your payout address.
-
-  3. In your miner's own web interface, set the pool to the Stratum address the
-     page shows you. The worker name and password are not used.
-
-  4. Watch the dashboard.
+  ### Bitcoin node
 
 
-  Use your server's IP address, not a `.local` name. Most ASIC firmware has no
-  mDNS resolver, so a `.local` address fails silently and the miner just reports
-  that the pool is not ready.
+  This app connects automatically to your Knots (BLAKE2b) Companion app on
+  install. A full archival node is not needed for mining, and that app is pruned
+  by default.
 
 
-  REPORTING YOUR HARDWARE
+  ### Configuring the gateway
 
 
-  Verified so far, both on stock firmware with no changes: the Goldshell HS-Box
-  in Sia mode, tested directly, and a Bitmain Antminer A3 on CGminer 4.9.0
-  reported by a user, which had 158 of 161 shares accepted over a two-hour
-  session. They share no manufacturer and no firmware lineage and spoke to the
-  gateway identically. Other Sia BLAKE2b miners are expected to work but have
-  not been tried.
+  Open this app and set your Bitcoin address under the **Config** tab. That is
+  the address your mining rewards are paid to, and nothing is mined until it is
+  set. It should be an address whose keys you hold: solo mining means a block you
+  find pays its whole subsidy there.
 
 
-  If yours is not on that list, this app can record how it talks to the gateway
-  and turn that into a short report you can share, so the upstream projects can
-  make BLAKE2b mining work on more hardware. Point the miner at the capture port
-  for a minute, fill in the form, and copy what it gives you. Nothing is sent
-  anywhere on its own, worker names are hashed and passwords are dropped before
-  anything reaches disk, and you see exactly what you are sharing.
+  The credentials for changing settings are on your umbrelOS home screen:
+  right-click the app icon and choose "Show default credentials". The username is
+  `admin`.
 
 
-  PORTS
+  ### Connecting your miner
 
 
-  Stratum on 23336 and the compatibility-test port on 23337, chosen so this can
-  sit alongside the official Datum app, which keeps 23334.
+  In your miner's own web interface, set the pool to your server's IP address on
+  port 23336:
+
+    - Stratum URL: `stratum+tcp://192.168.1.50:23336`
+
+    - Username/Worker: anything readable, so you can tell miners apart. It is not
+    used for payment.
+
+    - Password: leave blank, or use `d=1024` to ask for a starting share
+    difficulty if you are renting hashrate.
+
+
+  **Use your server's IP address, not a `.local` name.** Most ASIC firmware has
+  no mDNS resolver, so a `.local` address fails silently and the miner just
+  reports that the pool is not ready.
+
+
+  ### Which miners work
+
+
+  Verified on stock firmware: Goldshell HS-Box, Goldshell SC5 Pro, Goldshell SC
+  Box II, Bitmain Antminer A3 on CGminer, and Innosilicon S11. Other Sia BLAKE2b
+  miners are expected to work but have not been tried.
+
+
+  Port 23336 is used rather than the official Datum app's 23334, so both apps can
+  be installed on one server.
 developer: Paul Lamb
 website: https://github.com/paulscode/datum-blake2b-startos
 dependencies:
@@ -84,30 +91,56 @@ icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-
 gallery:
   - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-datum-blake2b/gallery/1.png
 path: ""
-defaultUsername: ""
-defaultPassword: ""
+defaultUsername: "admin"
+deterministicPassword: true
 releaseNotes: >-
-  Hardens the difficulty request added in 1.0.10, from a review done while preparing the change to
-  send upstream. Three things came out of it.
+  Opening this app now opens the DATUM Gateway dashboard, the same way the official Datum app does.
+  It used to open a page this project wrote, carrying a compatibility-report form, with the
+  dashboard published separately on port 7152 behind nothing at all. The dashboard is the app now,
+  and it sits behind umbrelOS's proxy like every other app's web interface.
 
 
-  The password was read on every authorize, and a miner may send that more than once on one
-  connection. Since a changed difficulty sends fresh work, a miner alternating between two values
-  could make the gateway build and send a full job per request, where it used to reply with a small
-  acknowledgement. It is now read once per connection. This is the one worth updating for if you point
-  rented hashrate at this gateway, because the miners doing so are not yours.
+  YOU CAN CHANGE SETTINGS IN THE APP. The Config tab is live: your payout address, coinbase tags,
+  stratum and vardiff settings, logging, all of it, and changes survive a restart. Sign in with
+  the username `admin` and the password from "Show default credentials" on the app icon's context
+  menu. Previously the dashboard's admin pages, including the page listing your connected miners,
+  were unreachable because no password was ever set.
 
 
-  A request is now bounded. The number was parsed in a way that saturates rather than failing, so a
-  long enough run of digits arrived as the largest 64-bit value and went into the difficulty and share
-  target maths unchecked. Requests beyond anything usable are ignored rather than clamped, because the
-  request is a floor and a value too high for the miner cannot be walked back down.
+  SET YOUR PAYOUT ADDRESS AFTER UPDATING. Earlier versions asked your node for an address and used
+  the first one it gave. That is no longer done, because it quietly put your block rewards in a
+  wallet whose backup nobody had thought about. The Config tab asks for one instead, which is what
+  the official app does.
 
 
-  Setting the new client difficulty floor to 0 reached an undefined shift before the check that
-  rejects it. It is now rejected first, with a clear message.
+  The compatibility report is gone: the second Stratum port on 23337 that recorded a miner's
+  conversation, and the form that turned a recording into a report. It existed to find out which
+  Sia ASICs could talk to this gateway when nobody knew. Five models across three manufacturers
+  are now known to work. If your miner was pointed at 23337, point it at 23336 instead.
 
 
-  No miner that was working is affected, and nothing about how a request is honoured has changed.
+  The private test chain is gone with it, along with the network selector on the old page. Mining
+  now means mining the BLAKE2b chain on mainnet.
+
+
+  Primary Coinbase Tag now works. It has been a setting that did nothing since it was added,
+  discarded on the way to the gateway by a rule that existed to protect the fork's activation
+  block. That block was mined on 30 August 2026, so there is nothing left to protect.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
+widgets:
+  - id: "stats"
+    type: "three-stats"
+    refresh: "30s"
+    endpoint: "gateway:7152/umbrel-api"
+    link: ""
+    example:
+      type: "three-stats"
+      link: ""
+      items:
+        - title: "Connections"
+          text: "2"
+          subtext: "Worker"
+        - title: "Hashrate"
+          text: "1.8"
+          subtext: "TH/s"
