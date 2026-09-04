@@ -39,6 +39,15 @@ description: >-
   which chain it follows.
 
 
+  THE BIP110 WARNING IN THE LOGS IS EXPECTED
+
+
+  On every start this node logs "This version of Bitcoin Knots does not support
+  the upcoming BIP110 (RDTS) network upgrade". That is not a fault and not
+  something to fix. It is the build telling you exactly what you installed it
+  for. A node that did not print it would be the wrong node for this app.
+
+
   WHAT IT USES
 
 

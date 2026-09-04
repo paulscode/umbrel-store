@@ -11,8 +11,8 @@
 export APP_DATUM_SHA256_GATEWAY_IP="10.21.21.65"
 
 # Stratum, published on the host for miners on your LAN. The official Datum app
-# keeps 23334 and the BLAKE2b companion 23336, so this takes 23340: 23337 was the
+# keeps 23334 and the BLAKE2b companion 23336, so this takes 23338: 23337 was the
 # BLAKE2b app's compatibility-capture port before that feature was removed, and
 # reusing a number that appears in its docs under a different meaning is a
 # confusion not worth saving a port for.
-export APP_DATUM_SHA256_STRATUM_PORT="23340"
+export APP_DATUM_SHA256_STRATUM_PORT="23338"

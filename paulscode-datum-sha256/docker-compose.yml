@@ -39,7 +39,7 @@ services:
       - ${APP_DATA_DIR}/data/settings/:/app/conf/
     ports:
       # Stratum, for the miner on your LAN.
-      - "23340:23340"
+      - "23338:23338"
     networks:
       default:
         ipv4_address: $APP_DATUM_SHA256_GATEWAY_IP

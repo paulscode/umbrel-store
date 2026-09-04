@@ -32,6 +32,20 @@ services:
   # this app and the official one. Changing it in Settings → Version to a newer
   # build turns this into an ordinary enforcing node, which during a BIP-110
   # split means changing which chain it follows.
+  # THE `datum` TOGGLE IS SEEDED OFF, AND IT HAS TO BE. It is labelled "Enable
+  # blocknotify for datum" in Advanced Settings, which reads as though it would
+  # notify this pair's gateway. It does not: this image hard-codes the URL to
+  # `http://datum_datum_1:21000/NOTIFY`, which is the OFFICIAL Datum app, and no
+  # setting can repoint it. Verified by reading the generated bitcoin.conf from
+  # a running container.
+  #
+  # Leaving it on would write a blocknotify naming an app this pair has nothing
+  # to do with, so it is off, and Datum (SHA256) Companion is seeded with a
+  # 5-second work update instead. DATUM's own default is 40 seconds with a
+  # polling fallback, so the cost of having no blocknotify is bounded either way.
+  #
+  # The BLAKE2b companion does not have this problem because its node runs our
+  # fork of this image, where that URL points at our gateway.
   app:
     image: ghcr.io/retropex/umbrel-bitcoin-knots:1.2.16@sha256:6564271b2214c1eb1883b2d406e6aee3383966037960113673dd73a7ad98f69d
     user: "1000:1000"

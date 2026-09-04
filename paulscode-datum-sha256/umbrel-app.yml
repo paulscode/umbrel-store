@@ -66,9 +66,9 @@ description: >-
 
 
   In your miner's own web interface, set the pool to your server's IP address on
-  port 23340:
+  port 23338:
 
-    - Stratum URL: `stratum+tcp://192.168.1.50:23340`
+    - Stratum URL: `stratum+tcp://192.168.1.50:23338`
 
     - Username/Worker: anything readable when mining solo. When mining to a pool,
     whatever that pool expects.
@@ -82,7 +82,7 @@ description: >-
   reports that the pool is not ready.
 
 
-  Port 23340 is used rather than the official DATUM app's 23334, so both can be
+  Port 23338 is used rather than the official DATUM app's 23334, so both can be
   installed on one server.
 developer: Paul Lamb
 website: https://github.com/paulscode/datum-sha256-startos
