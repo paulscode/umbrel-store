@@ -66,6 +66,42 @@ services:
           export CORE_RPC_COOKIE=true
           export CORE_RPC_COOKIE_PATH="$$COOKIE"
         fi
+        # Drop an oversized RBF cache before handing over to the backend.
+        #
+        # Mempool restores rbfcache.json with a whole-file read and JSON.parse
+        # before the backend is healthy, and a large enough file aborts V8
+        # before app-level error handling gets control. `restart: on-failure`
+        # then starts the same container again, reads the same file, and aborts
+        # again: a loop nothing inside the application can break.
+        #
+        # The guard belongs in this command and not in an Umbrel pre-start hook
+        # because Docker reruns the command on every restart, while hooks only
+        # run when Umbrel starts or updates the app.
+        #
+        # Unlike the official app, MEMPOOL_CACHE_DIR here is a path inside the
+        # container rather than a host bind mount, so the file dies with the
+        # container. That narrows the window to restarts of one container, which
+        # is exactly the window the loop lives in.
+        #
+        # Ported from getumbrel/umbrel-apps 9fcf1334.
+        max="$${MEMPOOL_RBF_CACHE_MAX_BYTES:-0}"
+        case "$${max}" in
+          ""|*[!0-9]*) max="0" ;;
+        esac
+        if [ "$${max}" -gt 0 ]; then
+          for file in /backend/cache/rbfcache.json /backend/cache/tmp-rbfcache.json; do
+            if [ -f "$${file}" ]; then
+              size="$$(wc -c < "$${file}" | tr -d "[:space:]")"
+              case "$${size}" in
+                ""|*[!0-9]*) size="0" ;;
+              esac
+              if [ "$${size}" -gt "$${max}" ]; then
+                rm -f "$${file}"
+                echo "mempool startup: removed oversized $${file} ($${size} bytes > $${max} bytes)"
+              fi
+            fi
+          done
+        fi
         exec ./wait-for-it.sh db:3306 --timeout=720 --strict -- ./start.sh
     environment:
       # Core RPC points at the Electrs Pruned app's btc-rpc-proxy, not at the
@@ -120,6 +156,10 @@ services:
       # what Electrs Pruned already fetched to build its own index.
       MEMPOOL_INDEXING_BLOCKS_AMOUNT: "52560"
       MEMPOOL_STDOUT_LOG_MIN_PRIORITY: "info"
+      # The ceiling the startup guard above compares against. Without it the
+      # guard reads 0 and does nothing, which is how a no-op guard hides in
+      # plain sight. 64 MiB, the same figure the official app uses.
+      MEMPOOL_RBF_CACHE_MAX_BYTES: "${APP_MEMPOOL_PRUNED_RBF_CACHE_MAX_BYTES:-67108864}"
       MEMPOOL_AUTOMATIC_POOLS_UPDATE: "true"
       MEMPOOL_RUST_GBT: "true"
       MEMPOOL_CPFP_INDEXING: "false"
