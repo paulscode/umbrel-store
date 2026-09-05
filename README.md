@@ -348,10 +348,8 @@ block store plus the record of unspent coins, which pruning does not shrink, plu
 up to 2 GB for the watchtower it runs and the bandwidth of an initial sync. It
 reaches the other chain over Tor.
 
-<!-- No Source link: https://github.com/paulscode/forktower does not exist. The
-     app's own umbrel-app.yml points website, repo and support at it, so those
-     are dead links on the app page too. Add the line back once the repo is
-     published, or repoint the manifest. -->
+- Source: https://github.com/paulscode/forktower
+- Issues: https://github.com/paulscode/forktower/issues
 
 ---
 
