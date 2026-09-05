@@ -22,7 +22,7 @@ services:
     # `<tag>@sha256:<digest>`; a tag alone can be moved, and Umbrel will happily
     # pull whatever it points at on a later install. The digest goes in once the
     # image is published, because it does not exist until then.
-    image: paulscode/umbrel-bitcoin-blake2b:1.0.0@sha256:feffd67dae555d0e564ac29580e185d4b03834200226cdb65172d89e3421bec8
+    image: paulscode/umbrel-bitcoin-blake2b:1.0.1@sha256:2f55353d0fc5a5b83b54f1b24e76fed8f67be8dc1257e7cdd627fb0f23d369bd
     user: "1000:1000"
     restart: on-failure
     # bitcoind flushes its chainstate on shutdown, and a stop that does not wait

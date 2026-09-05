@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (SHA256) Companion
-version: "1.0.0"
+version: "1.0.1"
 tagline: A Bitcoin Knots node that never enforces BIP-110, to run beside your main one
 description: >-
   A Bitcoin Knots node on the SHA256 chain: the same chain your Bitcoin or
@@ -72,16 +72,18 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  First release. A Bitcoin Knots node pinned to v29.3.knots20260507, the last release before
-  BIP-110 (RDTS) enforcement, running the same web interface as the official Bitcoin Knots app.
+  Turns the block filter index off while the node is pruned, which it is by default.
 
 
-  It installs alongside your existing node rather than replacing it, with its own ports and its own
-  data, so you can run an enforcing node and a non-enforcing one at the same time.
+  The two cannot run together: bitcoind exits on "Index basic block filter index needs block data
+  that has been pruned" and the node does not come up, while the app around it still reports
+  healthy. The setting is off for a new install and switched off automatically for an existing one
+  on the next start.
 
 
-  Pruned to about 5 GB by default, since the reason to run a second node is rarely to keep a second
-  full copy of the chain. Both settings are on the Advanced Settings page.
+  This app runs the same node image as the official Bitcoin Knots app, which is archival by default
+  and so never meets the pairing. This one prunes to about 5 GB by default, which is what brings it
+  within reach. If you want block filters, turn pruning off first under Advanced Settings.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:

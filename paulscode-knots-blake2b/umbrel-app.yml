@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.1.0"
+version: "1.1.1"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change, following the
@@ -66,36 +66,24 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  This app now has a web interface, and it is the same one the official Bitcoin Node app has:
-  sync progress, block and peer lists, a connect modal with your node's addresses and RPC
-  credentials, the full Advanced Settings page, and two home-screen widgets. It used to open a
-  static page reporting sync progress and little else, on the reasoning that a Bitcoin node has no
-  web interface. That was true of bitcoind and not true of the app around it.
+  Fixes the node failing to start after an update, which showed as the app running normally with no
+  node behind it.
 
 
-  It is a fork of the app the official Bitcoin Knots app runs, with one thing changed: which
-  bitcoind it starts. So the settings, the layout and the behaviour are upstream's, and it keeps
-  getting upstream's fixes.
+  Two faults, both of which every install hit. A bitcoin.conf left by the version of this app that
+  predates the web interface set rpcbind to 0.0.0.0, which already covers every address, so bitcoind
+  then failed to bind the addresses the app manages and refused to start. And the block filter index
+  was on by default, which cannot run on a pruned node: bitcoind exits on "Index basic block filter
+  index needs block data that has been pruned".
 
 
-  YOUR CHAIN DATA STAYS WHERE IT IS. There is no resync. The node is pointed at the directory it
-  has always used rather than being moved to match the layout the official apps use.
+  Both are repaired automatically when the app starts. The old bitcoin.conf is kept as
+  bitcoin.conf.pre-ui-backup in the app's data directory if you want to look at what was in it.
 
 
-  Settings now live in the app. Pruning, peers, networks, mempool limits and the rest are on the
-  settings page. Pruning still defaults to about 5 GB, which is the point of this app: it exists so
-  a second chain fits beside your first.
-
-
-  THE PRIVATE TEST CHAIN IS GONE, along with the settings page in the gateway app that chose it.
-  Those existed to prove the fork worked before it had a public chain to run on; it has had one
-  since August 2026. If you were running the private chain, this node starts syncing mainnet. That
-  data is still on disk and still in your backups, but there is no longer a way to select it.
-
-
-  The node also gains an RPC username and password, shown in the connect modal, so a wallet on
-  your network can reach it. Apps that authenticate by reading the node's cookie file keep working
-  unchanged.
+  Turning Peer Block Filters on in Advanced Settings used to break the node the same way, because it
+  switches the block filter index on behind the scenes. Pruning now takes precedence, so the pairing
+  cannot be created. Turn pruning off first if you want block filters.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
