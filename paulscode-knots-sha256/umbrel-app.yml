@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (SHA256) Companion
-version: "1.0.3"
+version: "1.0.4"
 tagline: A Bitcoin Knots node that never enforces BIP-110, to run beside your main one
 description: >-
   A Bitcoin Knots node on the SHA256 chain: the same chain your Bitcoin or
@@ -108,6 +108,10 @@ releaseNotes: >-
   switches on an index that cannot run on a pruned node, and bitcoind will not start until it is off.
   Restarting the app clears it. The BLAKE2b companion cannot hit this because it runs a node image
   that refuses the pairing; this one runs the stock image, which does not.
+
+
+  The Tor wait now finds its helper script on older umbrelOS releases too. It looked in one place
+  only, which is correct on 1.7.x and wrong on 1.4.x, where the same script lives elsewhere.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

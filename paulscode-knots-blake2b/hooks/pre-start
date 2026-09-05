@@ -124,12 +124,25 @@ fi
 # show notyetset.onion on a first start, which is the one thing this block exists
 # to prevent. Verified against the official Bitcoin Knots app's hook on a live
 # box, which calls the path used here.
-APP_SCRIPT="/opt/umbreld/source/modules/apps/legacy-compat/app-script"
-if [[ -x "${APP_SCRIPT}" ]]; then
+# Two umbrelOS generations put this in different places, and neither path exists
+# on the other. 1.7.x has app-script and no ${UMBREL_ROOT}/scripts at all; older
+# releases have scripts/app. Try both rather than assume, since guessing wrong
+# fails silently here and the wait below then always times out.
+APP_SCRIPT=""
+for candidate in \
+	"/opt/umbreld/source/modules/apps/legacy-compat/app-script" \
+	"${UMBREL_ROOT}/scripts/app"; do
+	if [[ -x "${candidate}" ]]; then
+		APP_SCRIPT="${candidate}"
+		break
+	fi
+done
+
+if [[ -n "${APP_SCRIPT}" ]]; then
 	"${APP_SCRIPT}" compose "${APP_ID}" up --detach app
 	"${APP_SCRIPT}" compose "${APP_ID}" up --detach tor
 else
-	echo "App: ${APP_ID} - no app-script at ${APP_SCRIPT}; skipping the early start"
+	echo "App: ${APP_ID} - found no app helper script; skipping the early start"
 fi
 
 echo "App: ${APP_ID} - Generating Tor Hidden Service..."
