@@ -22,9 +22,15 @@ An [Umbrel](https://umbrel.com) community app store bringing together all of
 | [Agent Wallet](#agent-wallet) | Self-custodial Bitcoin & Lightning wallet with an automation API for AI agents | Lightning Node (LND) + Electrs/Fulcrum |
 | [Knots (BLAKE2b) Companion](#knots-blake2b-companion) | A pruned Bitcoin Knots node following the BLAKE2b chain, alongside your existing node | none (self-contained) |
 | [Datum (BLAKE2b) Companion](#datum-blake2b-companion) | Solo mine the BLAKE2b chain with a Sia-style ASIC you already own | Knots (BLAKE2b) Companion |
+| [Knots (SHA256) Companion](#knots-sha256-companion) | A Bitcoin Knots node that never enforces BIP-110, beside your existing one | none (self-contained) |
+| [Datum (SHA256) Companion](#datum-sha256-companion) | Solo or pooled mining against that node, with your own block templates | Knots (SHA256) Companion |
 | [Electrs Liquid](#electrs-liquid) | A Liquid (`liquidv1`) full node bundled with an Electrum indexer | none (self-contained) |
+| [Electrs Pruned](#electrs-pruned) | An Electrum server that indexes from a pruned node, beside the official Electrs | Bitcoin Node |
+| [Forktower](#forktower) | Watches the other chain during a split, so it does not cost you a Lightning channel | Bitcoin Node (optional: LND) |
 | [HashGG](#hashgg) | Sovereign hash routing — exposes your Datum stratum port to the public internet | Datum (→ Bitcoin Knots) |
+| [HashGG Companion](#hashgg-companion) | The same hash routing, pointed at the Companion Datum Gateway | Datum (BLAKE2b) Companion |
 | [Mempool BIP-110](#mempool-bip-110) | Mempool block explorer fork that visualizes BIP-110 activation activity | Bitcoin Node (+ Electrs) |
+| [Mempool Pruned](#mempool-pruned) | Mempool block explorer that works against a pruned Bitcoin node | Bitcoin Node + Electrs Pruned |
 | [Pickhash](#pickhash) | Autonomously rents Bitcoin hashrate from MiningRigRentals and points it at your own pool | none (optional: HashGG) |
 
 ---
@@ -163,6 +169,71 @@ free account) or as a GitHub issue.
 
 ---
 
+### Knots (SHA256) Companion
+
+### Datum (SHA256) Companion
+
+The same shape as the BLAKE2b pair above, for the other side of a different
+split. These follow the SHA256 chain, the one your existing Bitcoin app already
+follows. What makes the node different is what it does not do: Knots ships the
+BIP-110 softfork, known as RDTS, and this node never enforces it. If the network
+ever splits over BIP-110, this one stays on the side that does not require it.
+
+Install it alongside your existing node, not instead of it. Then you have one
+node that enforces BIP-110 and one that does not, at the same time, and you can
+point each app at whichever chain it should follow. If you only want one Bitcoin
+node, the official Bitcoin Knots app is the one to install.
+
+The node runs the same image the official Bitcoin Knots app runs, unmodified, so
+the dashboard, block and peer lists, connect modal, Advanced Settings and widgets
+are all the ones you already know. The whole difference is one setting: it is
+pinned to Bitcoin Knots **v29.3.knots20260507**, the last release before RDTS
+enforcement.
+
+> **That pin is the point.** It is on the Version tab under Advanced Settings.
+> Changing it to a newer build makes this an ordinary enforcing node and removes
+> the reason to have installed it, which during a BIP-110 split means changing
+> which chain it follows. The pin is seeded on install only, so a later change to
+> it in this store will not reach an existing install.
+
+**The BIP110 warning in the logs is expected.** On every start the node logs
+"This version of Bitcoin Knots does not support the upcoming BIP110 (RDTS)
+network upgrade". That is not a fault. It is the build telling you exactly what
+you installed it for, and a node that did not print it would be the wrong node
+for this app.
+
+**Datum (SHA256) Companion** connects to it automatically on install and mines
+its chain. Unlike the BLAKE2b gateway, where no pool can validate a share, this
+one builds SHA256d templates that every DATUM pool understands, so solo and
+pooled mining both work. Leave the DATUM Pool settings empty and a block you find
+pays its whole subsidy to your address; fill them in and you mine to a pool while
+still building your own templates.
+
+**Set a payout address before you mine.** There is no default, because a default
+would mean sending your block rewards to somebody else. It is under the gateway's
+**Config** tab, and the credentials for that tab are on your home screen: right
+click the app icon and choose "Show default credentials". The username is
+`admin`.
+
+**Use your server's IP address, not a `.local` name.** Most ASIC firmware has no
+mDNS resolver, so a `.local` pool address fails silently and the miner reports
+only that the pool is not ready.
+
+**Disk:** about 5 GB of blocks by default rather than the whole chain, plus the
+node's own data. Change it under Advanced Settings. The first sync downloads the
+chain from the network and takes a while: this node shares no data with your
+existing one, which is the cost of being able to run both at once.
+
+**Ports:** RPC on **19332**, P2P on **19333**, Stratum on **23338**, and the two
+app tiles on **7151** (node) and **7155** (gateway). These avoid the official
+Bitcoin Knots app's `9332`/`9333` and the official Datum app's `23334`, so every
+one of them can be installed on the same server.
+
+- Source: https://github.com/paulscode/knots-prerdts-startos
+- Source: https://github.com/paulscode/datum-sha256-startos
+
+---
+
 ### Electrs Liquid
 
 Runs a Liquid full node (`elementsd`) and an Electrum indexer (`electrs`, built
@@ -189,6 +260,101 @@ broadcast transactions, without relying on external Liquid Electrum servers.
 
 ---
 
+### Electrs Pruned
+
+An Electrum server for a node that is not keeping the whole chain. The official
+Electrs app requires an archival node with transaction indexing, which means
+holding every block forever. This one indexes from a pruned node and fetches the
+blocks your node has dropped from the peer-to-peer network, checking each one
+against your node before using it.
+
+It runs beside the official Electrs rather than replacing it. The setup it is
+built for is two nodes on one server: an archival node with the official Electrs
+on `50001`, and a pruned node with this on `50201`. Both chains stay reachable
+from your own hardware without paying for the disk to hold two full blockchains.
+
+The app runs two containers. The indexer is electrs, patched to route requests
+for old blocks past the point where your node stopped keeping them. Beside it
+runs `btc-rpc-proxy`, which fetches those blocks over peer-to-peer and verifies
+them against your node, so nothing is trusted that your node has not confirmed.
+Nothing is changed on your Bitcoin node, and an archival node works too: the
+routing only engages below a prune height, so with no prune height it never
+engages.
+
+> **A pruned node saves disk on blocks, not on the index.** Expect roughly 60 to
+> 80 GB for the address index on mainnet and a first sync measured in hours.
+> Fetching a dropped block costs a network round trip, so a wallet asking about
+> very old transactions is slower than it would be against an archival node.
+> Recent history is unaffected.
+
+**Privacy.** Ordinary wallet use fetches nothing from peers: balances, history
+and unspent outputs come from the index this app builds, so your addresses never
+leave your server. Blocks your node has dropped are fetched from the network, and
+a peer serving you one learns you wanted it. During the first index that only
+shows you are syncing; afterwards a few requests still reach for a block on
+demand, and those follow from something you asked for. If your Bitcoin node runs
+over Tor, these fetches do too. An archival node with the official Electrs never
+fetches at all, and is the more private option if this tradeoff is not one you
+want.
+
+**Connecting:**
+
+- **Other Umbrel apps** can depend on this app and read
+  `APP_ELECTRS_PRUNED_SERVER_IP` / `APP_ELECTRS_PRUNED_SERVER_PORT` (internal
+  Electrum port `50001`).
+- **Wallets on your LAN** can point an Electrum-compatible wallet at your
+  server's address on port **50201**. The official Electrs app keeps `50001`, so
+  both can be installed and both connected to at once.
+
+- Source: https://github.com/paulscode/electrs-pruned-startos
+- Upstream: https://github.com/paulscode/electrs-pruned
+
+---
+
+### Forktower
+
+During a contested Bitcoin upgrade the network can separate into two chains. Your
+node follows one of them, and from its point of view nothing unusual has
+happened: it simply stops seeing certain blocks. But your Lightning channels
+exist on both chains, and the timers that protect them keep running on both.
+
+A channel is protected by a deadline. If your counterparty publishes an old
+state, you have a fixed number of blocks to respond before their claim becomes
+final, and your node cannot respond on a chain it cannot see. It cannot even tell
+you it is happening.
+
+Forktower runs a second Bitcoin node following the other chain and answers three
+questions your own node cannot: have the chains actually separated, which of your
+channels would be exposed and how long you would have, and is anything happening
+on the other chain right now that you need to act on.
+
+> **It holds no keys and signs nothing.** It reads from your Lightning node using
+> the read-only macaroon that node wrote for itself, never the admin one, and
+> never your node's data directory. If Forktower is compromised, your money does
+> not move. It also cannot close a channel for you. What it can do is tell you in
+> time that you should.
+
+It is useful before anything happens, which is the point: the decision worth
+making is whether to keep channels open through an activation, and that has to be
+made beforehand.
+
+**Requirements:** a Bitcoin node, either implementation, since Bitcoin Knots
+declares itself an implementation of the Bitcoin Node dependency. **Lightning
+Node (LND)** is optional; without it Forktower still watches both chains, it just
+cannot tell you which of your channels a split would expose.
+
+**Disk and bandwidth:** the second node is pruned and uses roughly 31 GB, a 20 GB
+block store plus the record of unspent coins, which pruning does not shrink, plus
+up to 2 GB for the watchtower it runs and the bandwidth of an initial sync. It
+reaches the other chain over Tor.
+
+<!-- No Source link: https://github.com/paulscode/forktower does not exist. The
+     app's own umbrel-app.yml points website, repo and support at it, so those
+     are dead links on the app page too. Add the line back once the repo is
+     published, or repoint the manifest. -->
+
+---
+
 ### HashGG
 
 Sovereign hash routing for your Bitcoin miners. Exposes your
@@ -201,6 +367,40 @@ NAT, or CGNAT.
 Requires the official [**Datum**](https://apps.umbrel.com/app/datum) Umbrel app
 (which in turn requires the **Bitcoin Knots** app). Install Datum first, then
 install HashGG and pick a tunnel mode in its web UI.
+
+- Source: https://github.com/paulscode/hashgg
+- Issues: https://github.com/paulscode/hashgg/issues
+
+---
+
+### HashGG Companion
+
+The same sovereign hash routing as [HashGG](#hashgg) above, pointed at a
+different gateway. HashGG pairs with the official Datum Gateway app, whatever
+chain that build follows. This one pairs with **Datum (BLAKE2b) Companion**,
+which exists so a second gateway can run beside the first.
+
+It installs and runs beside the ordinary HashGG rather than replacing it. One
+server can expose both gateways at once, and the two keep separate settings,
+separate playit.gg tunnels, and separate access to any VPS they share, so setting
+one up never disturbs the other. If you run both, the tile with COMPANION across
+the bottom of the icon is this one.
+
+The optional "make your Bitcoin node reachable" feature offers your BLAKE2b node
+here, and never touches the main Bitcoin package, which is the ordinary HashGG's
+job. That separation is why the two can run together without one advertising an
+address for the other's chain.
+
+Two tunnel options, chosen in the web UI: **playit.gg**, a managed service and
+the easiest setup, or a **VPS SSH tunnel**, with no third party on the data path.
+
+> **Nothing to forward until your node has synced.** A Datum Gateway does not
+> open its stratum port until it has its first block template, and it cannot get
+> one from a node that is still catching up. Until then this app says it is
+> waiting. On a fresh node that is hours, and it needs no action.
+
+**Requires** Datum (BLAKE2b) Companion, which in turn requires Knots (BLAKE2b)
+Companion.
 
 - Source: https://github.com/paulscode/hashgg
 - Issues: https://github.com/paulscode/hashgg/issues
@@ -220,6 +420,43 @@ activity on the Bitcoin network:
 **Requirements:** a fully synced **Bitcoin Node**; **Electrs** recommended.
 
 - Source: https://github.com/paulscode/mempool-bip110
+
+---
+
+### Mempool Pruned
+
+Your own [mempool.space](https://mempool.space) against a pruned node. The
+official Mempool app requires an archival node with transaction indexing; this
+one does not.
+
+Mempool normally looks up a confirmed transaction by asking Bitcoin for it
+directly, which only works if the node keeps a transaction index, and that index
+cannot be built on a pruned node. This build asks the Electrum server instead.
+That server has its own index and fetches any block your node has dropped from
+the peer-to-peer network, so the explorer sees a complete chain on a node that is
+not keeping one.
+
+**Requirements:** install [Electrs Pruned](#electrs-pruned) first and let it
+finish indexing. The official Electrs app will not do, because it requires an
+archival node, which is the requirement this app exists to remove. Your Bitcoin
+node may be pruned or archival; nothing here asks you to change it either way.
+
+> **Point both apps at the same node.** Umbrel asks which Bitcoin node to use
+> when you install this. Pick the one you picked for Electrs Pruned. This
+> explorer reads its blocks through that app, so pointing the two at different
+> nodes gives you an explorer describing a chain it is not reading. Either node
+> works, including the BLAKE2b companion, as long as both apps agree.
+
+Blocks below your node's prune height are fetched from the network on demand, so
+an old block page is slower than a recent one, and the page says so while it
+works. Recent history is unaffected. The explorer keeps its own database, which
+is separate from the chain and still needs room.
+
+Installs alongside the official Mempool and the BIP-110 fork above. All three
+keep their own database, address and port.
+
+- Source: https://github.com/paulscode/mempool-pruned-startos
+- Upstream: https://github.com/paulscode/mempool-pruned
 
 ---
 
