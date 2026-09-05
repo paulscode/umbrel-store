@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.1.1"
+version: "1.1.2"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change, following the
@@ -84,6 +84,11 @@ releaseNotes: >-
   Turning Peer Block Filters on in Advanced Settings used to break the node the same way, because it
   switches the block filter index on behind the scenes. Pruning now takes precedence, so the pairing
   cannot be created. Turn pruning off first if you want block filters.
+
+  Also restores the wait for Tor to publish its hidden services before the app finishes starting. It
+  called a helper path that no longer exists on umbrelOS, so it failed silently and the connect modal
+  could show notyetset.onion on a first start.
+
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:

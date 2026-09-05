@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (SHA256) Companion
-version: "1.0.1"
+version: "1.0.2"
 tagline: A Bitcoin Knots node that never enforces BIP-110, to run beside your main one
 description: >-
   A Bitcoin Knots node on the SHA256 chain: the same chain your Bitcoin or
@@ -84,6 +84,11 @@ releaseNotes: >-
   This app runs the same node image as the official Bitcoin Knots app, which is archival by default
   and so never meets the pairing. This one prunes to about 5 GB by default, which is what brings it
   within reach. If you want block filters, turn pruning off first under Advanced Settings.
+
+  Also restores the wait for Tor to publish its hidden services before the app finishes starting. It
+  called a helper path that no longer exists on umbrelOS, so it failed silently and the connect modal
+  could show notyetset.onion on a first start.
+
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:

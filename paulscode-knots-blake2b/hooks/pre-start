@@ -117,8 +117,20 @@ if [[ -f "${HIDDEN_SERVICE_FILE}" ]]; then
 	exit
 fi
 
-"${UMBREL_ROOT}/scripts/app" compose "${APP_ID}" up --detach app
-"${UMBREL_ROOT}/scripts/app" compose "${APP_ID}" up --detach tor
+# `app-script`, not `${UMBREL_ROOT}/scripts/app`. That older path does not exist on
+# current umbrelOS: /home/umbrel/umbrel/scripts is gone entirely, so both lines
+# failed with "No such file or directory". This hook has no `set -e`, so the
+# failure was silent, the wait below always timed out, and the connect modal could
+# show notyetset.onion on a first start, which is the one thing this block exists
+# to prevent. Verified against the official Bitcoin Knots app's hook on a live
+# box, which calls the path used here.
+APP_SCRIPT="/opt/umbreld/source/modules/apps/legacy-compat/app-script"
+if [[ -x "${APP_SCRIPT}" ]]; then
+	"${APP_SCRIPT}" compose "${APP_ID}" up --detach app
+	"${APP_SCRIPT}" compose "${APP_ID}" up --detach tor
+else
+	echo "App: ${APP_ID} - no app-script at ${APP_SCRIPT}; skipping the early start"
+fi
 
 echo "App: ${APP_ID} - Generating Tor Hidden Service..."
 
