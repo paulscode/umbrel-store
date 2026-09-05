@@ -23,10 +23,7 @@ services:
   # a file the pre-start hook patches is what the official Umbrel Datum app does,
   # and it is what lets api.modify_conf be true.
   gateway:
-    # PIN THIS BY DIGEST BEFORE RELEASING. Every other image in this store is
-    # `<tag>@sha256:<digest>`; a tag alone can be moved. The digest goes in once
-    # the image is published, because it does not exist until then.
-    image: paulscode/datum-blake2b:1.0.12
+    image: paulscode/datum-blake2b:1.0.12@sha256:35945215fa213f1d95aeedf0a370913e7fc85e2bb2f42a20fed32830b32e2bc7
     entrypoint: ["/usr/local/bin/datum_gateway"]
     command: ["-c", "/app/conf/datum_gateway_config.json"]
     user: 1000:1000
