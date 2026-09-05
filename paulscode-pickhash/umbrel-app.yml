@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-pickhash
 category: bitcoin
 name: Pickhash
-version: "0.1.4.0"
+version: "0.1.4.1"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
   Pickhash rents SHA-256 (AsicBoost) hashrate from MiningRigRentals and points
@@ -73,24 +73,18 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
-  Each rented rig now runs at a share difficulty suited to its own size.
+  The dashboard password is now hidden until you ask to see it. The "Dashboard
+  Password" action shows it masked behind a reveal toggle, and the copy button
+  still works without putting the password on screen — so you can copy it in
+  front of someone without showing it to them.
 
 
-  MiningRigRentals scores a rental on the hashrate it measures, and it measures that from accepted
-  shares. A rig left at a difficulty far above its own size produces too few shares to measure well,
-  so a rental that really did deliver can read as underdelivering and a refund claim on it gets
-  declined. Every rental used to be sent the same difficulty whatever its size: measured on the live
-  market, the BLAKE2b rigs listed wanted difficulties from 873 to 20,955, which no single value serves.
+  The Configure form also gains a generate button for rolling a fresh password,
+  and starts from a generated one rather than a blank field, so the dashboard
+  cannot be left briefly unprotected by submitting the form early.
 
 
-  The difficulty comes from the rig's own published optimal range rather than from a calculation on its
-  advertised hashrate, because that range is what the marketplace's own scoring expects, and that
-  scoring is what decides a refund. It travels in the Stratum password, the only field a rental passes
-  through to the pool untouched.
-
-
-  Whether your endpoint honours the request is detected rather than assumed. The endpoint test now says
-  which it is, and says so plainly when a gateway ignores it, in which case rentals behave exactly as
-  they always did. Datum Gateway (BLAKE2b) Companion 1.0.10 honours it.
+  Nothing else changes. Your existing password keeps working — this only changes
+  how it is displayed.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

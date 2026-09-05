@@ -8,7 +8,7 @@ services:
       APP_PORT: 3030
 
   web:
-    image: paulscode/pickhash:0.1.4.0@sha256:b4f173251dffc5816fa910e68e8359b12be7e52663c0b8c9ec4ed5baac5c9ee5
+    image: paulscode/pickhash:0.1.4.1@sha256:19700896888eecf2728e39be7b887d7ec6155c7fe3b6f9f5be1560c59693e6b2
     restart: on-failure
     environment:
       PORT: "3030"
