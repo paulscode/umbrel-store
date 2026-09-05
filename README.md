@@ -20,8 +20,8 @@ An [Umbrel](https://umbrel.com) community app store bringing together all of
 | App | What it does | Requires |
 |-----|--------------|----------|
 | [Agent Wallet](#agent-wallet) | Self-custodial Bitcoin & Lightning wallet with an automation API for AI agents | Lightning Node (LND) + Electrs/Fulcrum |
-| [Bitcoin Knots BLAKE2b](#bitcoin-knots-blake2b) | A private test chain enforcing the proposed BLAKE2b proof of work | none (self-contained) |
-| [Datum Gateway BLAKE2b](#datum-gateway-blake2b) | Mine that test chain with a Sia-style BLAKE2b ASIC you already own | Bitcoin Knots BLAKE2b |
+| [Knots (BLAKE2b) Companion](#knots-blake2b-companion) | A pruned Bitcoin Knots node following the BLAKE2b chain, alongside your existing node | none (self-contained) |
+| [Datum (BLAKE2b) Companion](#datum-blake2b-companion) | Solo mine the BLAKE2b chain with a Sia-style ASIC you already own | Knots (BLAKE2b) Companion |
 | [Electrs Liquid](#electrs-liquid) | A Liquid (`liquidv1`) full node bundled with an Electrum indexer | none (self-contained) |
 | [HashGG](#hashgg) | Sovereign hash routing — exposes your Datum stratum port to the public internet | Datum (→ Bitcoin Knots) |
 | [Mempool BIP-110](#mempool-bip-110) | Mempool block explorer fork that visualizes BIP-110 activation activity | Bitcoin Node (+ Electrs) |
@@ -71,49 +71,58 @@ and restart the app:
 
 ---
 
-### Bitcoin Knots BLAKE2b
+### Knots (BLAKE2b) Companion
 
-### Datum Gateway BLAKE2b
+### Datum (BLAKE2b) Companion
 
-Two apps, one experiment, and the only reason to install either is to answer a
-hardware question: **can a BLAKE2b ASIC built for Sia mine Bitcoin blocks?**
+Two apps for one chain: a node that follows it and a gateway that lets a Sia-style
+ASIC mine it.
 
-Bitcoin uses SHA256d today. There is an open proposal
-([Knots PR #359](https://github.com/bitcoinknots/bitcoin/pull/359)) to change its
-proof of work to BLAKE2b, which is what Sia mines — so Sia ASICs would be able to
-mine Bitcoin. **Bitcoin Knots BLAKE2b** runs a node built from that branch on its
-own private `regtest` chain, and **Datum Gateway BLAKE2b** turns that node's block
-templates into Stratum work in the dialect Sia miners speak. Point a miner at it
-and you can see for yourself, in about ten minutes.
+Bitcoin's mainnet split on 30 August 2026. The two chains part at block 961632,
+and from block 961640 one of them uses BLAKE2b for proof of work instead of
+SHA256d. BLAKE2b is the algorithm Sia mines, so ASICs built for Sia can mine that
+chain. **Knots (BLAKE2b) Companion** runs a node that follows it and enforces its
+rules; **Datum (BLAKE2b) Companion** turns that node's block templates into
+Stratum work in the dialect Sia miners speak.
 
-> ⚠️ **This is a test chain, not Bitcoin.** `regtest` starts empty, has no peers,
-> and is yours alone. The coins it mines are worthless by construction and cannot
-> be sent anywhere. BLAKE2b is a proposal Bitcoin has not adopted, and this is not
-> a way to mine Bitcoin with a Sia miner today.
+> **This is a real chain with real block rewards.** Blocks you mine here pay a
+> real subsidy to a real address, and the chain has other participants. Both sides
+> of the split claim to be Bitcoin. Which one you follow is your decision, and
+> installing these makes it.
 
-**Install the node first**, then the gateway. There is nothing to configure: the
-gateway asks the node for a payout address on its own, and BLAKE2b activates at
-height 1 so the first block your miner finds is already a BLAKE2b block.
+**Install the node first**, then the gateway, which connects to it automatically.
+The node installs alongside your existing Bitcoin node rather than in place of it,
+on its own ports and its own data, and is pruned to about 5 GB by default so both
+chains fit on one server. Its first sync downloads the chain from the network and
+takes a while.
 
-The node has no web interface, because a Bitcoin node does not have one; opening
-it shows a short page saying what to do next. The gateway's tile is where the work
-happens: it shows the Stratum address, links through to the mining dashboard, and
-generates a compatibility report.
+The node runs the same web interface the official Bitcoin Knots app runs, from a
+fork of that app's image: the same dashboard, block and peer lists, connect modal,
+Advanced Settings and home-screen widgets. Opening the gateway opens the DATUM
+Gateway dashboard, behind umbrelOS's proxy, with a working admin login from "Show
+default credentials" on the app icon; the username is `admin`.
+
+**Set a payout address before you mine.** There is no default, because a default
+would mean sending your block rewards to somebody else. It goes under the
+gateway's **Config** tab, and it should be an address whose keys you hold: solo
+mining means a block you find pays its whole subsidy there.
 
 **Use your server's IP address, not a `.local` name.** Most ASIC firmware has no
 mDNS resolver, so a `.local` pool address fails silently and the miner simply
 reports that the pool is not ready. This is the single most common reason a miner
 appears not to work.
 
-**Ports:** Stratum on **23336**, a compatibility-capture port on **23337**,
-DATUM's dashboard on **7152**, and the two app tiles on **7150** (node) and
+**Ports:** Stratum on **23336**, and the two app tiles on **7150** (node) and
 **7153** (gateway). These avoid the official
-[Datum](https://apps.umbrel.com/app/datum) app's `23334`, so both can be installed
-on the same server, and they stay out of the 3000s where app tiles crowd together.
+[Datum](https://apps.umbrel.com/app/datum) app's `23334` and the official Bitcoin
+Knots app's ports, so all of them can be installed on the same server, and they
+stay out of the 3000s where app tiles crowd together.
 
-#### Reporting your hardware
+#### Miners known to work
 
-Verified so far, both on stock firmware with no changes:
+These results were gathered against the test chains these apps ran before the
+mainnet split, so they measure the Stratum dialect rather than the chain. The
+dialect is unchanged. All on stock firmware with no modifications:
 
 - **Goldshell HS-Box** (firmware 2.2.4) in Sia mode, tested directly — it connects,
   receives BLAKE2b work, and the blocks it finds are accepted with no rejections.
@@ -129,8 +138,7 @@ Verified so far, both on stock firmware with no changes:
 Five devices across three manufacturers and three mining stacks (`intminer`,
 `cgminer`, `sgminer`), all speaking to the gateway identically. That spread is what
 makes the result mean something: it is the Sia dialect, not one vendor's idea of
-it. Other Sia BLAKE2b
-miners are expected to work but have not been tried.
+it. Other Sia BLAKE2b miners are expected to work but have not been tried.
 
 **GPUs do not work yet.** `ccminer -a sia` computes exactly the right hash, but it
 speaks the other "Sia stratum" — the one the Sia pools use, with 4-byte time and
@@ -139,12 +147,15 @@ the ASICs speak. Tested directly on an RTX 3090 and a Quadro RTX 8000: it reject
 the job and never starts hashing. A GPU miner is possible but would mean teaching
 one the other dialect, not finding the right flag.
 
-If yours is not on that list, point it at the capture port for a minute or two,
-then fill in the form on the gateway's page. It produces a short report you can
-share in the [Bitcoin section of the forum](https://paulscode.com/c/bitcoin/8)
-(posting needs a free account) or as a GitHub issue. Nothing is sent anywhere on
-its own: you see exactly what you are sharing, and worker names are hashed and
-passwords dropped before anything reaches disk.
+The compatibility-report form and its capture port on `23337` are gone. They
+existed to gather the list above, the question they answered is answered, and a
+second Stratum port that recorded miner traffic is not something to leave running
+against a chain carrying real rewards. If your miner was pointed at `23337`, point
+it at `23336`.
+
+If your hardware is not on that list, results are welcome in the
+[Bitcoin section of the forum](https://paulscode.com/c/bitcoin/8) (posting needs a
+free account) or as a GitHub issue.
 
 - Source: https://github.com/paulscode/knots-blake2b-startos
 - Source: https://github.com/paulscode/datum-blake2b-startos
