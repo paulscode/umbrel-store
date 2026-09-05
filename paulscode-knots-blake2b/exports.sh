@@ -67,15 +67,32 @@ export APP_KNOTS_BLAKE2B_NETWORK_ELECTRS="bitcoin"
 # working unchanged, and the connect modal in the node's own UI has real
 # credentials to show.
 #
-# Same shape as the official Bitcoin Knots app, including generating the salted
-# hash with its `rpcauth.py`.
+# GENERATED INLINE, NOT BY scripts/rpcauth.py.
+#
+# umbreld copies only `docker-compose.yml *.template exports.sh torrc hooks` on
+# an update. `scripts/` is not on that list, so a version of this app that added
+# both a new exports.sh and the script it called shipped the caller without the
+# callee: every updating install whose `.env` did not already exist ran
+# `scripts/rpcauth.py`, got exit 127, and since umbreld sources this file under
+# `set -euo pipefail` for the app AND every dependent, the app could never start.
+#
+# Only the password was ever used here anyway. rpcauth.py also prints a salted
+# `rpcauth=` line, and this discarded it with `tail -1`: the node image builds
+# that line itself from the user and password below. So there is nothing to
+# reimplement, only a random secret to make, and doing it here removes the
+# dependency on a file an update will not deliver.
 BITCOIN_ENV_FILE="${EXPORTS_APP_DIR}/.env"
 
 if [[ ! -f "${BITCOIN_ENV_FILE}" ]]; then
 	if [[ -z ${BITCOIN_RPC_USER+x} ]] || [[ -z ${BITCOIN_RPC_PASS+x} ]]; then
 		BITCOIN_RPC_USER="umbrel"
-		BITCOIN_RPC_DETAILS=$("${EXPORTS_APP_DIR}/scripts/rpcauth.py" "${BITCOIN_RPC_USER}")
-		BITCOIN_RPC_PASS=$(echo "$BITCOIN_RPC_DETAILS" | tail -1)
+		# 32 random bytes, url-safe base64, which is exactly what rpcauth.py
+		# produced. `|| true` and the shell fallback because a bare failure here
+		# would abort this file and take the app and its dependents with it.
+		BITCOIN_RPC_PASS=$(python3 -c 'import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())' 2>/dev/null || true)
+		if [[ -z "${BITCOIN_RPC_PASS}" ]]; then
+			BITCOIN_RPC_PASS=$(head -c 32 /dev/urandom | base64 | tr '+/' '-_' | tr -d '\n')
+		fi
 	fi
 
 	echo "export APP_KNOTS_BLAKE2B_RPC_USER='${BITCOIN_RPC_USER}'"	>> "${BITCOIN_ENV_FILE}"

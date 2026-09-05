@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (SHA256) Companion
-version: "1.0.4"
+version: "1.0.5"
 tagline: A Bitcoin Knots node that never enforces BIP-110, to run beside your main one
 description: >-
   A Bitcoin Knots node on the SHA256 chain: the same chain your Bitcoin or
@@ -86,32 +86,27 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Turns the block filter index off while the node is pruned, which it is by default.
+  Fixes the update hanging, at 1% or on "Restarting", with the app never coming back.
 
 
-  The two cannot run together: bitcoind exits on "Index basic block filter index needs block data
-  that has been pruned" and the node does not come up, while the app around it still reports
-  healthy. The setting is off for a new install and switched off automatically for an existing one
-  on the next start.
+  A previous version added a helper script and an exports.sh that called it. umbrelOS copies only
+  docker-compose.yml, *.template, exports.sh, torrc and hooks when it updates an app, and not
+  scripts/, so the caller arrived without the callee. exports.sh is sourced with errexit for this app
+  and every app that depends on it, so the missing script stopped the whole thing dead before any
+  container could start.
 
 
-  This app runs the same node image as the official Bitcoin Knots app, which is archival by default
-  and so never meets the pairing. This one prunes to about 5 GB by default, which is what brings it
-  within reach. If you want block filters, turn pruning off first under Advanced Settings.
-
-  Also restores the wait for Tor to publish its hidden services before the app finishes starting. It
-  called a helper path that no longer exists on umbrelOS, so it failed silently and the connect modal
-  could show notyetset.onion on a first start.
+  It only bit installs that had no saved .env yet, which is why some updates went through and others
+  hung indefinitely.
 
 
-  Documents a trap this app can still hit: turning on Peer Block Filters while the node is pruned
-  switches on an index that cannot run on a pruned node, and bitcoind will not start until it is off.
-  Restarting the app clears it. The BLAKE2b companion cannot hit this because it runs a node image
-  that refuses the pairing; this one runs the stock image, which does not.
+  Nothing is lost and no reinstall is needed. The blockchain lives in the app's data directory and was
+  never touched. Updating again is the fix: the corrected exports.sh is copied before it is used, so
+  the retry repairs the install.
 
 
-  The Tor wait now finds its helper script on older umbrelOS releases too. It looked in one place
-  only, which is correct on 1.7.x and wrong on 1.4.x, where the same script lives elsewhere.
+  The script is gone rather than shipped differently. Only the password it printed was ever used, so
+  that is now generated inline and there is no second file for an update to leave behind.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

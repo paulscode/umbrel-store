@@ -62,8 +62,13 @@ BITCOIN_ENV_FILE="${EXPORTS_APP_DIR}/.env"
 if [[ ! -f "${BITCOIN_ENV_FILE}" ]]; then
 	if [[ -z ${BITCOIN_RPC_USER+x} ]] || [[ -z ${BITCOIN_RPC_PASS+x} ]]; then
 		BITCOIN_RPC_USER="umbrel"
-		BITCOIN_RPC_DETAILS=$("${EXPORTS_APP_DIR}/scripts/rpcauth.py" "${BITCOIN_RPC_USER}")
-		BITCOIN_RPC_PASS=$(echo "$BITCOIN_RPC_DETAILS" | tail -1)
+		# 32 random bytes, url-safe base64, which is exactly what rpcauth.py
+		# produced. `|| true` and the shell fallback because a bare failure here
+		# would abort this file and take the app and its dependents with it.
+		BITCOIN_RPC_PASS=$(python3 -c 'import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())' 2>/dev/null || true)
+		if [[ -z "${BITCOIN_RPC_PASS}" ]]; then
+			BITCOIN_RPC_PASS=$(head -c 32 /dev/urandom | base64 | tr '+/' '-_' | tr -d '\n')
+		fi
 	fi
 
 	echo "export APP_KNOTS_SHA256_RPC_USER='${BITCOIN_RPC_USER}'"	>> "${BITCOIN_ENV_FILE}"
