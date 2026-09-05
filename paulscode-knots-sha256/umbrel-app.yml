@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (SHA256) Companion
-version: "1.0.2"
+version: "1.0.3"
 tagline: A Bitcoin Knots node that never enforces BIP-110, to run beside your main one
 description: >-
   A Bitcoin Knots node on the SHA256 chain: the same chain your Bitcoin or
@@ -55,6 +55,20 @@ description: >-
   own data. Change that under Advanced Settings. The first sync downloads the
   chain from the network and takes a while: this node does not share data with
   your existing one, which is the cost of being able to run both at once.
+
+
+  DO NOT TURN ON PEER BLOCK FILTERS WHILE THIS NODE IS PRUNED
+
+
+  It switches on the block filter index, and that index cannot run on a pruned
+  node: bitcoind stops with "Index basic block filter index needs block data that
+  has been pruned" and will not start again until the setting is off. The app
+  around it still reports healthy, so the node looks fine while it is down.
+
+
+  If it happens, set Peer Block Filters back off, or just restart the app: it
+  turns the index off at every start while pruning is on. To use block filters,
+  set pruning to 0 first and let the node sync the whole chain.
 developer: Paul Lamb
 website: https://github.com/paulscode/knots-prerdts-startos
 dependencies: []
@@ -88,6 +102,12 @@ releaseNotes: >-
   Also restores the wait for Tor to publish its hidden services before the app finishes starting. It
   called a helper path that no longer exists on umbrelOS, so it failed silently and the connect modal
   could show notyetset.onion on a first start.
+
+
+  Documents a trap this app can still hit: turning on Peer Block Filters while the node is pruned
+  switches on an index that cannot run on a pruned node, and bitcoind will not start until it is off.
+  Restarting the app clears it. The BLAKE2b companion cannot hit this because it runs a node image
+  that refuses the pairing; this one runs the stock image, which does not.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
