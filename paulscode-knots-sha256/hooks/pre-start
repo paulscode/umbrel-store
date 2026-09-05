@@ -34,6 +34,51 @@ if [[ -d "${APP_DATA_DIR}/app" ]]; then
 	chown -R "${DESIRED_OWNER}" "${APP_DATA_DIR}/app"
 fi
 
+# BLOCK FILTER INDEX ON A PRUNED NODE.
+#
+# The UI defaults blockfilterindex on, which is right for the official app
+# because that one is archival by default. This app prunes by default, and
+# bitcoind refuses to start when the index needs blocks that are already gone:
+#
+#   Index "basic block filter index" needs block data that has been pruned.
+#   A fatal internal error occurred ... Failed to start indexes, shutting down.
+#
+# Turned off only while pruning is on, and only if the user has not already
+# turned it off, so an archival install and a deliberate choice are both left
+# alone. Someone who wants block filters can set prune to 0 and switch them back
+# on in Advanced Settings.
+SETTINGS="${APP_DATA_DIR}/app/settings.json"
+if [[ -f "${SETTINGS}" ]]; then
+	# Heredoc is <<'PYEOF' and the body sits at column 0 on purpose. With <<-
+	# bash strips leading tabs from every line, which flattens Python's own
+	# indentation and the script dies with an IndentationError that this hook
+	# would swallow.
+	python3 - "${SETTINGS}" <<'PYEOF' || true
+import json, sys
+
+path = sys.argv[1]
+try:
+    with open(path) as f:
+        data = json.load(f)
+except Exception:
+    sys.exit(0)
+if not isinstance(data, dict):
+    sys.exit(0)
+
+prune = data.get("prune", 0)
+if isinstance(prune, bool) or not isinstance(prune, (int, float)) or prune <= 0:
+    sys.exit(0)
+if not (data.get("blockfilterindex") or data.get("peerblockfilters")):
+    sys.exit(0)
+
+data["blockfilterindex"] = False
+data["peerblockfilters"] = False
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+print("turned blockfilterindex off: it cannot run on a pruned node")
+PYEOF
+fi
+
 # Delay booting the full app until the RPC and P2P Tor Hidden Services are ready.
 
 HIDDEN_SERVICE_FILE="${TOR_DATA_DIR}/app-${APP_ID}-rpc/hostname"
