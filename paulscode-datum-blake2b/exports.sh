@@ -10,8 +10,10 @@
 # The gateway's container. 10.21.21.63 sits next to the node app's .62 and clear
 # of the official apps (bitcoin-knots 10.21.21.7, lightning 10.21.21.9, electrs
 # 10.21.21.10, mempool 10.21.21.26-28, electrs-liquid 10.21.21.50, agent-wallet
-# 10.21.21.60, forktower 10.21.21.61, fulcrum 10.21.21.200, mempool-bip110
-# 10.21.21.240-242).
+# 10.21.21.60, fulcrum 10.21.21.200, mempool-bip110 10.21.21.240-242).
+#
+# .61 is not free even though forktower has been removed from this store:
+# anyone who installed it still has it running there. Do not reuse it.
 #
 # Two more used to be here, for the compatibility-capture proxy and the page that
 # turned a capture into a report. Both are gone, along with the capture port

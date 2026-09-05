@@ -26,7 +26,6 @@ An [Umbrel](https://umbrel.com) community app store bringing together all of
 | [Datum (SHA256) Companion](#datum-sha256-companion) | Solo or pooled mining against that node, with your own block templates | Knots (SHA256) Companion |
 | [Electrs Liquid](#electrs-liquid) | A Liquid (`liquidv1`) full node bundled with an Electrum indexer | none (self-contained) |
 | [Electrs Pruned](#electrs-pruned) | An Electrum server that indexes from a pruned node, beside the official Electrs | Bitcoin Node |
-| [Forktower](#forktower) | Watches the other chain during a split, so it does not cost you a Lightning channel | Bitcoin Node (optional: LND) |
 | [HashGG](#hashgg) | Sovereign hash routing — exposes your Datum stratum port to the public internet | Datum (→ Bitcoin Knots) |
 | [HashGG Companion](#hashgg-companion) | The same hash routing, pointed at the Companion Datum Gateway | Datum (BLAKE2b) Companion |
 | [Mempool BIP-110](#mempool-bip-110) | Mempool block explorer fork that visualizes BIP-110 activation activity | Bitcoin Node (+ Electrs) |
@@ -308,48 +307,6 @@ want.
 
 - Source: https://github.com/paulscode/electrs-pruned-startos
 - Upstream: https://github.com/paulscode/electrs-pruned
-
----
-
-### Forktower
-
-During a contested Bitcoin upgrade the network can separate into two chains. Your
-node follows one of them, and from its point of view nothing unusual has
-happened: it simply stops seeing certain blocks. But your Lightning channels
-exist on both chains, and the timers that protect them keep running on both.
-
-A channel is protected by a deadline. If your counterparty publishes an old
-state, you have a fixed number of blocks to respond before their claim becomes
-final, and your node cannot respond on a chain it cannot see. It cannot even tell
-you it is happening.
-
-Forktower runs a second Bitcoin node following the other chain and answers three
-questions your own node cannot: have the chains actually separated, which of your
-channels would be exposed and how long you would have, and is anything happening
-on the other chain right now that you need to act on.
-
-> **It holds no keys and signs nothing.** It reads from your Lightning node using
-> the read-only macaroon that node wrote for itself, never the admin one, and
-> never your node's data directory. If Forktower is compromised, your money does
-> not move. It also cannot close a channel for you. What it can do is tell you in
-> time that you should.
-
-It is useful before anything happens, which is the point: the decision worth
-making is whether to keep channels open through an activation, and that has to be
-made beforehand.
-
-**Requirements:** a Bitcoin node, either implementation, since Bitcoin Knots
-declares itself an implementation of the Bitcoin Node dependency. **Lightning
-Node (LND)** is optional; without it Forktower still watches both chains, it just
-cannot tell you which of your channels a split would expose.
-
-**Disk and bandwidth:** the second node is pruned and uses roughly 31 GB, a 20 GB
-block store plus the record of unspent coins, which pruning does not shrink, plus
-up to 2 GB for the watchtower it runs and the bandwidth of an initial sync. It
-reaches the other chain over Tor.
-
-- Source: https://github.com/paulscode/forktower
-- Issues: https://github.com/paulscode/forktower/issues
 
 ---
 

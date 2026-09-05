@@ -11,8 +11,9 @@
 # and left the app stopped along with a dependent stuck part way through
 # installing. Guard every read, and put `|| true` behind anything that can fail.
 
-# Static IPs for this app's containers. 10.21.21.62 / 10.21.22.62-63 sit next to
-# forktower's .61 and clear of the official apps (bitcoin-knots 10.21.21.7,
+# Static IPs for this app's containers. 10.21.21.62 / 10.21.22.62-63 sit above
+# .61, which forktower held before it was removed from this store and which
+# existing installs still hold, and clear of the official apps (bitcoin-knots 10.21.21.7,
 # lightning 10.21.21.9, electrs 10.21.21.10, mempool 10.21.21.26-28,
 # electrs-liquid 10.21.21.50, agent-wallet 10.21.21.60, fulcrum 10.21.21.200,
 # mempool-bip110 10.21.21.240-242).

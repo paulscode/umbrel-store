@@ -5,8 +5,9 @@
 # the Electrum endpoint other apps can depend on. The high end of the 10.21.x.x
 # range, to stay clear of the official apps: the Bitcoin Node is 10.21.21.8 and
 # the official Electrs app uses 10.21.21.10 and 10.21.22.4. Within this store,
-# .50 is electrs-liquid and .60 to .64 are agent-wallet, forktower and the
-# blake2b apps, so this takes .70.
+# .50 is electrs-liquid and .60 to .64 are agent-wallet, the blake2b apps and
+# .61, which forktower held before it was removed from this store and which
+# existing installs still hold. So this takes .70.
 
 export APP_ELECTRS_PRUNED_WEB_IP="10.21.22.70"
 export APP_ELECTRS_PRUNED_SERVER_IP="10.21.21.70"
