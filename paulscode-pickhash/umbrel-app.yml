@@ -5,9 +5,15 @@ name: Pickhash
 version: "0.1.4.1"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
-  Pickhash rents SHA-256 (AsicBoost) hashrate from MiningRigRentals and points
-  it at your own stratum endpoint — typically your Bitcoin node behind a Datum
-  Gateway — so the hashrate you pay for mines your block templates.
+  Pickhash rents SHA-256 (AsicBoost) or BLAKE2b hashrate from MiningRigRentals
+  and points it at your own stratum endpoint — typically your own node behind a
+  Datum Gateway — so the hashrate you pay for mines your block templates.
+
+
+  One algorithm is active at a time, chosen during setup or later in Settings.
+  Prices, available hashrate, spend limits, your saved endpoint and your history
+  are kept separate for each, because a TH of BLAKE2b and a TH of SHA-256 are
+  nothing like the same thing. Switching is refused while a session is running.
 
 
   You work with three linked numbers — how much to spend, how much hashrate,
@@ -40,9 +46,10 @@ description: >-
        miningrigrentals.com (Account → API) and paste the key and secret.
        Deposit a little Bitcoin there to fund rentals.
 
-    3. Set your stratum endpoint — where the rented hashrate should point.
-       If you also run the HashGG app, Pickhash can auto-discover your public
-       endpoint; otherwise enter host:port manually.
+    3. Choose your algorithm and stratum endpoint — pick SHA-256 (AsicBoost) or
+       BLAKE2b, then say where the rented hashrate should point. If you also run
+       the HashGG app, Pickhash can auto-discover your public endpoint;
+       otherwise enter host:port manually.
 
 
   Then choose a target hashrate, a budget, and a duration, switch to LIVE when
