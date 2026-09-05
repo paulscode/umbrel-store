@@ -45,10 +45,10 @@ for fee estimates and links. It also includes a BOLT 12 onion-message gateway an
 an optional, experimental Anonymize feature (with an optional Liquid hop that can
 use **Electrs Liquid** below).
 
-> ⚠️ Anyone holding the dashboard password or an issued API key can spend from
-> the connected LND node up to its limits. Treat the dashboard password and API
-> keys like cash. Get your dashboard password by right-clicking the Agent Wallet
-> tile and choosing **Show default credentials** — that value is your login.
+> **The dashboard password and API keys spend real money.** Anyone holding
+> either can spend from the connected LND node up to its limits. Treat them like
+> cash. Get your dashboard password by right-clicking the Agent Wallet tile and
+> choosing **Show default credentials** — that value is your login.
 
 The wallet bundles its own PostgreSQL, Redis, and Tor (supervised by s6-overlay)
 in a single container — the same image contract as the StartOS package.
@@ -240,7 +240,7 @@ Runs a Liquid full node (`elementsd`) and an Electrum indexer (`electrs`, built
 Electrum endpoint to query Liquid balances and transaction history and to
 broadcast transactions, without relying on external Liquid Electrum servers.
 
-> ⚠️ **Heavyweight.** Stores the full Liquid chain plus its address index
+> **Heavyweight.** Stores the full Liquid chain plus its address index
 > (~115 GB of disk) and uses ~14 GiB of RAM during the initial sync. It is meant
 > to run alongside other Bitcoin/Lightning services, so ≥32 GB of total RAM is
 > recommended. The first sync can take many hours. Self-contained: it does
@@ -368,9 +368,9 @@ A specialized fork of the [Mempool](https://mempool.space) block explorer that
 visualizes [BIP-110 (Reduced Data Temporary Softfork)](https://github.com/dathonohm/bips/blob/reduced-data/bip-0110.mediawiki)
 activity on the Bitcoin network:
 
-- 🟢 **Miner signaling detection** — blocks from miners signaling BIP-110 support glow green/gold
-- 🟠 **Violation highlighting** — transactions that would be invalid under BIP-110 rules glow neon orange
-- 📊 **Full Mempool functionality** — all standard explorer features (mempool, blocks, transactions, mining dashboard)
+- **Miner signaling detection** — blocks from miners signaling BIP-110 support glow green/gold
+- **Violation highlighting** — transactions that would be invalid under BIP-110 rules glow neon orange
+- **Full Mempool functionality** — all standard explorer features (mempool, blocks, transactions, mining dashboard)
 
 **Requirements:** a fully synced **Bitcoin Node**; **Electrs** recommended.
 
@@ -428,7 +428,7 @@ rigs, prices and creates the rentals, points them at your pool, and watches over
 delivery (ramp-up, under-delivery, offline rigs, refunds). It starts in DRY-RUN
 (a rehearsal that spends nothing); going LIVE requires a dashboard password.
 
-> ⚠️ Pickhash spends real Bitcoin on your behalf, within the budget and
+> **Pickhash spends real Bitcoin on your behalf**, within the budget and
 > guardrails you set. Marketplace credentials are encrypted at rest. Set a
 > dashboard password before switching to LIVE.
 
