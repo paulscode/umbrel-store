@@ -83,7 +83,20 @@ export APP_KNOTS_BLAKE2B_NETWORK_ELECTRS="bitcoin"
 # dependency on a file an update will not deliver.
 BITCOIN_ENV_FILE="${EXPORTS_APP_DIR}/.env"
 
-if [[ ! -f "${BITCOIN_ENV_FILE}" ]]; then
+# GUARDED ON THE VARIABLES, NOT ON THE FILE EXISTING.
+#
+# This used to be `if [[ ! -f "${BITCOIN_ENV_FILE}" ]]`, so an install that
+# already had a .env never had it rewritten. Earlier versions of this app
+# wrote different names into that file, so after the rename the file was
+# present, was sourced, and still left the names below unset. Everything
+# downstream then saw an unconfigured node: the Datum companion exited at its
+# "which node do I talk to" check, leaving its RPC and admin password unset.
+#
+# Sourcing first and testing the variables covers that, and any other legacy
+# shape, without needing to know what the old file looked like.
+[[ -f "${BITCOIN_ENV_FILE}" ]] && . "${BITCOIN_ENV_FILE}"
+
+if [[ -z "${APP_KNOTS_BLAKE2B_RPC_USER:-}" ]] || [[ -z "${APP_KNOTS_BLAKE2B_RPC_PASS:-}" ]]; then
 	if [[ -z ${BITCOIN_RPC_USER+x} ]] || [[ -z ${BITCOIN_RPC_PASS+x} ]]; then
 		BITCOIN_RPC_USER="umbrel"
 		# 32 random bytes, url-safe base64, which is exactly what rpcauth.py
@@ -93,6 +106,14 @@ if [[ ! -f "${BITCOIN_ENV_FILE}" ]]; then
 		if [[ -z "${BITCOIN_RPC_PASS}" ]]; then
 			BITCOIN_RPC_PASS=$(head -c 32 /dev/urandom | base64 | tr '+/' '-_' | tr -d '\n')
 		fi
+	fi
+
+	# Prefer credentials an older .env already holds. bitcoind wrote its
+	# rpcauth line from these, so reusing them keeps the node and every
+	# dependent on the pair they were already using.
+	if [[ -n "${APP_BITCOIN_KNOTS_RPC_USER:-}" ]]; then
+		BITCOIN_RPC_USER="${APP_BITCOIN_KNOTS_RPC_USER}"
+		BITCOIN_RPC_PASS="${APP_BITCOIN_KNOTS_RPC_PASS:-}"
 	fi
 
 	echo "export APP_KNOTS_BLAKE2B_RPC_USER='${BITCOIN_RPC_USER}'"	>> "${BITCOIN_ENV_FILE}"

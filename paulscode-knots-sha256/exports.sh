@@ -59,7 +59,20 @@ export APP_KNOTS_SHA256_NETWORK_ELECTRS="bitcoin"
 # unchanged, and the connect modal has real credentials to show.
 BITCOIN_ENV_FILE="${EXPORTS_APP_DIR}/.env"
 
-if [[ ! -f "${BITCOIN_ENV_FILE}" ]]; then
+# GUARDED ON THE VARIABLES, NOT ON THE FILE EXISTING.
+#
+# This used to be `if [[ ! -f "${BITCOIN_ENV_FILE}" ]]`, so an install that
+# already had a .env never had it rewritten. Earlier versions of this app
+# wrote different names into that file, so after the rename the file was
+# present, was sourced, and still left the names below unset. Everything
+# downstream then saw an unconfigured node: the Datum companion exited at its
+# "which node do I talk to" check, leaving its RPC and admin password unset.
+#
+# Sourcing first and testing the variables covers that, and any other legacy
+# shape, without needing to know what the old file looked like.
+[[ -f "${BITCOIN_ENV_FILE}" ]] && . "${BITCOIN_ENV_FILE}"
+
+if [[ -z "${APP_KNOTS_SHA256_RPC_USER:-}" ]] || [[ -z "${APP_KNOTS_SHA256_RPC_PASS:-}" ]]; then
 	if [[ -z ${BITCOIN_RPC_USER+x} ]] || [[ -z ${BITCOIN_RPC_PASS+x} ]]; then
 		BITCOIN_RPC_USER="umbrel"
 		# 32 random bytes, url-safe base64, which is exactly what rpcauth.py

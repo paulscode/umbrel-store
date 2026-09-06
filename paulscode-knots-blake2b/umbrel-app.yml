@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.1.4"
+version: "1.1.5"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change, following the
@@ -66,27 +66,21 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes the update hanging, at 1% or on "Restarting", with the app never coming back.
+  Fixes the Datum companion never being configured on an install that was upgraded rather than
+  installed fresh: no node RPC details, and an admin password that stayed at its placeholder so the
+  dashboard's Clients tab rejected the password shown under "Show default credentials".
 
 
-  A previous version added a helper script and an exports.sh that called it. umbrelOS copies only
-  docker-compose.yml, *.template, exports.sh, torrc and hooks when it updates an app, and not
-  scripts/, so the caller arrived without the callee. exports.sh is sourced with errexit for this app
-  and every app that depends on it, so the missing script stopped the whole thing dead before any
-  container could start.
+  The node app records its RPC credentials in a file it only wrote when that file did not already
+  exist. An earlier version stored them under different names, so after they were renamed the file was
+  present, was read, and still left the current names undefined. Everything downstream then saw a node
+  with no RPC details, and the Datum companion stopped before it could write either its RPC settings
+  or its admin password.
 
 
-  It only bit installs that had no saved .env yet, which is why some updates went through and others
-  hung indefinitely.
-
-
-  Nothing is lost and no reinstall is needed. The blockchain lives in the app's data directory and was
-  never touched. Updating again is the fix: the corrected exports.sh is copied before it is used, so
-  the retry repairs the install.
-
-
-  The script is gone rather than shipped differently. Only the password it printed was ever used, so
-  that is now generated inline and there is no second file for an update to leave behind.
+  The check is now on the credentials themselves rather than on the file, and existing credentials are
+  reused rather than replaced, so nothing that already works changes. Update the node app, then the
+  Datum companion, and the dashboard login will work.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
