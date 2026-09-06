@@ -18,9 +18,55 @@ APP_DATA_DIR="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/..")"
 DATUM_CONFIG_FILE="${APP_DATA_DIR}/data/settings/datum_gateway_config.json"
 DESIRED_OWNER="1000:1000"
 
+# WRITTEN HERE IF ABSENT, RATHER THAN ASSUMED PRESENT.
+#
+# The defaults below are shipped as data/settings/datum_gateway_config.json, and
+# an install copies them. An UPDATE does not: umbreld copies only
+# `docker-compose.yml *.template exports.sh torrc hooks`, so an install that
+# updated into the version which first needed this file never received it.
+# Docker then created the bind-mount source as an empty root-owned directory and
+# the gateway crash-looped on "unable to open /app/conf/datum_gateway_config.json".
+#
+# Exiting non-zero here did not prevent that, it only hid the reason. So the file
+# is created from these defaults when missing, which repairs such an install on
+# its next start and costs nothing when the file is already there. The patching
+# below then fills in the host-supplied values as usual.
 if [ ! -f "${DATUM_CONFIG_FILE}" ]; then
-  echo "DATUM configuration file not found. Installation incomplete."
-  exit 1
+  echo "DATUM configuration file missing; writing defaults."
+  mkdir -p "$(dirname "${DATUM_CONFIG_FILE}")"
+  cat > "${DATUM_CONFIG_FILE}" <<'DATUMCONF'
+{
+  "bitcoind": {
+    "rpcuser": "auto-configure-on-install",
+    "rpcpassword": "auto-configure-on-install",
+    "rpcurl": "auto-configure-on-install",
+    "work_update_seconds": 5,
+    "notify_fallback": true
+  },
+  "api": {
+    "listen_port": 7152,
+    "modify_conf": true,
+    "admin_password": "umbrel"
+  },
+  "mining": {
+    "pool_address": "",
+    "coinbase_tag_primary": "DATUM on Umbrel",
+    "coinbase_tag_secondary": "DATUM on Umbrel",
+    "pow_algorithm": "auto"
+  },
+  "stratum": {
+    "listen_port": 23338,
+    "vardiff_min": 1024
+  },
+  "logger": {
+    "log_level_console": 2
+  },
+  "datum": {
+    "pool_host": "",
+    "pooled_mining_only": false
+  }
+}
+DATUMCONF
 fi
 
 # The node app exports these. Empty means it is not installed or its exports

@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-sha256
 category: bitcoin
 name: Datum (SHA256) Companion
-version: "1.0.0"
+version: "1.0.1"
 tagline: Mine with your own block templates, on a node that never enforces BIP-110
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -100,22 +100,20 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  First release. A DATUM Gateway paired with Knots (SHA256) Companion, the node that never enforces
-  BIP-110.
+  Fixes the app failing to open, with the gateway restarting in a loop and logging "unable to open
+  /app/conf/datum_gateway_config.json".
 
 
-  Opening the app opens the gateway dashboard, behind umbrelOS's proxy, with a working admin login
-  from "Show default credentials" on the app icon. The Config tab is live: your payout address,
-  coinbase tags, stratum and vardiff settings, pool settings and logging, and changes survive a
-  restart.
+  Its configuration file is shipped with the app and copied on a fresh install, but umbrelOS does not
+  copy that part of an app when it updates one. An install that updated into the version which first
+  needed the file never received it, Docker created an empty directory where it should have been, and
+  the gateway could not start.
 
 
-  Set a payout address before you mine. There is no default, because a default would mean sending
-  your block rewards to somebody else.
+  The file is now written from its defaults whenever it is missing, so an affected install repairs
+  itself on the next start. Nothing is overwritten if it is already there: a payout address or any
+  other setting changed in the dashboard is left alone.
 
-
-  Solo and pooled mining both work. Unlike the BLAKE2b companion, where no pool can validate a
-  share, this gateway builds SHA256d templates and every DATUM pool understands them.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:

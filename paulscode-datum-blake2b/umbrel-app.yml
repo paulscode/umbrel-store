@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.1.0"
+version: "1.1.1"
 tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -94,38 +94,20 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  Opening this app now opens the DATUM Gateway dashboard, the same way the official Datum app does.
-  It used to open a page this project wrote, carrying a compatibility-report form, with the
-  dashboard published separately on port 7152 behind nothing at all. The dashboard is the app now,
-  and it sits behind umbrelOS's proxy like every other app's web interface.
+  Fixes the app failing to open, with the gateway restarting in a loop and logging "unable to open
+  /app/conf/datum_gateway_config.json".
 
 
-  YOU CAN CHANGE SETTINGS IN THE APP. The Config tab is live: your payout address, coinbase tags,
-  stratum and vardiff settings, logging, all of it, and changes survive a restart. Sign in with
-  the username `admin` and the password from "Show default credentials" on the app icon's context
-  menu. Previously the dashboard's admin pages, including the page listing your connected miners,
-  were unreachable because no password was ever set.
+  Its configuration file is shipped with the app and copied on a fresh install, but umbrelOS does not
+  copy that part of an app when it updates one. An install that updated into the version which first
+  needed the file never received it, Docker created an empty directory where it should have been, and
+  the gateway could not start.
 
 
-  SET YOUR PAYOUT ADDRESS AFTER UPDATING. Earlier versions asked your node for an address and used
-  the first one it gave. That is no longer done, because it quietly put your block rewards in a
-  wallet whose backup nobody had thought about. The Config tab asks for one instead, which is what
-  the official app does.
+  The file is now written from its defaults whenever it is missing, so an affected install repairs
+  itself on the next start. Nothing is overwritten if it is already there: a payout address or any
+  other setting changed in the dashboard is left alone.
 
-
-  The compatibility report is gone: the second Stratum port on 23337 that recorded a miner's
-  conversation, and the form that turned a recording into a report. It existed to find out which
-  Sia ASICs could talk to this gateway when nobody knew. Five models across three manufacturers
-  are now known to work. If your miner was pointed at 23337, point it at 23336 instead.
-
-
-  The private test chain is gone with it, along with the network selector on the old page. Mining
-  now means mining the BLAKE2b chain on mainnet.
-
-
-  Primary Coinbase Tag now works. It has been a setting that did nothing since it was added,
-  discarded on the way to the gateway by a rule that existed to protect the fork's activation
-  block. That block was mined on 30 August 2026, so there is nothing left to protect.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
