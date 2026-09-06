@@ -95,11 +95,11 @@ services:
   # 077 because it carries the RPC password, and the image's own entrypoint
   # chmods 600 for the same reason.
   #
-  # passthrough_rpcauth points at the node's bitcoin.conf, which carries an
-  # `rpcauth=umbrel:<salt>$<hash>` line. That makes the proxy accept exactly the
-  # credentials the node accepts, so electrs authenticates with the same user and
-  # password whether it is pointed at the node or at the proxy. It also means no
-  # second secret is generated, stored or shared by this app.
+  # The proxy accepts exactly what the node accepts: the `rpcauth=` lines the
+  # node is configured with, and the cookie it writes. Both, whenever both
+  # exist, because electrs picks between them on its own. That way electrs
+  # authenticates the same whether it is pointed at the node or at the proxy,
+  # and no second secret is generated, stored or shared by this app.
   proxy:
     # Our build of v0.8.0, carrying PR #33 and PR #34. Stock v0.8.0 cannot parse
     # a 164-byte BLAKE2b header, and it parses the block for any request it
@@ -146,26 +146,71 @@ services:
         H=$$(esc "$${BITCOIND_HOST}")
         U=$$(esc "$${BITCOIND_USER}")
         P=$$(esc "$${BITCOIND_PASS}")
-        # How the chosen node authenticates, which differs between them and is not a
-        # setting: the official Bitcoin Node uses rpcauth and exports a user and password,
-        # while the BLAKE2b companion uses the cookie it writes itself. An empty user is
-        # the signal for the second, and the cookie is located by probing the chain
-        # subdirectories bitcoind uses for anything but mainnet, exactly as the electrs
-        # entrypoint does.
-        if [ -n "$${BITCOIND_USER}" ]; then
-          AUTH=$$(printf 'bitcoind_user = "%s"\nbitcoind_password = "%s"\npassthrough_rpcauth = "/bitcoin/bitcoin.conf"' "$$U" "$$P")
-        else
-          COOKIE=""
-          for sub in regtest testnet4 testnet signet ""; do
-            if [ -n "$$sub" ]; then C="/bitcoin/$$sub/.cookie"; else C="/bitcoin/.cookie"; fi
-            if [ -r "$$C" ]; then COOKIE="$$C"; break; fi
+        # The cookie is located by probing the chain subdirectories bitcoind uses
+        # for anything but mainnet, exactly as the electrs entrypoint does. It is
+        # looked for whether or not a user and password were exported, because it
+        # is needed for more than one thing below.
+        COOKIE=""
+        for sub in regtest testnet4 testnet signet ""; do
+          if [ -n "$$sub" ]; then C="/bitcoin/$$sub/.cookie"; else C="/bitcoin/.cookie"; fi
+          if [ -r "$$C" ]; then COOKIE="$$C"; break; fi
+        done
+
+        # Every rpcauth= line the node actually uses, which is not necessarily in
+        # the file it names. bitcoin.conf is allowed to be a stub that pulls the
+        # real settings in with includeconf=, and that is exactly what the BLAKE2b
+        # companion does: its bitcoin.conf holds one includeconf line and the
+        # rpcauth lives in umbrel-bitcoin.conf beside it.
+        #
+        # Pointing passthrough_rpcauth straight at bitcoin.conf then loads no
+        # users at all, and the proxy answers every caller 401 while the node
+        # itself accepts those very credentials. That is not a visible
+        # misconfiguration: it looks like electrs has the wrong password.
+        #
+        # bitcoind honours includeconf only in the top-level file, so one level is
+        # the whole of it.
+        : > /tmp/rpcauth.conf
+        if [ -r /bitcoin/bitcoin.conf ]; then
+          grep -h '^[[:space:]]*rpcauth=' /bitcoin/bitcoin.conf >> /tmp/rpcauth.conf 2>/dev/null || true
+          sed -n 's/^[[:space:]]*includeconf=//p' /bitcoin/bitcoin.conf 2>/dev/null | while IFS= read -r inc; do
+            [ -n "$$inc" ] || continue
+            case "$$inc" in /*) F="$$inc" ;; *) F="/bitcoin/$$inc" ;; esac
+            [ -r "$$F" ] && grep -h '^[[:space:]]*rpcauth=' "$$F" >> /tmp/rpcauth.conf 2>/dev/null || true
           done
+        fi
+
+        # How the proxy authenticates TO the node. The official Bitcoin Node
+        # exports a user and password; the BLAKE2b companion historically
+        # exported neither, and an empty user is still the signal to use its
+        # cookie instead.
+        if [ -n "$${BITCOIND_USER}" ]; then
+          AUTH=$$(printf 'bitcoind_user = "%s"\nbitcoind_password = "%s"' "$$U" "$$P")
+        else
           if [ -z "$$COOKIE" ]; then
             echo "proxy: no readable .cookie under /bitcoin; is the chosen node running?" >&2
             exit 1
           fi
           echo "proxy: authenticating to the node with $$COOKIE"
-          AUTH=$$(printf 'cookie_file = "%s"\npassthrough_rpccookie = "%s"' "$$COOKIE" "$$COOKIE")
+          AUTH=$$(printf 'cookie_file = "%s"' "$$COOKIE")
+        fi
+
+        # Which credentials the proxy ACCEPTS. Both are offered whenever both
+        # exist, rather than picking one to match how the proxy talks to the
+        # node. Those are separate questions: electrs chooses for itself, and it
+        # follows the same "user and password if exported, cookie otherwise" rule
+        # against variables that can change under it on an app update. Accepting
+        # only one of the two turns that into a 401 loop.
+        if [ -s /tmp/rpcauth.conf ]; then
+          echo "proxy: accepting the node's rpcauth credentials"
+          AUTH=$$(printf '%s\npassthrough_rpcauth = "/tmp/rpcauth.conf"' "$$AUTH")
+        fi
+        if [ -n "$$COOKIE" ]; then
+          echo "proxy: accepting the node's cookie at $$COOKIE"
+          AUTH=$$(printf '%s\npassthrough_rpccookie = "%s"' "$$AUTH" "$$COOKIE")
+        fi
+        if [ ! -s /tmp/rpcauth.conf ] && [ -z "$$COOKIE" ]; then
+          echo "proxy: no rpcauth and no cookie found; nothing could authenticate" >&2
+          exit 1
         fi
         cat > /tmp/btc_rpc_proxy.toml <<EOF
         bitcoind_address = "$$H"

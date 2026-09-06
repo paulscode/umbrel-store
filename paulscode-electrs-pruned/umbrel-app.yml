@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.10"
+version: "0.11.11"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
@@ -92,29 +92,35 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes two faults in the RPC proxy this app uses to fetch the blocks your pruned node no longer
-  has. Either one stops indexing completely, and neither clears on its own.
+  Fixes three faults that between them stop this app indexing. None of them clear on their own,
+  and all three look like something else, so it is worth saying what each one did.
 
 
-  The first stopped every index at block 434,499 and left it there. That block was mined in 2016
-  while SegWit was still being signalled, which gives it an unusual but perfectly valid shape,
-  and the proxy mistook that shape for a block a peer had tampered with. Since every peer returns
-  the same block, every peer looked like it was lying, and the block was never fetched. Indexing
-  sat and retried it forever while reporting no progress.
+  Indexing stopped at block 434,499 and stayed there. That block was mined in 2016 while SegWit
+  was still being signalled, which gives it an unusual but perfectly valid shape, and the block
+  fetcher mistook that shape for a block a peer had tampered with. Since every peer returns the
+  same block, every peer looked like it was lying, so the block was never fetched. Indexing sat
+  and retried it forever while reporting no progress.
 
 
-  The second only appeared after you restarted your Bitcoin node. The proxy read the node's
-  password once when it started and kept the old copy, so once the node generated a new one the
-  proxy rejected this app's every request. Electrs then could not reach the node at all and
-  restarted in a loop. Restarting Electrs did not help, because the stale copy was in the proxy.
+  After a Bitcoin node restart, this app could not reach the node at all. The block fetcher read
+  the node's password once when it started and kept that copy, so once the node generated a new
+  one it rejected this app's every request. Electrs then restarted in a loop. Restarting Electrs
+  did not help, because the stale copy was on the other side.
 
 
-  Nothing is lost and no reindex is needed. Whatever was already indexed stays, and indexing picks
-  up from where it stopped. If you were stuck at 434,499, expect progress to resume within a few
-  minutes of the update.
+  On the Knots (BLAKE2b) Companion, the same rejection could happen without any node restart.
+  That node keeps its RPC credentials in a second configuration file that the first one pulls in,
+  and this app was only reading the first, so it ended up accepting no credentials at all while
+  the node itself accepted them perfectly well. It now reads both, and accepts the node's cookie
+  as well, so it no longer matters which of the two Electrs picks.
 
 
-  Both faults are in the upstream proxy rather than anything specific to this app, and both fixes
-  have been sent upstream.
+  Nothing is lost and no reindex is needed. Whatever was already indexed stays, and indexing
+  resumes where it stopped. If you were stuck at 434,499, expect progress within a few minutes.
+
+
+  The first two faults are in the upstream proxy rather than anything specific to this app, and
+  both fixes have been sent upstream.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
