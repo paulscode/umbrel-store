@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.9"
+version: "0.11.10"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
@@ -92,12 +92,29 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Moves off port 3031, which the official AnythingLLM app also uses. Umbrel gives each app its
-  own port and refuses to install one whose port is already taken, so anyone running that app
-  could not install this one, and the failure said only that the port was allocated.
+  Fixes two faults in the RPC proxy this app uses to fetch the blocks your pruned node no longer
+  has. Either one stops indexing completely, and neither clears on its own.
 
 
-  If you already have this installed, the address you use to open it changes from 3031 to 3034.
-  Nothing else changes, and your index is untouched.
+  The first stopped every index at block 434,499 and left it there. That block was mined in 2016
+  while SegWit was still being signalled, which gives it an unusual but perfectly valid shape,
+  and the proxy mistook that shape for a block a peer had tampered with. Since every peer returns
+  the same block, every peer looked like it was lying, and the block was never fetched. Indexing
+  sat and retried it forever while reporting no progress.
+
+
+  The second only appeared after you restarted your Bitcoin node. The proxy read the node's
+  password once when it started and kept the old copy, so once the node generated a new one the
+  proxy rejected this app's every request. Electrs then could not reach the node at all and
+  restarted in a loop. Restarting Electrs did not help, because the stale copy was in the proxy.
+
+
+  Nothing is lost and no reindex is needed. Whatever was already indexed stays, and indexing picks
+  up from where it stopped. If you were stuck at 434,499, expect progress to resume within a few
+  minutes of the update.
+
+
+  Both faults are in the upstream proxy rather than anything specific to this app, and both fixes
+  have been sent upstream.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

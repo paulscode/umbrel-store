@@ -101,14 +101,28 @@ services:
   # password whether it is pointed at the node or at the proxy. It also means no
   # second secret is generated, stored or shared by this app.
   proxy:
-    # Our build of v0.8.0, carrying PR #33. Stock v0.8.0 cannot parse a 164-byte
-    # BLAKE2b header, and it parses the block for any request it intercepts, so
-    # every verbose `getblock` and every intercepted `getrawtransaction` above
-    # block 961640 came back "IO error: failed to fill whole buffer". That is
-    # Mempool Pruned's entire block path and this app's own verbose transaction
-    # lookups. Not a pruning problem: it failed on blocks the node still had.
-    # Swap back to ghcr.io/start9labs/btc-rpc-proxy once #33 is merged upstream.
-    image: paulscode/btc-rpc-proxy:v0.8.0-blake2b.1@sha256:84f236b9d8ad87b5dced11ce1e85bab33d7b51e64b4dc0f86e79ab1746a56bfc
+    # Our build of v0.8.0, carrying PR #33 and PR #34. Stock v0.8.0 cannot parse
+    # a 164-byte BLAKE2b header, and it parses the block for any request it
+    # intercepts, so every verbose `getblock` and every intercepted
+    # `getrawtransaction` above block 961640 came back "IO error: failed to fill
+    # whole buffer". That is Mempool Pruned's entire block path and this app's
+    # own verbose transaction lookups. Not a pruning problem: it failed on
+    # blocks the node still had.
+    #
+    # blake2b.2 adds PR #34, which is two upstream defects rather than anything
+    # BLAKE2b-specific, and either one stops this app dead:
+    #
+    #   - The witness check rejected any block whose coinbase commits to
+    #     witnesses the block does not carry. Blocks mined during SegWit
+    #     signalling have exactly that shape and are perfectly valid; mainnet
+    #     434499 is the first. Every peer returns the same bytes, so every peer
+    #     "failed", and the index could never pass that height.
+    #   - The passthrough cookie was read once at startup. bitcoind writes a new
+    #     one every time it starts, so after the node restarted the proxy
+    #     answered electrs 401 forever and only restarting the proxy cleared it.
+    #
+    # Swap back to ghcr.io/start9labs/btc-rpc-proxy once #33 and #34 are merged.
+    image: paulscode/btc-rpc-proxy:v0.8.0-blake2b.2@sha256:1c389b705a406052d93f5e78763478a6f8fd6f83fcd3daf8c16baf17da2c3278
     restart: on-failure
     environment:
       BITCOIND_HOST: ${APP_BITCOIN_NODE_IP}
