@@ -121,6 +121,17 @@ fi
 
 # The gateway runs as 1000:1000 and has to be able to rewrite this file, which is
 # the whole point of modify_conf.
+# THE DIRECTORY TOO, NOT JUST THE FILE.
+#
+# modify_conf is on, and the gateway saves by writing a temp file beside this one
+# and renaming it, which needs write permission on the DIRECTORY. Chowning only
+# the file leaves the dashboard's Config page reporting "Error writing new config
+# file (changes will be lost at restart)" and silently discarding every save.
+#
+# The directory is usually root-owned precisely when this matters: Docker creates
+# a missing bind-mount source as root, which is what happens on an install that
+# updated into needing this file and never received it.
+chown "${DESIRED_OWNER}" "$(dirname "${DATUM_CONFIG_FILE}")"
 chown "${DESIRED_OWNER}" "$DATUM_CONFIG_FILE"
 
 echo "DATUM configuration updated successfully."

@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-sha256
 category: bitcoin
 name: Datum (SHA256) Companion
-version: "1.0.1"
+version: "1.0.2"
 tagline: Mine with your own block templates, on a node that never enforces BIP-110
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -113,6 +113,12 @@ releaseNotes: >-
   The file is now written from its defaults whenever it is missing, so an affected install repairs
   itself on the next start. Nothing is overwritten if it is already there: a payout address or any
   other setting changed in the dashboard is left alone.
+
+
+  Also fixes "Error writing new config file (changes will be lost at restart)" when saving on the
+  Config tab. The gateway saves by writing a temporary file next to its config, which needs write
+  access to the folder holding it, and that folder was owned by root. Settings saved before this
+  update were genuinely discarded, so re-enter anything you changed and it will stick.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
