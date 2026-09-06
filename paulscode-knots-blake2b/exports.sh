@@ -111,9 +111,14 @@ if [[ -z "${APP_KNOTS_BLAKE2B_RPC_USER:-}" ]] || [[ -z "${APP_KNOTS_BLAKE2B_RPC_
 	# Prefer credentials an older .env already holds. bitcoind wrote its
 	# rpcauth line from these, so reusing them keeps the node and every
 	# dependent on the pair they were already using.
-	if [[ -n "${APP_BITCOIN_KNOTS_RPC_USER:-}" ]]; then
+	# BOTH must be non-empty to be worth adopting. The version that used these
+	# names authenticated to bitcoind with the cookie it writes itself and stored
+	# an EMPTY password, so testing only the user adopts the emptiness and leaves
+	# every dependent exactly as stuck as before. Found on a live install whose
+	# legacy password hashed to the empty string.
+	if [[ -n "${APP_BITCOIN_KNOTS_RPC_USER:-}" ]] && [[ -n "${APP_BITCOIN_KNOTS_RPC_PASS:-}" ]]; then
 		BITCOIN_RPC_USER="${APP_BITCOIN_KNOTS_RPC_USER}"
-		BITCOIN_RPC_PASS="${APP_BITCOIN_KNOTS_RPC_PASS:-}"
+		BITCOIN_RPC_PASS="${APP_BITCOIN_KNOTS_RPC_PASS}"
 	fi
 
 	echo "export APP_KNOTS_BLAKE2B_RPC_USER='${BITCOIN_RPC_USER}'"	>> "${BITCOIN_ENV_FILE}"
