@@ -117,6 +117,50 @@ if jq -e '.mining.pool_address | select(. == "enter your bitcoin address")' "$DA
      "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
 fi
 
+# A POOL PUBKEY THAT WOULD KILL THE GATEWAY, DEFUSED BEFORE IT DOES.
+#
+# The pool's public key is 128 hex characters: an ed25519 key and an x25519 key,
+# each 64, concatenated. Paste 127 of them, or a key with a 0x prefix, and
+# datum_pubkey_to_struct logs "Pool public key is not the correct length!" and
+# main exits FATAL before anything else starts.
+#
+# That is unrecoverable here in a way it is not on StartOS. There the settings
+# live in actions, which run while the service is down. Here the dashboard is
+# the only settings form there is, it is served by the process that just died,
+# and `restart: on-failure` then crash-loops it. The Config page never loads
+# again, so the value that broke it cannot be corrected from the app at all.
+#
+# So an invalid key is not handed to the gateway. Pooled mining is turned off for
+# this start, which lets the gateway run and the dashboard come back, and the
+# host is kept under "pool_host(old)", which is DATUM's own convention for a
+# remembered host: selecting pooled mining again on the Config page restores it.
+# The rejected key is left in place, so it is visible on that page and can be
+# corrected rather than silently discarded.
+#
+# ONLY WHEN THE KEY IS ACTUALLY SET, WHICH IS THE WHOLE POINT.
+#
+# DATUM compiles in a default pool pubkey and uses it whenever the config names
+# none, so host and port alone start perfectly well and are what a pool's own
+# instructions usually ask for. Treating an absent key as a bad one would turn
+# pooled mining off for exactly the people who followed those instructions. An
+# empty string is different from absent and is checked: the config description
+# claims empty means auto-fetch, no version of DATUM implements that, and it is
+# fatal like any other wrong length.
+POOL_HOST="$(jq -r '.datum.pool_host // ""' "$DATUM_CONFIG_FILE")"
+POOL_PUBKEY_SET="$(jq -r '(.datum // {}) | has("pool_pubkey")' "$DATUM_CONFIG_FILE")"
+POOL_PUBKEY="$(jq -r '.datum.pool_pubkey // ""' "$DATUM_CONFIG_FILE")"
+
+if [ -n "${POOL_HOST}" ] && [ "${POOL_PUBKEY_SET}" = "true" ] \
+   && ! printf '%s' "${POOL_PUBKEY}" | grep -Eq '^[0-9a-fA-F]{128}$'; then
+  echo "Pool host is set to '${POOL_HOST}', but the pool public key is not 128 hex characters."
+  echo "The gateway exits on that, and its dashboard is the only place to correct it, so pooled mining is off for this start."
+  echo "Open the Config tab, set Collaborative reward sharing back to prefer or require, and re-enter the pool's public key."
+  jq '.datum["pool_host(old)"] = .datum.pool_host |
+      .datum.pool_host = "" |
+      .datum.pooled_mining_only = false' \
+     "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+fi
+
 # The gateway runs as 1000:1000 and has to be able to rewrite this file, which is
 # the whole point of modify_conf.
 # THE DIRECTORY TOO, NOT JUST THE FILE.
