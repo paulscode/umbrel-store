@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.1.3"
+version: "1.1.4"
 tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -69,11 +69,18 @@ description: >-
     - Port: `28915`
 
 
-  Leave **Pubkey** alone. DATUM has a pool key built in and uses it whenever that
-  box is empty, which is why a host and a port are all Convoy asks for. Only put
-  something there if the pool publishes a key of its own, and if you do, it has to
-  be 128 hex characters: a signing key and an encryption key one after the other.
-  A key of any other length stops the gateway from starting.
+  **Pubkey** is already filled in with Convoy's, so a host and a port are all you
+  need to add. It should read:
+
+
+  `dbb11fa0c2b5403e4f798fa6071bb97e6079d219598366032fdf2ae01962b13c5e66e2be7d6b008f0b2603f3e6f6fc64768fa786c8129c46d3e30a5867734b62`
+
+
+  That key is what authenticates the pool to you, so it is worth checking against
+  the one Convoy publishes rather than taking it from here. If Convoy ever changes
+  it, paste the new one into that box. It is always 128 hex characters, a signing
+  key and an encryption key one after the other, and a key of any other length
+  stops the gateway from starting.
 
 
   Before you change any of this, the Host box shows
@@ -129,28 +136,26 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  Explains how to mine to a pool, and stops one wrong value there from taking the app down.
+  Fills in Convoy's pool public key, which 1.1.3 wrongly told you to leave alone.
 
 
-  The Pool boxes on the Config tab are greyed out until "Collaborative reward sharing" is changed
-  from "never" to "prefer" or "require". That is DATUM's dashboard disabling them, not a fault, but
-  nothing said so, and the Host box meanwhile shows an address belonging to a pool on the chain that
-  kept SHA256d. It is DATUM's built-in default, shown whenever no pool is set, and this app has never
-  contacted it. The setup instructions on this page now cover both.
+  DATUM has a pool key compiled in and uses it whenever the config names none. That key belongs to a
+  pool on the chain that kept SHA256d, so on this chain it is never the right answer: a gateway given
+  Convoy's host and port and nothing else would offer the wrong key, and the connection would fail
+  with nothing on the dashboard to say why. 1.1.3's instructions said to leave the box empty. That
+  was wrong, and this corrects it.
 
 
-  Convoy's host and port are named in the instructions, and the Pubkey box is best left empty: DATUM
-  has a pool key built in and uses it whenever that box is unset, which is why a host and a port are
-  all a pool usually asks for.
+  Convoy's key is now seeded into the config, so its host and port are all you need to enter. The key
+  is shown in the Pubkey box on the Config tab, and it is worth checking against the one Convoy
+  publishes, since that key is what authenticates the pool to you. A key you have already entered
+  yourself is left alone, and if Convoy ever changes it, the new one goes in that box.
 
 
-  If you do fill it in, it has to be exactly 128 hex characters, a signing key and an encryption key
-  one after the other. Anything else was fatal at startup rather than a validation error, and because
-  the dashboard is served by the process that died, the app would crash-loop with no way left to
-  correct the value. A key of the wrong length is now caught before the gateway sees it: pooled
-  mining is turned off for that start so the dashboard comes back, the host is remembered, and the
-  app log says what to fix. An empty box is left alone, so nothing changes for anyone who never
-  touched it.
+  Everything 1.1.3 added is still here: the Pool boxes stay greyed out until "Collaborative reward
+  sharing" is changed from "never", which is the step people miss, and a key of the wrong length is
+  caught before it reaches the gateway instead of crash-looping the app out of reach of its own
+  dashboard.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:

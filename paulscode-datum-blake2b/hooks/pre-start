@@ -146,6 +146,30 @@ fi
 # empty string is different from absent and is checked: the config description
 # claims empty means auto-fetch, no version of DATUM implements that, and it is
 # fatal like any other wrong length.
+# SEEDED WITH CONVOY'S KEY, BECAUSE DATUM'S BUILT-IN ONE IS THE OTHER CHAIN'S.
+#
+# DATUM compiles in a pool pubkey and uses it whenever the config names none.
+# That key is Ocean's, and Ocean mines the chain that kept SHA256d, so on this
+# chain the built-in default is never the right answer: a gateway given a host
+# and a port alone would offer Ocean's key to Convoy and the handshake would
+# fail, with nothing on the dashboard to suggest why.
+#
+# Convoy's key is seeded here so that a host and a port are all this app needs,
+# which is what its own instructions ask for. Read from a gateway connected to
+# Convoy on 11 September 2026, where the dashboard reported "Connected and
+# Ready" against Pool Tag "CONVOY".
+#
+# Only when absent. A key already in the file is the operator's, including one
+# they pasted from Convoy themselves, and if Convoy ever rotates this the
+# dashboard is where the new one goes.
+CONVOY_POOL_PUBKEY="dbb11fa0c2b5403e4f798fa6071bb97e6079d219598366032fdf2ae01962b13c5e66e2be7d6b008f0b2603f3e6f6fc64768fa786c8129c46d3e30a5867734b62"
+
+if [ "$(jq -r '(.datum // {}) | has("pool_pubkey")' "$DATUM_CONFIG_FILE")" != "true" ]; then
+  echo "Seeding Convoy's pool public key, since DATUM's built-in default belongs to a pool on the other chain."
+  jq --arg key "$CONVOY_POOL_PUBKEY" '.datum.pool_pubkey = $key' \
+     "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+fi
+
 POOL_HOST="$(jq -r '.datum.pool_host // ""' "$DATUM_CONFIG_FILE")"
 POOL_PUBKEY_SET="$(jq -r '(.datum // {}) | has("pool_pubkey")' "$DATUM_CONFIG_FILE")"
 POOL_PUBKEY="$(jq -r '.datum.pool_pubkey // ""' "$DATUM_CONFIG_FILE")"
