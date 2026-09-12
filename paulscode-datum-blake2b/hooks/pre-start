@@ -159,13 +159,23 @@ fi
 # Convoy on 11 September 2026, where the dashboard reported "Connected and
 # Ready" against Pool Tag "CONVOY".
 #
-# Only when absent. A key already in the file is the operator's, including one
-# they pasted from Convoy themselves, and if Convoy ever rotates this the
-# dashboard is where the new one goes.
+# Two cases are repaired. Absent, which is every install predating this. And
+# DATUM's own key present verbatim, which is what a config carried over from the
+# official Datum Gateway app looks like, and what somebody gets if they read the
+# key out of DATUM's documentation. Ocean does not serve this chain, so that key
+# is never a usable answer here whichever way it arrived.
+#
+# Anything else is the operator's and is left alone, including a key they pasted
+# from Convoy themselves and any key Convoy rotates to later.
 CONVOY_POOL_PUBKEY="dbb11fa0c2b5403e4f798fa6071bb97e6079d219598366032fdf2ae01962b13c5e66e2be7d6b008f0b2603f3e6f6fc64768fa786c8129c46d3e30a5867734b62"
+DATUM_BUILTIN_POOL_PUBKEY="f21f2f0ef0aa1970468f22bad9bb7f4535146f8e4a8f646bebc93da3d89b1406f40d032f09a417d94dc068055df654937922d2c89522e3e8f6f0e649de473003"
 
-if [ "$(jq -r '(.datum // {}) | has("pool_pubkey")' "$DATUM_CONFIG_FILE")" != "true" ]; then
-  echo "Seeding Convoy's pool public key, since DATUM's built-in default belongs to a pool on the other chain."
+CURRENT_POOL_PUBKEY="$(jq -r '.datum.pool_pubkey // ""' "$DATUM_CONFIG_FILE" | tr 'A-Z' 'a-z')"
+if [ -z "${CURRENT_POOL_PUBKEY}" ] || [ "${CURRENT_POOL_PUBKEY}" = "${DATUM_BUILTIN_POOL_PUBKEY}" ]; then
+  if [ -n "${CURRENT_POOL_PUBKEY}" ]; then
+    echo "The configured pool public key is DATUM's built-in one, which belongs to Ocean on the chain that kept SHA256d."
+  fi
+  echo "Setting Convoy's pool public key, which is the one this chain needs."
   jq --arg key "$CONVOY_POOL_PUBKEY" '.datum.pool_pubkey = $key' \
      "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
 fi

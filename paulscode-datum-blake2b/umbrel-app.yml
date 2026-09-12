@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.1.4"
+version: "1.1.5"
 tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -136,26 +136,24 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  Fills in Convoy's pool public key, which 1.1.3 wrongly told you to leave alone.
+  Replaces DATUM's built-in pool key with Convoy's, as well as filling in a missing one.
 
 
-  DATUM has a pool key compiled in and uses it whenever the config names none. That key belongs to a
-  pool on the chain that kept SHA256d, so on this chain it is never the right answer: a gateway given
-  Convoy's host and port and nothing else would offer the wrong key, and the connection would fail
-  with nothing on the dashboard to say why. 1.1.3's instructions said to leave the box empty. That
-  was wrong, and this corrects it.
+  1.1.4 seeded Convoy's key when the Pubkey box was empty. It left the box alone when it already held
+  DATUM's own built-in key, which is the other way to end up unable to reach Convoy: that key is
+  Ocean's, on the chain that kept SHA256d, and it arrives that way if a config is carried over from
+  the official Datum app or if the key is copied out of DATUM's documentation. Either way it is never
+  a usable answer on this chain, so it is now replaced too.
 
 
-  Convoy's key is now seeded into the config, so its host and port are all you need to enter. The key
-  is shown in the Pubkey box on the Config tab, and it is worth checking against the one Convoy
-  publishes, since that key is what authenticates the pool to you. A key you have already entered
-  yourself is left alone, and if Convoy ever changes it, the new one goes in that box.
+  A key you set yourself is still left alone, including one taken from Convoy, and any key Convoy
+  rotates to in future.
 
 
-  Everything 1.1.3 added is still here: the Pool boxes stay greyed out until "Collaborative reward
-  sharing" is changed from "never", which is the step people miss, and a key of the wrong length is
-  caught before it reaches the gateway instead of crash-looping the app out of reach of its own
-  dashboard.
+  The symptom this fixes, if you are looking at it: Status reads "Non-Pooled Mode" with Collaborative
+  reward sharing on "prefer", Pool Shares sit at zero while local shares climb, and Pool Tag shows
+  your own gateway's tag where the pool's should be. That is the handshake failing on the wrong key,
+  and the gateway quietly mining solo instead.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
