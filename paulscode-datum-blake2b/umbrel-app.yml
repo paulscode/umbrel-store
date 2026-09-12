@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.1.5"
+version: "1.1.6"
 tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -136,24 +136,34 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  Replaces DATUM's built-in pool key with Convoy's, as well as filling in a missing one.
+  Pooled mining to Convoy now works. It could not before, and no setting would have fixed it.
 
 
-  1.1.4 seeded Convoy's key when the Pubkey box was empty. It left the box alone when it already held
-  DATUM's own built-in key, which is the other way to end up unable to reach Convoy: that key is
-  Ocean's, on the chain that kept SHA256d, and it arrives that way if a config is carried over from
-  the official Datum app or if the key is copied out of DATUM's documentation. Either way it is never
-  a usable answer on this chain, so it is now replaced too.
+  Convoy extended the DATUM protocol, and their server hangs up on a gateway that does not speak the
+  addition. Ours did not, so it connected, was disconnected, and with reward sharing on "prefer" fell
+  back to solo without saying why. On the dashboard that read as "Non-Pooled Mode", Pool Shares stuck
+  at zero while local shares climbed, and Pool Tag showing this gateway's own tag where the pool's
+  belongs.
 
 
-  A key you set yourself is still left alone, including one taken from Convoy, and any key Convoy
-  rotates to in future.
+  The gateway is now built from Convoy's own fork, which is the client for their pool, with our
+  stratum password difficulty carried on top so `d=8192` and `fd=8192` still work. That matters for
+  rented hashrate and Convoy's fork does not have it.
 
 
-  The symptom this fixes, if you are looking at it: Status reads "Non-Pooled Mode" with Collaborative
-  reward sharing on "prefer", Pool Shares sit at zero while local shares climb, and Pool Tag shows
-  your own gateway's tag where the pool's should be. That is the handshake failing on the wrong key,
-  and the gateway quietly mining solo instead.
+  Verified before shipping, because this decides what your miner is paid for: Convoy's BLAKE2b test
+  vector hashes identically in an independent implementation checked against live mainnet block
+  961640; their full test suite passes; solo mining against a Knots BLAKE2b node produced blocks the
+  node accepted with zero rejections; and a Goldshell HS Box and an Innosilicon S11 mined against
+  both builds for real, at parity.
+
+
+  One visible change. Convoy advertises bitcoin difficulty rather than pool difficulty, so your miner
+  will be told 1023.984375 where it used to see 1024. Both of the ASICs above handle it. Shares below
+  difficulty 1 are now refused outright, which no real miner produces.
+
+
+  Solo mining is unchanged and remains the default.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
