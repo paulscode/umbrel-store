@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.3-beta-blake2b.5.1"
+version: "0.21.3-beta-blake2b.5.2"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -42,6 +42,18 @@ description: >-
   up after every channel open or close.
 
 
+  CHANNEL BACKUPS
+
+
+  The official app sends channel backups to Umbrel's backup server, which does
+  not accept them from this app. Lightning Fork copies channel.backup instead
+  to a place you control, chosen under Channel backups in the dashboard's
+  menu: an SFTP server, a Nextcloud, Dropbox or Google Drive. The copy is
+  made whenever your channels change, and Recover channels fetches it back
+  from the same place. Until a target is set, the file lives only on this
+  Umbrel.
+
+
   Runs beside the official Lightning Node app: it uses ports 9737, 10010 and
   8180 where that app uses 9735, 10009 and 8080. The dashboard is that app's,
   forked: named Lightning Fork, styled after this icon, its port-forwarding
@@ -65,17 +77,15 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  The dashboard is now Lightning Fork's own, forked from the official Lightning
-  Node app's. It carries this app's name and icon, a dark theme in the icon's
-  electric blue, and a badge naming the Bitcoin BLAKE2b chain. Two errors the
-  borrowed dashboard used to make are fixed: its port-forwarding note now says
-  9737, this app's peer port, and its transaction links open mempool.guide,
-  which follows the BLAKE2b chain, instead of mempool.space. Fiat amounts are
-  priced for this chain: BTCB2's own market at neoxa.exchange, with other
-  currencies converted through Coingecko's rate table, as Sparrow BLAKE2b does
-  it; when a feed is unreachable the hints show the amount in sats or BTC
-  instead. The node itself is unchanged from 0.21.3-beta-blake2b.5. Updating
-  restarts the node once so the dashboard can rewrite its configuration file.
+  Channel backups that work. The official dashboard sent channel.backup to
+  Umbrel's backup server, which answers 403 to this app, so no backup ever
+  succeeded and the dashboard kept reporting a failure. Those settings are
+  gone. In their place, Channel backups in the dashboard's menu copies
+  channel.backup to a place you control, an SFTP server, a Nextcloud, Dropbox
+  or Google Drive, whenever your channels change, with a Back up now button
+  and a status line; Recover channels fetches the copy back from the same
+  place, or takes a file you upload. This is the same agent the StartOS
+  package uses. The node itself is unchanged from 0.21.3-beta-blake2b.5.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
