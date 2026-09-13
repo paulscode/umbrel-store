@@ -1,0 +1,132 @@
+manifestVersion: 1.1
+id: paulscode-lightning-fork
+category: bitcoin
+name: Lightning Fork
+version: "0.21.3-beta-blake2b.3"
+tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
+description: >-
+  Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
+  chain: the Bitcoin Knots hard fork that replaced SHA256d proof of work with
+  BLAKE2b at block 961640 on 30 August 2026. It opens and closes channels,
+  routes payments, and sends and receives over the Lightning Network on that
+  chain, behind the same dashboard the official Lightning Node app uses.
+
+
+  WHICH NODE IT NEEDS
+
+
+  A Bitcoin node on the BLAKE2b chain, chosen in this app's node selector. Two
+  qualify: Knots (BLAKE2b) Companion from this store, and Bitcoin Knots once it
+  is on 29.4.1 or later. Bitcoin Core, and any Knots below 29.4.1, are on the
+  other chain. Lightning Fork checks the node once the wallet is unlocked, and
+  again every five minutes, and refuses one it cannot confirm; this app's page
+  then says so in words rather than spinning.
+
+
+  HOW IT STAYS AWAY FROM THE BITCOIN LIGHTNING NETWORK
+
+
+  The two chains share their history, addresses and keys, so a Lightning node
+  cannot tell them apart by any ordinary check. Lightning Fork advertises the
+  BLAKE2b chain in every peer handshake and drops peers that do not, and issues
+  invoices that start with lnblake, which no Bitcoin wallet will pay. It cannot
+  connect to, pay, or be paid from the Bitcoin Lightning network by accident.
+
+
+  REAL MONEY ON A YOUNG CHAIN
+
+
+  Coins that existed before block 961640 exist on both chains. Until Lightning
+  Fork signs with the chain's replay-protected signature type, prefer funding
+  channels with coins received after that block, and keep amounts modest. Back
+  up after every channel open or close.
+
+
+  Runs beside the official Lightning Node app: it uses ports 9737, 10010 and
+  8180 where that app uses 9735, 10009 and 8080. Two things in the dashboard
+  still speak for that app: the settings page's port-forwarding note says
+  9735 where this app's peer port is 9737, and transaction links open
+  mempool.space, which follows the other chain.
+developer: Paul Lamb
+website: https://github.com/paulscode/lightning-fork
+dependencies:
+  - bitcoin
+repo: https://github.com/paulscode/lightning-fork
+support: https://paulscode.com/c/bitcoin/8
+# Tile port, checked against every app installed on the author's box and every
+# app in this store: a colliding tile port fails the whole install. 7156 sits
+# with the store's other 715x tiles.
+port: 7156
+# Community stores must supply full URLs for icon and gallery; Umbrel's resolver
+# only auto-prefixes them for the official store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-lightning-fork/icon.png
+gallery:
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-lightning-fork/gallery/1.png
+path: ""
+defaultPassword: ""
+releaseNotes: >-
+  First release: LND 0.21.3-beta following the Bitcoin BLAKE2b chain, with the
+  official Lightning Node dashboard.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store
+widgets:
+  - id: "bitcoin-wallet"
+    type: "text-with-buttons"
+    refresh: "5s"
+    endpoint: "app:3006/v1/lnd/widgets/bitcoin-wallet"
+    link: ""
+    example:
+      type: "text-with-buttons"
+      link: ""
+      title: "Bitcoin Wallet"
+      text: "1,845,894"
+      subtext: "sats"
+      buttons:
+        - text: "Withdraw"
+          icon: "arrow-up-right"
+          link: "?action=send-bitcoin"
+        - text: "Deposit"
+          icon: "arrow-down-right"
+          link: "?action=receive-bitcoin"
+  - id: "lightning-wallet"
+    type: "text-with-buttons"
+    refresh: "2s"
+    endpoint: "app:3006/v1/lnd/widgets/lightning-wallet"
+    link: ""
+    example:
+      type: "text-with-buttons"
+      link: ""
+      title: "Lightning Wallet"
+      text: "762,248"
+      subtext: "sats"
+      buttons:
+        - text: "Send"
+          icon: "arrow-up-right"
+          link: "?action=send-lightning"
+        - text: "Receive"
+          icon: "arrow-down-right"
+          link: "?action=receive-lightning"
+  - id: "lightning-stats"
+    type: "four-stats"
+    refresh: "5s"
+    endpoint: "app:3006/v1/lnd/widgets/lightning-stats"
+    link: ""
+    example:
+      type: "four-stats"
+      link: ""
+      items:
+        - title: "Connections"
+          text: "5"
+          subtext: "peers"
+        - title: "Active channels"
+          text: "3"
+          subtext: "channels"
+        - title: "Max send"
+          text: "90K"
+          subtext: "sats"
+        - title: "Max receive"
+          text: "45K"
+          subtext: "sats"
+backupIgnore:
+  - data/lnd/data/graph/mainnet/channel.db
+  - data/status

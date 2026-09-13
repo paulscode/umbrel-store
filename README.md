@@ -21,6 +21,7 @@ An [Umbrel](https://umbrel.com) community app store bringing together all of
 |-----|--------------|----------|
 | [Agent Wallet](#agent-wallet) | Self-custodial Bitcoin & Lightning wallet with an automation API for AI agents | Lightning Node (LND) + Electrs/Fulcrum |
 | [Knots (BLAKE2b) Companion](#knots-blake2b-companion) | A pruned Bitcoin Knots node following the BLAKE2b chain, alongside your existing node | none (self-contained) |
+| [Lightning Fork](#lightning-fork) | A Lightning Network node (LND fork) for the BLAKE2b chain, beside the official Lightning Node | Knots (BLAKE2b) Companion (or Bitcoin Knots 29.4.1+) |
 | [Datum (BLAKE2b) Companion](#datum-blake2b-companion) | Solo mine the BLAKE2b chain with a Sia-style ASIC you already own | Knots (BLAKE2b) Companion |
 | [Knots (SHA256) Companion](#knots-sha256-companion) | A Bitcoin Knots node that never enforces BIP-110, beside your existing one | none (self-contained) |
 | [Datum (SHA256) Companion](#datum-sha256-companion) | Solo or pooled mining against that node, with your own block templates | Knots (SHA256) Companion |
@@ -77,6 +78,38 @@ and restart the app:
 ---
 
 ### Knots (BLAKE2b) Companion
+
+### Lightning Fork
+
+LND with the changes needed to follow the Bitcoin BLAKE2b chain, behind the
+same dashboard the official Lightning Node app uses. It opens and closes
+channels, routes payments, and sends and receives over the Lightning Network on
+that chain. It advertises the BLAKE2b chain in every peer handshake and drops
+peers that do not, and issues invoices that start with `lnblake`, which no
+Bitcoin wallet will pay, so it cannot reach the Bitcoin Lightning network by
+accident.
+
+Which Bitcoin node it follows is chosen in the app's node selector, the same one
+every app that depends on a Bitcoin node gets. Two qualify: **Knots (BLAKE2b)
+Companion** above, and **Bitcoin Knots** once it is on 29.4.1 or later. The
+daemon checks the node when it starts and refuses one it cannot confirm is on
+the BLAKE2b chain; the app's tile then shows why, in words, rather than a
+spinner. Bitcoin Core and any Knots below 29.4.1 are refused.
+
+> **Real money on a young chain.** Coins that existed before block 961640 exist
+> on both chains. Until Lightning Fork signs with the chain's replay-protected
+> signature type, prefer funding channels with coins received after that block,
+> and keep amounts modest. Back up after every channel open or close.
+
+**Connecting:** wallets that speak lndconnect (Zeus and the like) connect
+exactly as to LND, through the dashboard's connect modal. The app listens on
+**9737** (peers), **10010** (gRPC) and **8180** (REST); the official Lightning
+Node app keeps 9735, 10009 and 8080, so both can be installed at once.
+
+- Source: https://github.com/paulscode/lightning-fork
+- Issues: https://github.com/paulscode/lightning-fork/issues
+
+---
 
 ### Datum (BLAKE2b) Companion
 
