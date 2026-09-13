@@ -2,14 +2,14 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.3-beta-blake2b.5"
+version: "0.21.3-beta-blake2b.5.1"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
   chain: the Bitcoin Knots hard fork that replaced SHA256d proof of work with
   BLAKE2b at block 961640 on 30 August 2026. It opens and closes channels,
   routes payments, and sends and receives over the Lightning Network on that
-  chain, behind the same dashboard the official Lightning Node app uses.
+  chain, behind a dashboard forked from the official Lightning Node app's.
 
 
   WHICH NODE IT NEEDS
@@ -43,10 +43,10 @@ description: >-
 
 
   Runs beside the official Lightning Node app: it uses ports 9737, 10010 and
-  8180 where that app uses 9735, 10009 and 8080. Two things in the dashboard
-  still speak for that app: the settings page's port-forwarding note says
-  9735 where this app's peer port is 9737, and transaction links open
-  mempool.space, which follows the other chain.
+  8180 where that app uses 9735, 10009 and 8080. The dashboard is that app's,
+  forked: named Lightning Fork, styled after this icon, its port-forwarding
+  note corrected to 9737, and its transaction links pointed at mempool.guide,
+  which follows the BLAKE2b chain, rather than mempool.space.
 developer: Paul Lamb
 website: https://github.com/paulscode/lightning-fork
 dependencies:
@@ -65,13 +65,17 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Replay protection. Everything the node signs on its own, from wallet sends
-  and sweeps to the inputs it contributes to a channel, now opts into the
-  BLAKE2b chain's unified signature hash, so those transactions cannot be
-  replayed on the SHA256d chain. A PSBT that arrives with signatures made
-  elsewhere without the opt-in is refused rather than finalized. The daemon
-  also reports the chain's temporary block-size reduction and warns about any
-  channel funded before the fork.
+  The dashboard is now Lightning Fork's own, forked from the official Lightning
+  Node app's. It carries this app's name and icon, a dark theme in the icon's
+  electric blue, and a badge naming the Bitcoin BLAKE2b chain. Two errors the
+  borrowed dashboard used to make are fixed: its port-forwarding note now says
+  9737, this app's peer port, and its transaction links open mempool.guide,
+  which follows the BLAKE2b chain, instead of mempool.space. Fiat amounts are
+  priced for this chain: BTCB2's own market at neoxa.exchange, with other
+  currencies converted through Coingecko's rate table, as Sparrow BLAKE2b does
+  it; when a feed is unreachable the hints show the amount in sats or BTC
+  instead. The node itself is unchanged from 0.21.3-beta-blake2b.5. Updating
+  restarts the node once so the dashboard can rewrite its configuration file.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
