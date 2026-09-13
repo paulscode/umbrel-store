@@ -66,13 +66,11 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  ZeroMQ works now. The node is built with the ZeroMQ library it was missing:
-  it wrote the zmqpubrawblock and zmqpubrawtx settings it advertises and
-  silently ignored them, so nothing ever listened on those ports and
-  "getzmqnotifications" answered "Method not found". Lightning Fork, which
-  subscribes to block and transaction notifications over ZeroMQ, had to fall
-  back to polling this node over RPC; from this release it can use the feed.
-  Nothing else changes.
+  Same node as 1.1.6. A build with ZeroMQ compiled in was published as 1.1.7
+  for a few minutes and withdrawn: it shipped the node without the ZeroMQ
+  runtime library, so the node did not start. This release restores the
+  1.1.6 image under the new version number so that anyone who updated gets a
+  running node back; the ZeroMQ build follows as 1.1.8.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
