@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.3-beta-blake2b.3"
+version: "0.21.3-beta-blake2b.3.1"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -65,8 +65,11 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  First release: LND 0.21.3-beta following the Bitcoin BLAKE2b chain, with the
-  official Lightning Node dashboard.
+  Runs against a Bitcoin node that does not serve ZMQ, such as Knots (BLAKE2b)
+  Companion 1.1.6, by polling it over RPC instead of stopping at start with
+  "connection refused". Forgets the previous run's verdict on the node when the
+  app starts, so the tile never shows a refusal of a node you have already
+  switched away from.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:

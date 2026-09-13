@@ -59,8 +59,31 @@ fi
 BIN_ARGS+=( "--bitcoind.rpchost=${APP_BITCOIN_NODE_IP:-}:${APP_BITCOIN_RPC_PORT:-}" )
 BIN_ARGS+=( "--bitcoind.rpcuser=${APP_BITCOIN_RPC_USER:-}" )
 BIN_ARGS+=( "--bitcoind.rpcpass=${APP_BITCOIN_RPC_PASS:-}" )
-BIN_ARGS+=( "--bitcoind.zmqpubrawblock=tcp://${APP_BITCOIN_NODE_IP:-}:${APP_BITCOIN_ZMQ_RAWBLOCK_PORT:-}" )
-BIN_ARGS+=( "--bitcoind.zmqpubrawtx=tcp://${APP_BITCOIN_NODE_IP:-}:${APP_BITCOIN_ZMQ_RAWTX_PORT:-}" )
+
+# Block and transaction notifications: ZMQ when the selected node is serving
+# it, RPC polling otherwise. A node whose exports name ZMQ ports it does not
+# actually serve (a bitcoind built without libzmq does exactly that, and the
+# Knots (BLAKE2b) Companion did at 1.1.6) would otherwise stop the daemon at
+# start with "connection refused" and nothing on the tile to say why. One TCP
+# connect with a one-second limit decides; it is inside an `if`, so it cannot
+# abort this file. Polling notices a block within ten seconds, which a
+# Lightning node can live with; ZMQ is the better of the two when it is there.
+lightning_fork_zmq=0
+if [[ -n "${APP_BITCOIN_NODE_IP:-}" ]] && [[ -n "${APP_BITCOIN_ZMQ_RAWBLOCK_PORT:-}" ]]; then
+	if timeout 1 bash -c "exec 3<>/dev/tcp/${APP_BITCOIN_NODE_IP}/${APP_BITCOIN_ZMQ_RAWBLOCK_PORT}" 2>/dev/null; then
+		lightning_fork_zmq=1
+	fi
+fi
+if [[ "${lightning_fork_zmq}" = 1 ]]; then
+	BIN_ARGS+=( "--bitcoind.zmqpubrawblock=tcp://${APP_BITCOIN_NODE_IP}:${APP_BITCOIN_ZMQ_RAWBLOCK_PORT}" )
+	BIN_ARGS+=( "--bitcoind.zmqpubrawtx=tcp://${APP_BITCOIN_NODE_IP}:${APP_BITCOIN_ZMQ_RAWTX_PORT:-}" )
+	export APP_LIGHTNING_FORK_BLOCK_SOURCE="zmq"
+else
+	BIN_ARGS+=( "--bitcoind.rpcpolling" )
+	BIN_ARGS+=( "--bitcoind.blockpollinginterval=10s" )
+	BIN_ARGS+=( "--bitcoind.txpollinginterval=10s" )
+	export APP_LIGHTNING_FORK_BLOCK_SOURCE="rpcpolling"
+fi
 
 # [tor]
 BIN_ARGS+=( "--tor.active" )

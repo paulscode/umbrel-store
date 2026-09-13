@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 
-# Delay booting Lightning Fork until the gRPC and REST Tor hidden services are
+# Two things before Lightning Fork starts.
+#
+# First, forget the previous run's verdict on the Bitcoin node. It is written
+# again once the wallet is unlocked; until then the tile must show the
+# dashboard, not a refusal of a node the user may just have switched away
+# from (or a confirmation of one they switched to but that has not been
+# checked yet).
+rm -f "${APP_DATA_DIR:-${UMBREL_ROOT}/app-data/${APP_ID}}/data/status/chain-identity.json" 2>/dev/null || true
+
+# Second, delay booting until the gRPC and REST Tor hidden services are
 # ready, exactly as the official Lightning Node app does.
 
 HIDDEN_SERVICE_FILE="${TOR_DATA_DIR}/app-${APP_ID}-grpc/hostname"
