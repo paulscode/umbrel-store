@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.3-beta-blake2b.5.2"
+version: "0.21.3-beta-blake2b.6.0"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -77,16 +77,20 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Channel backups that work. The official dashboard sent channel.backup to
-  Umbrel's backup server, which answers 403 to this app, so no backup ever
-  succeeded and the dashboard kept reporting a failure. Those settings are
-  gone. In their place, Channel backups in the dashboard's menu copies
-  channel.backup to a place you control, an SFTP server, a Nextcloud, Dropbox
-  or Google Drive, whenever your channels change, with a Back up now button
-  and a status line; Recover channels fetches the copy back from the same
-  place, or takes a file you upload. This is the same agent the StartOS
-  package uses. The node itself is unchanged from 0.21.3-beta-blake2b.5.
+  BOLT 12 offers, native to the node. Mint an offer with lncli offer create,
+  from the app's terminal, and hand the lno1... string to a pool that pays to
+  offers, the way OCEAN does; the node answers the pool's invoice requests
+  over onion messages and is paid to an ordinary invoice with blinded paths,
+  which shows up in this dashboard like any other. The same offer comes back
+  after a restore from seed, and a request for an offer the node lost is
+  still served. The node can also fetch and pay other nodes' offers (lncli
+  offer fetchinvoice, lncli offer pay), including through a peer it is the
+  introduction node of. Offers, requests and invoices decode as valid in an
+  unmodified Core Lightning.
 
+
+  Lightning Fork 0.21.3-beta-blake2b.6. Minting and paying offers from this
+  dashboard comes in the next update.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
