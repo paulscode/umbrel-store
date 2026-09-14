@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.3-beta-blake2b.7.1"
+version: "0.21.3-beta-blake2b.7.2"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -79,19 +79,18 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Dashboard improvements from first use. Balances, channels and transactions
-  refresh on their own every ten seconds while the page is open. The node's
-  alias is shown under the title with its color. Transaction fees for
-  sending and for opening channels are chosen as Low, Medium or High: from
-  Mempool Pruned when it is installed (pick it under the menu's Mempool app
-  entry; the rates are the ones its own page shows), or from the node's own
-  estimate. Channel details show the funding transaction, and the closing
-  transaction while a channel closes, with a copy button and a link to the
-  chosen Mempool app. A page whose session has ended goes back to the
-  sign-in screen by itself.
+  Onion messages from any peer. A pool's invoice requests for your offers,
+  and the replies to your own requests, come from nodes that have no channel
+  with you; the node now takes them (lnd dropped them by default), with rate
+  limits still in place, and answers a request it sent directly with a reply
+  path that starts at itself. Found while testing against the Core Lightning
+  port of this chain: as released, that port keeps Bitcoin's chain identity,
+  so the two refuse each other; a patch series giving it this chain's
+  identity, with which the two peer, open channels, pay each other's
+  invoices and offers and close, is proposed to its maintainer.
 
 
-  Lightning Fork 0.21.3-beta-blake2b.8, dashboard 1.3.2-blake2b.11.
+  Lightning Fork 0.21.3-beta-blake2b.9, dashboard 1.3.2-blake2b.11.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
