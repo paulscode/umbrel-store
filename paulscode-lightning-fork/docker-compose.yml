@@ -115,7 +115,7 @@ services:
   # explorer link is left unset because the official Mempool app follows the
   # other chain; transaction links fall back to mempool.guide.
   app:
-    image: paulscode/umbrel-lightning-fork:1.3.2-blake2b.9@sha256:77e1384e3293d71a2eefe218d86582a76a68314a4fac87a05214f45b5c55ca78
+    image: paulscode/umbrel-lightning-fork:1.3.2-blake2b.10@sha256:ba7e7f043e87b4e6208edc781da9c3121c4f60eb22afcc70868d92c765c15053
     restart: on-failure
     volumes:
       - "${APP_LIGHTNING_FORK_NODE_DATA_DIR}:/data/.lnd"
@@ -159,7 +159,7 @@ services:
   # and a wallet on the LAN agree.
   lnd:
     hostname: "${DEVICE_DOMAIN_NAME}" # Needed so LND can generate a valid cert
-    image: paulscode/lightning-fork:0.21.3-beta-blake2b.6@sha256:b86bfe902edbbe83d2fc763a328dd46b2a0b76f76ea4c00bb544f7a458e4c14a
+    image: paulscode/lightning-fork:0.21.3-beta-blake2b.8@sha256:b04f90c436bd90b2e655c62c0106051a07d372ed007583c496bb91b587fbfcf7
     command: "${APP_LIGHTNING_FORK_COMMAND}"
     user: 1000:1000
     restart: unless-stopped
