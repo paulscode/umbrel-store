@@ -23,6 +23,24 @@ export APP_LIGHTNING_FORK_NODE_GRPC_PORT="10010"
 export APP_LIGHTNING_FORK_NODE_REST_PORT="8180"
 export APP_LIGHTNING_FORK_NODE_DATA_DIR="${EXPORTS_APP_DIR}/data/lnd"
 
+# ---------------------------------------------------------------------------
+# Mempool Pruned is OPTIONAL: the dashboard can take its fee rates (the Low,
+# Medium and High its page shows) and its transaction links from it. umbrelOS
+# only injects the env of an app's required dependencies, so an installed
+# Mempool Pruned is detected here, host-side, the way the official Mempool
+# app detects Lightning. Two values: the app's web UI on the app network
+# (its nginx serves the fee endpoint the page reads) for the dashboard's
+# own requests, and the UI's port on this host for the links a browser
+# follows. The official Mempool app follows the other chain, so it is not
+# offered. Nothing here may exit non-zero (see the top of this file).
+installed="$("${UMBREL_ROOT:-/home/umbrel/umbrel}/scripts/app" ls-installed 2>/dev/null | tr ' ' '\n' || true)"
+if echo "${installed}" | grep -qxF "paulscode-mempool-pruned"; then
+  export APP_LIGHTNING_FORK_MEMPOOL_PRUNED_API="http://10.21.21.243:8080"
+  export APP_LIGHTNING_FORK_MEMPOOL_PRUNED_UI_PORT="3032"
+  # Its onion address, for a dashboard page opened over Tor.
+  export APP_LIGHTNING_FORK_MEMPOOL_PRUNED_HIDDEN_SERVICE="$(cat "${EXPORTS_TOR_DATA_DIR:-/nonexistent}/app-paulscode-mempool-pruned/hostname" 2>/dev/null || true)"
+fi
+
 # Where the daemon writes its verdict on the selected node
 # (chain-identity.json), kept apart from the wallet so the status container
 # can read it without being handed the wallet directory.

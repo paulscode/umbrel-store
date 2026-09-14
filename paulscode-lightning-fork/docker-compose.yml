@@ -112,10 +112,12 @@ services:
   # after the icon, its port note and explorer links corrected, fiat amounts
   # removed. It speaks LND's RPC, which Lightning Fork keeps, and reads
   # getinfo.chains as bitcoin/mainnet, which Lightning Fork reports. The
-  # explorer link is left unset because the official Mempool app follows the
-  # other chain; transaction links fall back to mempool.guide.
+  # official Mempool app follows the other chain, so the explorer link is
+  # left unset; Mempool Pruned, when installed, is offered for fee rates and
+  # transaction links (see exports.sh), and links otherwise fall back to
+  # mempool.guide.
   app:
-    image: paulscode/umbrel-lightning-fork:1.3.2-blake2b.10@sha256:ba7e7f043e87b4e6208edc781da9c3121c4f60eb22afcc70868d92c765c15053
+    image: paulscode/umbrel-lightning-fork:1.3.2-blake2b.11@sha256:6a8473ca8a4effdf1cead8d81a3cf1ed1ce793d97e6999480d3ca0b3a299f95a
     restart: on-failure
     volumes:
       - "${APP_LIGHTNING_FORK_NODE_DATA_DIR}:/data/.lnd"
@@ -149,6 +151,9 @@ services:
       DEVICE_DOMAIN_NAME: "${DEVICE_DOMAIN_NAME}"
       EXPLORER_PORT: ""
       EXPLORER_HIDDEN_SERVICE: ""
+      MEMPOOL_PRUNED_API: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_API:-}"
+      MEMPOOL_PRUNED_UI_PORT: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_UI_PORT:-}"
+      MEMPOOL_PRUNED_HIDDEN_SERVICE: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_HIDDEN_SERVICE:-}"
     networks:
       default:
         ipv4_address: $APP_LIGHTNING_FORK_IP
