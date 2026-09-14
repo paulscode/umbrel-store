@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-pickhash
 category: bitcoin
 name: Pickhash
-version: "0.1.4.1"
+version: "0.1.4.2"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
   Pickhash rents SHA-256 (AsicBoost) or BLAKE2b hashrate from MiningRigRentals
@@ -80,18 +80,26 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
-  The dashboard password is now hidden until you ask to see it. The "Dashboard
-  Password" action shows it masked behind a reveal toggle, and the copy button
-  still works without putting the password on screen — so you can copy it in
-  front of someone without showing it to them.
+  Fixes a stratum username that some pools cannot credit. Rentals used to connect
+  as your-address-r<rental-id>. Ocean accepts that form, but Convoy — the main
+  BLAKE2b pool — serves work for it and cannot read an address out of it, so
+  hashrate you had paid for was mined and credited to nobody. Nothing showed it:
+  MiningRigRentals sees a fully-delivering rental, so there is no underdelivery to
+  detect and no refund to claim, and the only symptom is hashrate missing from your
+  pool dashboard. Rentals now connect as your-address.r<rental-id> — one period, no
+  dash — which every pool tested accepts.
 
 
-  The Configure form also gains a generate button for rolling a fresh password,
-  and starts from a generated one rather than a blank field, so the dashboard
-  cannot be left briefly unprotected by submitting the form early.
+  Rentals already running are corrected in place, so you do not have to wait for
+  them to expire. On the first tick after updating, any active rental whose username
+  is stale is re-pointed to the corrected one, carrying its per-rig difficulty
+  through untouched, and you get a notice saying it happened. Remaining hours are
+  attributed from that point. Rentals that have already ended cannot be recovered.
 
 
-  Nothing else changes. Your existing password keeps working — this only changes
-  how it is displayed.
+  Your endpoint's worker field is simpler as a result. A bare Bitcoin address is now
+  a complete answer — Pickhash adds the worker name itself — so the old advice to
+  enter it as address.worker is no longer needed, though typing it that way still
+  works. The endpoint test now checks the exact username rentals will send.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
