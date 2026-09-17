@@ -31,7 +31,7 @@ set -euo pipefail
 # Versioned separately. The pair is released together, but a fix to one is not a
 # reason to make everybody re-pull the other, and Umbrel offers an update per app.
 KNOTS_VERSION="1.0.8"
-DATUM_VERSION="1.0.14"
+DATUM_VERSION="1.0.15"
 PLATFORMS="linux/amd64,linux/arm64"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
