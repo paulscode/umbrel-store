@@ -108,6 +108,31 @@ if ! jq -e '.api.modify_conf' "$DATUM_CONFIG_FILE" > /dev/null; then
      "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
 fi
 
+# THE ADDRESS TO POINT A MINER AT, WHICH ONLY THE HOST KNOWS.
+#
+# The gateway runs in a container on the apps network. From in there it can see
+# neither the address this device answers on nor anything about the port published
+# in front of it, so its status page could only ever guess from the address you
+# happened to open the page with — and most people open Umbrel by name, which is
+# exactly the thing mining firmware cannot resolve. This hook runs on the host, so
+# it can simply look.
+#
+# `ip route get` reports the source address of the route to somewhere off the LAN,
+# which is this device's primary address. `hostname -I` is not a substitute: it
+# lists every interface including each Docker bridge, in no useful order.
+#
+# Rewritten on every start rather than written once, because it is derived and a
+# DHCP lease can move. Left alone when the lookup fails, so a previously good value
+# survives a start with no network.
+HOST_IP="$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}')"
+if [ -n "${HOST_IP}" ]; then
+  echo "Telling the gateway to advertise ${HOST_IP} as the address for miners."
+  jq --arg host "$HOST_IP" '.stratum.advertised_host = $host' \
+     "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+else
+  echo "Could not determine this device's LAN address; the status page will fall back to the address you open it with."
+fi
+
 # A payout address that is not one. Earlier versions of this app asked the node
 # for an address on first start; this one leaves it empty and the dashboard asks,
 # which is what the official app does. Clear the upstream placeholder if a config
