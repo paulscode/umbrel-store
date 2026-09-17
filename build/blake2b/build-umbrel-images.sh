@@ -31,7 +31,7 @@ set -euo pipefail
 # Versioned separately. The pair is released together, but a fix to one is not a
 # reason to make everybody re-pull the other, and Umbrel offers an update per app.
 KNOTS_VERSION="1.0.8"
-DATUM_VERSION="1.0.11"
+DATUM_VERSION="1.0.14"
 PLATFORMS="linux/amd64,linux/arm64"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -109,7 +109,6 @@ if [[ -n "${PUSH}" ]]; then
   echo "📝 Pin the digests above in each app's docker-compose.yml, e.g.:"
   echo "   image: paulscode/knots-blake2b:${KNOTS_VERSION}@sha256:<digest>"
   echo "   image: paulscode/datum-blake2b:${DATUM_VERSION}@sha256:<digest>"
-  echo "   (the gateway digest appears three times: gateway, capture, report)"
 fi
 
 echo ""

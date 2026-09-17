@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.1.6"
+version: "1.1.7"
 tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -136,34 +136,40 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  Pooled mining to Convoy now works. It could not before, and no setting would have fixed it.
+  The Obelisk SC1 Gen 2 can mine through this gateway now. Nothing changes for any other miner: what
+  the gateway says to mining hardware when it connects is byte-for-byte what the previous release
+  said, checked against the previous build running beside it.
 
 
-  Convoy extended the DATUM protocol, and their server hangs up on a gateway that does not speak the
-  addition. Ours did not, so it connected, was disconnected, and with reward sharing on "prefer" fell
-  back to solo without saying why. On the dashboard that read as "Non-Pooled Mode", Pool Shares stuck
-  at zero while local shares climbed, and Pool Tag showing this gateway's own tag where the pool's
-  belongs.
+  The SC1 Gen 2 has a 32-bit extranonce2 built into its firmware, where this gateway asks for 8
+  bytes. It goes wrong two different ways depending on whether the firmware has been modified, and
+  both are handled.
 
 
-  The gateway is now built from Convoy's own fork, which is the client for their pool, with our
-  stratum password difficulty carried on top so `d=8192` and `fd=8192` still work. That matters for
-  rented hashrate and Convoy's fork does not have it.
+  If your SC1 runs patched firmware, there is nothing to set. That firmware sends 4 bytes of real
+  value and 4 bytes of whatever was sitting next to it in memory, which used to make every share come
+  back rejected as H-not-zero. The gateway now reads the share as sent first and, only if that fails,
+  reads it again the way the miner actually calculated it. A miner whose shares already work never
+  reaches the second attempt, so it cannot be affected.
 
 
-  Verified before shipping, because this decides what your miner is paid for: Convoy's BLAKE2b test
-  vector hashes identically in an independent implementation checked against live mainnet block
-  961640; their full test suite passes; solo mining against a Knots BLAKE2b node produced blocks the
-  node accepted with zero rejections; and a Goldshell HS Box and an Innosilicon S11 mined against
-  both builds for real, at parity.
+  If your SC1 is stock, it refuses the work outright, and there is a new setting for it. Open the app,
+  go to the Config tab, and set "Extranonce2 size" to "4 bytes". Leave it on 8 for anything else. This
+  is not a per-miner setting: it changes what every miner on this gateway is told, so if you have
+  other hardware pointed at it, check that it is still getting shares accepted afterwards. The gateway
+  restarts when you change it, so your miners reconnect and pick up the new value.
 
 
-  One visible change. Convoy advertises bitcoin difficulty rather than pool difficulty, so your miner
-  will be told 1023.984375 where it used to see 1024. Both of the ASICs above handle it. Shares below
-  difficulty 1 are now refused outright, which no real miner produces.
+  This has not been tested on real SC1 hardware. It was built from a detailed report by somebody who
+  got one mining, and verified here against software written to match how that firmware behaves. That
+  is why the setting is off by default. If you have one, whether it works or not is worth posting on
+  the forum.
 
 
-  Solo mining is unchanged and remains the default.
+  Also fixed: saving the Config page could crash the gateway if the form arrived incomplete, which
+  dropped every connected miner. And the block subsidy for the gateway's own empty work is now taken
+  from the block template rather than recalculated; on Bitcoin the two are the same number, so nothing
+  changes for you.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
