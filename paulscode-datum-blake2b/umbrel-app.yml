@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.1.8"
+version: "1.1.9"
 tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -136,26 +136,27 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  The app now tells you where to point your miner.
+  Fixes a fault that could start rejecting your shares after several hours of mining.
 
 
-  Open the app and look at the top of the "Stratum Server Info" box on the status page. There is a new
-  "Point Your Miner At" line showing the full address, including the port, already filled in with this
-  device's IP address on your network. Copy that into your miner and you are done.
+  The gateway keeps a list of the shares it has already seen, so it can spot one that arrives twice. The
+  first time that list filled up it lost track of itself, and from then on it could refuse perfectly good
+  shares. Restarting the app was the only thing that cleared it. How long it took to get there depended on
+  how busy your miners were, so a few hours was typical. If your reject rate has ever climbed out of
+  nowhere and then gone back to normal after you restarted, this is very likely why.
 
 
-  This was the hardest part of setting the app up and there was nothing in the app that told you. The
-  address is not the one in your browser's address bar: mining hardware almost never understands a name
-  like umbrel.local, so it has to be the IP, and the port is 23336 rather than the usual 23334 so that
-  this app and the original Datum app can both be installed at once. Now you do not have to know any of
-  that.
+  The app now also tells you why shares were refused, rather than only how many. On the status page, under
+  "Local Shares Rejected", there is a new "Rejected Because" line listing what has actually happened, most
+  common first. It reads "None" when there is nothing to report. The Clients page has a new "Last Reject"
+  column, so when only one of your miners is misbehaving you can see which one it is.
 
 
-  The address is looked up fresh each time the app starts, so it follows your device if your router
-  hands it a different one.
+  Those reasons use the same words your mining hardware writes in its own log, so you can read the two
+  side by side.
 
 
-  Nothing about your mining changes, and there is nothing to set.
+  Nothing about your settings changes, and your miners do not need reconfiguring.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
