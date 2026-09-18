@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-sha256
 category: bitcoin
 name: Datum (SHA256) Companion
-version: "1.0.2"
+version: "1.0.3"
 tagline: Mine with your own block templates, on a node that never enforces BIP-110
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -100,26 +100,29 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  Fixes the app failing to open, with the gateway restarting in a loop and logging "unable to open
-  /app/conf/datum_gateway_config.json".
+  Fixes a fault that could start rejecting your shares after several hours of mining.
 
 
-  Its configuration file is shipped with the app and copied on a fresh install, but umbrelOS does not
-  copy that part of an app when it updates one. An install that updated into the version which first
-  needed the file never received it, Docker created an empty directory where it should have been, and
-  the gateway could not start.
+  The gateway keeps a list of the shares it has already seen, so it can spot one that arrives twice. The
+  first time that list filled up it lost track of itself, and from then on it could refuse perfectly good
+  shares. Restarting the app was the only thing that cleared it. How long it took to get there depended on
+  how busy your miners were, so a few hours was typical. If your reject rate has ever climbed out of
+  nowhere and then gone back to normal after you restarted, this is very likely why.
 
 
-  The file is now written from its defaults whenever it is missing, so an affected install repairs
-  itself on the next start. Nothing is overwritten if it is already there: a payout address or any
-  other setting changed in the dashboard is left alone.
+  The app now also tells you why shares were refused, rather than only how many. On the status page, under
+  "Local Shares Rejected", there is a new "Rejected Because" line listing what has actually happened, most
+  common first. It reads "None" when there is nothing to report. The Clients page has a new "Last Reject"
+  column, so when only one of your miners is misbehaving you can see which one it is.
 
 
-  Also fixes "Error writing new config file (changes will be lost at restart)" when saving on the
-  Config tab. The gateway saves by writing a temporary file next to its config, which needs write
-  access to the folder holding it, and that folder was owned by root. Settings saved before this
-  update were genuinely discarded, so re-enter anything you changed and it will stick.
+  Those reasons use the same words your mining hardware writes in its own log, so you can read the two
+  side by side.
 
+
+  Behind the scenes this app now pulls its own image rather than sharing one with the BLAKE2b companion,
+  which has moved to a different codebase. Nothing about your settings changes, your miners do not need
+  reconfiguring, and this is an ordinary update to the app you already have installed.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:

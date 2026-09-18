@@ -8,12 +8,20 @@ services:
       APP_HOST: $APP_DATUM_SHA256_GATEWAY_IP
       APP_PORT: 7152
 
-  # The DATUM Gateway. Same image as the BLAKE2b companion and as this project's
-  # StartOS packages, and that is not a shortcut: the DATUM fork it builds from
-  # carries nothing of its own, it is a mirror of OCEAN upstream, and upstream
-  # DATUM speaks both algorithms. `pow_algorithm` is left at `auto`, which takes
-  # the algorithm from the node's template, and against this node that always
+  # The DATUM Gateway, built from master, which tracks OCEAN upstream. Upstream
+  # DATUM speaks both algorithms, and `pow_algorithm` is left at `auto`, which
+  # takes the algorithm from the node's template; against this node that always
   # resolves to SHA256d.
+  #
+  # This used to pull `paulscode/datum-blake2b`, and that was never as odd as it
+  # read: the tag it pinned was built from the same master commit this one is, so
+  # the contents were always the OCEAN line and only the name said otherwise. It
+  # stopped being merely untidy when the BLAKE2b package moved to Convoy's fork,
+  # which it had to, because only Convoy's fork can talk to the pool serving that
+  # chain. The next tag in that repository is a different codebase, and handing a
+  # SHA256 miner Convoy's protocol extensions would point it at a pool that does
+  # not speak them. Hence `paulscode/datum-sha256`, built from this package's own
+  # Dockerfile by build/sha256/build-umbrel-images.sh in the store repo.
   #
   # `entrypoint` and `command` override the image's own entrypoint deliberately.
   # That entrypoint regenerates the config from the environment on every start,
@@ -23,7 +31,7 @@ services:
   # a file the pre-start hook patches is what the official Umbrel Datum app does,
   # and it is what lets api.modify_conf be true.
   gateway:
-    image: paulscode/datum-blake2b:1.0.12@sha256:35945215fa213f1d95aeedf0a370913e7fc85e2bb2f42a20fed32830b32e2bc7
+    image: paulscode/datum-sha256:1.0.0@sha256:59d9d08072aacd22831c6d932c8782cc8c220b05454bde39fb97940a79df0f2c
     entrypoint: ["/usr/local/bin/datum_gateway"]
     command: ["-c", "/app/conf/datum_gateway_config.json"]
     user: 1000:1000
