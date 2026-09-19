@@ -8,44 +8,31 @@ services:
 
   # The node, and the web interface that manages it.
   #
-  # This is Retropex's published image, the same one the official Bitcoin Knots
-  # app runs, used unmodified. It ships ten bitcoind builds and lets the Version
-  # setting choose between them, and one of those is v29.3.knots20260507 — the
-  # last release before BIP-110 (RDTS) enforcement, and the exact build Start9's
-  # pre-RDTS package pins.
-  #
-  # So this app is that image plus a seeded settings.json. No fork, no third
-  # image to keep in step with upstream. The BLAKE2b companion needed a fork
-  # because no published image contains a BLAKE2b bitcoind; this one does not.
+  # Today: Retropex's published image, the same one the official Bitcoin Knots
+  # app runs, unmodified, with a seeded `data/app/settings.json`. That image
+  # ships several bitcoind builds and its Version setting chooses between them;
+  # the seed selects the SHA256-chain build (the image's own default is a newer
+  # build that follows a different chain), so the seeded Version is load-bearing
+  # until the next node update. That update moves this app onto the Bitcoin
+  # Knots SHA256 app image shared with the full-node app (one build, no Version
+  # setting to keep), after which the two apps stay in lock-step and differ only
+  # by identity, icon, seeded settings and env prefix/ports.
   #
   # THE SEED REACHES A FRESH INSTALL ONLY. umbreld's `copy_app_files` takes
   # `docker-compose.yml`, `*.template`, `exports.sh`, `torrc` and `hooks` on an
   # update, and not `data/`. So `data/app/settings.json` lands once, on install,
-  # and is then the user's: their Version and pruning choices survive every app
-  # update, and a change to the seeded pin in this store will NOT reach anyone
-  # who already installed. Moving the pin later means release notes telling
-  # people to change it themselves, or a hook that rewrites it.
+  # and is then the user's: their pruning choice survives every app update.
   #
-  # THE VERSION SETTING IS LOAD-BEARING HERE. The image's own default is
-  # v29.4.1.knots20260508, which enforces RDTS. `data/app/settings.json` pins
-  # v29.3.knots20260507 instead, and that pin is the entire difference between
-  # this app and the official one. Changing it in Settings → Version to a newer
-  # build turns this into an ordinary enforcing node, which during a BIP-110
-  # split means changing which chain it follows.
   # THE `datum` TOGGLE IS SEEDED OFF, AND IT HAS TO BE. It is labelled "Enable
   # blocknotify for datum" in Advanced Settings, which reads as though it would
   # notify this pair's gateway. It does not: this image hard-codes the URL to
   # `http://datum_datum_1:21000/NOTIFY`, which is the OFFICIAL Datum app, and no
   # setting can repoint it. Verified by reading the generated bitcoin.conf from
-  # a running container.
-  #
-  # Leaving it on would write a blocknotify naming an app this pair has nothing
-  # to do with, so it is off, and Datum (SHA256) Companion is seeded with a
-  # 5-second work update instead. DATUM's own default is 40 seconds with a
-  # polling fallback, so the cost of having no blocknotify is bounded either way.
-  #
-  # The BLAKE2b companion does not have this problem because its node runs our
-  # fork of this image, where that URL points at our gateway.
+  # a running container. Leaving it on would write a blocknotify naming an app
+  # this pair has nothing to do with, so it is off, and Datum (SHA256) Companion
+  # is seeded with a 5-second work update instead. DATUM's own default is 40
+  # seconds with a polling fallback, so the cost of having no blocknotify is
+  # bounded either way.
   app:
     image: ghcr.io/retropex/umbrel-bitcoin-knots:1.2.16@sha256:6564271b2214c1eb1883b2d406e6aee3383966037960113673dd73a7ad98f69d
     user: "1000:1000"

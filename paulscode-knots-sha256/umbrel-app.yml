@@ -4,48 +4,34 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (SHA256) Companion
-version: "1.0.6"
-tagline: A Bitcoin Knots node that never enforces BIP-110, to run beside your main one
+version: "1.0.7"
+tagline: A pruned Bitcoin Knots node for the SHA256 chain, to run beside your main one
 description: >-
   A Bitcoin Knots node on the SHA256 chain: the same chain your Bitcoin or
-  Bitcoin Knots app already follows. What makes this one different is what it
-  does not do. Knots ships the BIP-110 softfork, known as RDTS, and this node
-  never enforces it, so if the network ever splits over BIP-110 this one stays
-  on the side that does not require it.
+  Bitcoin Knots app already follows, with Knots' policy defaults. Install it
+  alongside your existing node rather than in place of it: this one is pruned,
+  so both fit on one machine, and it keeps its own data, ports and settings.
 
 
   WHY YOU WOULD RUN IT
 
 
-  Install it alongside your existing node, not instead of it. Then you have one
-  node that enforces BIP-110 and one that does not, at the same time, and you
-  can point each app at whichever chain it should follow. If you only want one
-  Bitcoin node, the official Bitcoin Knots app is the one to install.
+  You want a Knots node with Knots' relay and mining policy beside the node your
+  other apps already depend on, or you want to pair it with Datum (SHA256)
+  Companion to mine with your own templates. If you only want one Bitcoin node,
+  install the official Bitcoin Knots app or the Bitcoin Knots SHA256 full node
+  instead.
 
 
   HOW IT WORKS
 
 
-  It runs the same web interface the official Bitcoin Knots app runs, from the
-  same image, so the dashboard, block and peer lists, connect modal, Advanced
-  Settings and widgets are all the ones you already know. The only difference is
-  a setting: it is pinned to Bitcoin Knots v29.3.knots20260507, the last release
-  before RDTS enforcement.
-
-
-  THAT PIN IS THE WHOLE POINT. It is on the Version tab under Advanced Settings.
-  Changing it to a newer build makes this an ordinary enforcing node and removes
-  the reason to have installed it, which during a BIP-110 split means changing
-  which chain it follows.
-
-
-  THE BIP110 WARNING IN THE LOGS IS EXPECTED
-
-
-  On every start this node logs "This version of Bitcoin Knots does not support
-  the upcoming BIP110 (RDTS) network upgrade". That is not a fault and not
-  something to fix. It is the build telling you exactly what you installed it
-  for. A node that did not print it would be the wrong node for this app.
+  It runs the same web interface the official Bitcoin Knots app runs, so the
+  dashboard, block and peer lists, connect modal, Advanced Settings and widgets
+  are all the ones you already know. It follows Bitcoin Knots SHA256 releases
+  (Bitcoin Knots' patch series maintained on top of Bitcoin Core for the SHA256
+  chain, consensus-identical to Bitcoin Core) in lock-step with the Bitcoin
+  Knots SHA256 full-node app.
 
 
   WHAT IT USES
@@ -86,21 +72,10 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes the Datum companion never being configured on an install that was upgraded rather than
-  installed fresh: no node RPC details, and an admin password that stayed at its placeholder so the
-  dashboard's Clients tab rejected the password shown under "Show default credentials".
-
-
-  The node app records its RPC credentials in a file it only wrote when that file did not already
-  exist. An earlier version stored them under different names, so after they were renamed the file was
-  present, was read, and still left the current names undefined. Everything downstream then saw a node
-  with no RPC details, and the Datum companion stopped before it could write either its RPC settings
-  or its admin password.
-
-
-  The check is now on the credentials themselves rather than on the file, and existing credentials are
-  reused rather than replaced, so nothing that already works changes. Update the node app, then the
-  Datum companion, and the dashboard login will work.
+  Description update only: the app is described as what it is — a pruned Bitcoin Knots node for the
+  SHA256 chain to run beside your main one — and the notes about a pinned release and BIP-110 are gone.
+  Nothing about the node or its settings changes in this version. The next node update moves this app onto
+  the Bitcoin Knots SHA256 image shared with the full-node app, in lock-step from then on.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
