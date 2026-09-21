@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.11"
+version: "0.11.12"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
@@ -92,35 +92,32 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes three faults that between them stop this app indexing. None of them clear on their own,
-  and all three look like something else, so it is worth saying what each one did.
+  Fixes this app refusing to start, and then refusing to read blocks, against a
+  node running Bitcoin Knots 29.4.2.knots20260508.
 
 
-  Indexing stopped at block 434,499 and stayed there. That block was mined in 2016 while SegWit
-  was still being signalled, which gives it an unusual but perfectly valid shape, and the block
-  fetcher mistook that shape for a block a peer had tampered with. Since every peer returns the
-  same block, every peer looked like it was lying, so the block was never fetched. Indexing sat
-  and retried it forever while reporting no progress.
+  That release stopped reporting a "difficulty" field for blocks with the new
+  header format, because a BLAKE2b difficulty and a SHA256d one are different
+  units and cannot be compared. On this chain every block above the activation
+  has the new header, so the field is simply absent. Two pieces of this app
+  treated it as mandatory and rejected the whole reply.
 
 
-  After a Bitcoin node restart, this app could not reach the node at all. The block fetcher read
-  the node's password once when it started and kept that copy, so once the node generated a new
-  one it rejected this app's every request. Electrs then restarted in a loop. Restarting Electrs
-  did not help, because the stale copy was on the other side.
+  The indexer hit it first and could not start at all: it loaded its headers,
+  then exited reporting "daemon not available" with "missing field difficulty"
+  underneath, and the app showed as crashed. The RPC proxy beside it hit the
+  same thing on block headers, which is the path every verbose block lookup
+  goes through, including Mempool Pruned's.
 
 
-  On the Knots (BLAKE2b) Companion, the same rejection could happen without any node restart.
-  That node keeps its RPC credentials in a second configuration file that the first one pulls in,
-  and this app was only reading the first, so it ended up accepting no credentials at all while
-  the node itself accepted them perfectly well. It now reads both, and accepts the node's cookie
-  as well, so it no longer matters which of the two Electrs picks.
+  Both now read whichever field the node sent and ignore the rest. No reindex
+  is needed and nothing was lost: the indexer never got as far as writing, and
+  the proxy fails on read.
 
 
-  Nothing is lost and no reindex is needed. Whatever was already indexed stays, and indexing
-  resumes where it stopped. If you were stuck at 434,499, expect progress within a few minutes.
+  The proxy also moves to upstream 0.8.1, the same build the StartOS package
+  runs. Two defects this app carried its own patches for are fixed upstream
+  there, so it is now one patch on top rather than three.
 
-
-  The first two faults are in the upstream proxy rather than anything specific to this app, and
-  both fixes have been sent upstream.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

@@ -23,7 +23,7 @@
 
 set -euo pipefail
 
-VERSION="0.11.1"
+VERSION="0.11.3"
 IMAGE="paulscode/electrs-pruned:${VERSION}"
 PLATFORMS="linux/amd64,linux/arm64"
 

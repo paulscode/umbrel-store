@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.1.9"
+version: "1.1.10"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change, following the
@@ -93,11 +93,24 @@ releaseNotes: >-
   downloading the chain again. Updating promptly avoids the question entirely.
 
 
-  One change for anything reading this node over RPC: the "difficulty" field is
-  gone from getblock, getblockheader, getblockchaininfo and getmininginfo,
-  replaced by "difficulty_blake2b". The two are different units and were never
-  comparable. Apps that show a difficulty figure need their own update to read
-  the new name; Mempool Pruned has one.
+  UPDATE ELECTRS PRUNED TOO, TO 0.11.12 OR LATER
+
+
+  This node no longer reports a "difficulty" field for blocks with the new
+  header format, which on this chain is every block above the activation. It
+  reports "difficulty_blake2b" instead, because the two are different units and
+  were never comparable.
+
+
+  That is not only a display change, which is what these notes said at 1.1.9.
+  Electrs Pruned treated the old field as mandatory and cannot start against
+  this node without its own update: it loads its headers, then exits reporting
+  "daemon not available", and the app shows as crashed. Nothing is wrong with
+  your node or your index if you see that, and no reindex is needed. Update
+  Electrs Pruned and it starts again.
+
+
+  Mempool Pruned needed an update for the same reason and has one, at 3.3.1.7.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

@@ -101,28 +101,31 @@ services:
   # authenticates the same whether it is pointed at the node or at the proxy,
   # and no second secret is generated, stored or shared by this app.
   proxy:
-    # Our build of v0.8.0, carrying PR #33 and PR #34. Stock v0.8.0 cannot parse
-    # a 164-byte BLAKE2b header, and it parses the block for any request it
-    # intercepts, so every verbose `getblock` and every intercepted
-    # `getrawtransaction` above block 961640 came back "IO error: failed to fill
-    # whole buffer". That is Mempool Pruned's entire block path and this app's
-    # own verbose transaction lookups. Not a pruning problem: it failed on
-    # blocks the node still had.
+    # Our build of upstream v0.8.1, which is one patch on top rather than the
+    # three the v0.8.0 line carried: the witness-commitment check and the
+    # read-once passthrough cookie (PR #34) are fixed upstream in 0.8.1. The one
+    # remaining delta is BLAKE2b header support, still open upstream as PR #33.
+    # Without it the proxy cannot parse a 164-byte header, and it parses the
+    # block for any request it intercepts, so every verbose `getblock` and every
+    # intercepted `getrawtransaction` above block 961640 came back "IO error:
+    # failed to fill whole buffer". That is Mempool Pruned's entire block path
+    # and this app's own verbose transaction lookups. Not a pruning problem: it
+    # failed on blocks the node still had.
     #
-    # blake2b.2 adds PR #34, which is two upstream defects rather than anything
-    # BLAKE2b-specific, and either one stops this app dead:
+    # blake2b.2 is what this chain needs after Bitcoin Knots
+    # 29.4.2.knots20260508. That release (knots#420) stopped reporting a
+    # `difficulty` field for header-v2 blocks and reports `difficulty_blake2b`
+    # instead; the proxy declared the old field required, in a struct that
+    # `getblock` flattens, so it could not read a single block header on this
+    # chain. It matters doubly here because the proxy re-serializes that struct
+    # when it rebuilds a verbose `getblock` for a pruned block, so a field it
+    # does not name is dropped on the way back to the caller rather than merely
+    # unread.
     #
-    #   - The witness check rejected any block whose coinbase commits to
-    #     witnesses the block does not carry. Blocks mined during SegWit
-    #     signalling have exactly that shape and are perfectly valid; mainnet
-    #     434499 is the first. Every peer returns the same bytes, so every peer
-    #     "failed", and the index could never pass that height.
-    #   - The passthrough cookie was read once at startup. bitcoind writes a new
-    #     one every time it starts, so after the node restarted the proxy
-    #     answered electrs 401 forever and only restarting the proxy cleared it.
-    #
-    # Swap back to ghcr.io/start9labs/btc-rpc-proxy once #33 and #34 are merged.
-    image: paulscode/btc-rpc-proxy:v0.8.0-blake2b.2@sha256:1c389b705a406052d93f5e78763478a6f8fd6f83fcd3daf8c16baf17da2c3278
+    # This is the same image the StartOS package runs; the two lines were split
+    # and are now one. Swap back to ghcr.io/start9labs/btc-rpc-proxy once #33 is
+    # merged.
+    image: paulscode/btc-rpc-proxy:v0.8.1-blake2b.2@sha256:a69b0e9294093efe3e764b47ff5370f4b6e3ed0db0cbef6907051146bfdd4684
     restart: on-failure
     environment:
       BITCOIND_HOST: ${APP_BITCOIN_NODE_IP}
@@ -244,7 +247,7 @@ services:
   # daemon_p2p_addr points at the node directly, because that path only carries
   # blocks the node still has and gains nothing from the detour.
   server:
-    image: paulscode/electrs-pruned:0.11.2@sha256:48ee6a0a869c6181d490e0866ba9918ba78cf643e0b9e2b0519b2a59d06c6ddd
+    image: paulscode/electrs-pruned:0.11.3@sha256:56659c2ffc898dc63690a673cbe39a1151a5ed56a6ba365c73ccefbeabfff4d3
     restart: always
     stop_grace_period: 5m
     depends_on:
