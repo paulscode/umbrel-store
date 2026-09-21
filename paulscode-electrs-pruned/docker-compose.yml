@@ -247,7 +247,7 @@ services:
   # daemon_p2p_addr points at the node directly, because that path only carries
   # blocks the node still has and gains nothing from the detour.
   server:
-    image: paulscode/electrs-pruned:0.11.3@sha256:56659c2ffc898dc63690a673cbe39a1151a5ed56a6ba365c73ccefbeabfff4d3
+    image: paulscode/electrs-pruned:0.11.4@sha256:de245550aeb7a556bdb25601b21e37fa111364bd5e60e4c861ffb891422cfb2e
     restart: always
     stop_grace_period: 5m
     depends_on:

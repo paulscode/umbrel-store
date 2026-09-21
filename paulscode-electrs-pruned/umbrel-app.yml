@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.12"
+version: "0.11.13"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
@@ -92,32 +92,23 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes this app refusing to start, and then refusing to read blocks, against a
-  node running Bitcoin Knots 29.4.2.knots20260508.
+  Finishes the fix that 0.11.12 started.
 
 
-  That release stopped reporting a "difficulty" field for blocks with the new
-  header format, because a BLAKE2b difficulty and a SHA256d one are different
-  units and cannot be compared. On this chain every block above the activation
-  has the new header, so the field is simply absent. Two pieces of this app
-  treated it as mandatory and rejected the whole reply.
+  Bitcoin Knots 29.4.2.knots20260508 stopped reporting a "difficulty" field for
+  blocks with the new header format. 0.11.12 fixed the call that stopped the
+  indexer starting, but two more calls read the same removed field, so a
+  started indexer then stalled on the first block it tried to index, logging
+  "resolving block heights failed ... missing field difficulty" and retrying
+  every thirty seconds. The app looked healthy while making no progress.
 
 
-  The indexer hit it first and could not start at all: it loaded its headers,
-  then exited reporting "daemon not available" with "missing field difficulty"
-  underneath, and the app showed as crashed. The RPC proxy beside it hit the
-  same thing on block headers, which is the path every verbose block lookup
-  goes through, including Mempool Pruned's.
+  Block heights and block transaction lists are now read without it, the same
+  way the first fix did.
 
 
-  Both now read whichever field the node sent and ignore the rest. No reindex
-  is needed and nothing was lost: the indexer never got as far as writing, and
-  the proxy fails on read.
-
-
-  The proxy also moves to upstream 0.8.1, the same build the StartOS package
-  runs. Two defects this app carried its own patches for are fixed upstream
-  there, so it is now one patch on top rather than three.
+  No reindex is needed and nothing was lost. An index stuck at this point
+  resumes from the block it stopped at.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
