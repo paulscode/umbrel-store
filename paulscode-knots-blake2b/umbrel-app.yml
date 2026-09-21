@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.1.8"
+version: "1.1.9"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change, following the
@@ -66,14 +66,38 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  ZeroMQ works now. The node is built with the ZeroMQ library it was missing:
-  it wrote the zmqpubrawblock and zmqpubrawtx settings it advertises and
-  silently ignored them, so nothing ever listened on those ports and
-  "getzmqnotifications" answered "Method not found". Lightning Fork, which
-  subscribes to block and transaction notifications over ZeroMQ, had to fall
-  back to polling this node over RPC; from this release it can use the feed.
-  (1.1.7 briefly shipped this build without the runtime library and was
-  withdrawn the same hour.) Nothing else changes.
+  Updates the node to Bitcoin Knots 29.4.2.knots20260508, which carries the
+  chain's temporary long coinbase maturity rule. Newly mined coins now need 6480
+  confirmations before they can be spent, roughly 45 days at a ten minute block
+  target, where the old wait was 100 blocks. The consensus rule begins being
+  enforced at block 973440.
+
+
+  This also affects coins you have already mined. Nodes require the longer wait
+  of every coinbase spend they will relay, whatever height the coin was mined
+  at, so a payout from the last 45 days that was spendable before this update
+  will not be spendable after it. Nothing is lost; the wait is longer.
+
+
+  Update before your node reaches block 973440 if you can. A node running this
+  build from before that height checks the new rule as it goes and never has to
+  look back.
+
+
+  A node updated after it has passed 973440 has to rewind to that block and
+  recheck everything since, which takes a while and needs the block data for
+  that stretch still on disk. This app prunes, so that data does not stay
+  forever. At the default pruning size there is plenty of room, but if you have
+  set pruning low and update long after 973440, the node can refuse to start and
+  report that required block data has been pruned. Recovering from that means
+  downloading the chain again. Updating promptly avoids the question entirely.
+
+
+  One change for anything reading this node over RPC: the "difficulty" field is
+  gone from getblock, getblockheader, getblockchaininfo and getmininginfo,
+  replaced by "difficulty_blake2b". The two are different units and were never
+  comparable. Apps that show a difficulty figure need their own update to read
+  the new name; Mempool Pruned has one.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

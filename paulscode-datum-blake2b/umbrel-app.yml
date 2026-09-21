@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.1.9"
+version: "1.2.0"
 tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -53,6 +53,19 @@ description: >-
 
   Out of the box this mines solo: a block you find pays its whole subsidy to your
   address, and nothing is shared.
+
+
+  MINED COINS CANNOT BE SPENT STRAIGHT AWAY
+
+
+  A block's subsidy is locked before it can be moved. This is a network rule, not
+  a setting, and it applies wherever you send the payout. The wait used to be 100
+  blocks, about 16 hours; the chain has deployed a temporary longer one of 6480
+  blocks, roughly 45 days at a ten minute block target. It applies to coins
+  already mined as well as new ones. Nothing is lost, but plan for it: if you mine
+  a block today, expect to wait about six weeks before you can spend it. Use a
+  wallet that knows the rule, or it may offer the coins and then fail when you try
+  to send them.
 
 
   To mine to a pool instead, open the **Config** tab and change **Collaborative
@@ -136,27 +149,26 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  Fixes a fault that could start rejecting your shares after several hours of mining.
+  Update Knots (BLAKE2b) Companion as well as this app. If you mine against a
+  node that has not taken the chain's new coinbase maturity rule, the blocks you
+  find will be rejected.
 
 
-  The gateway keeps a list of the shares it has already seen, so it can spot one that arrives twice. The
-  first time that list filled up it lost track of itself, and from then on it could refuse perfectly good
-  shares. Restarting the app was the only thing that cleared it. How long it took to get there depended on
-  how busy your miners were, so a few hours was typical. If your reject rate has ever climbed out of
-  nowhere and then gone back to normal after you restarted, this is very likely why.
+  The gateway takes its list of transactions straight from the node and does not
+  check them, so this is not something it can protect you from. A node without
+  the rule will offer transactions that stopped being valid at block 973440, and
+  any block built from them is invalid. Update the node app to 1.1.9 or later,
+  which is the first version carrying the rule.
 
 
-  The app now also tells you why shares were refused, rather than only how many. On the status page, under
-  "Local Shares Rejected", there is a new "Rejected Because" line listing what has actually happened, most
-  common first. It reads "None" when there is nothing to report. The Clients page has a new "Last Reject"
-  column, so when only one of your miners is misbehaving you can see which one it is.
+  Nothing about how the gateway mines changes and you do not need to reconfigure
+  your miners. This release also documents how long mined coins are locked,
+  which the setup notes did not say at all: the wait used to be 100 blocks,
+  about 16 hours, and is now 6480 blocks, roughly 45 days at a ten minute block
+  target, applying to coins already mined as well as new ones. Nothing is lost,
+  but a first block arriving and then sitting unspendable is expected rather
+  than a fault.
 
-
-  Those reasons use the same words your mining hardware writes in its own log, so you can read the two
-  side by side.
-
-
-  Nothing about your settings changes, and your miners do not need reconfiguring.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:

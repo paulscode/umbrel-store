@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-mempool-pruned
 category: bitcoin
 name: Mempool Pruned
-version: "3.3.1.6"
+version: "3.3.1.7"
 tagline: A block explorer that works with a pruned Bitcoin node
 description: >-
   Run your own mempool.space against a pruned node. The official Mempool app
@@ -68,12 +68,24 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes the explorer falling behind the chain, and gives every block a miner name.
+  Keeps the difficulty figure working against a Bitcoin Knots node on the
+  BLAKE2b chain.
 
-  The explorer worked out each transaction's fee by reading every input's previous transaction. On a pruned node those sit in blocks your node no longer keeps, so each one became a block fetch from a peer. One recent block needed 288 of them. That took longer than the time between blocks, so the explorer fell further behind with every block, eventually gave up and showed only the eight most recent, and stopped serving history. It now reads the whole block from your node in one call, which supplies the fees as well, and only falls back to the slower route for blocks your node has pruned. A block that took minutes now takes milliseconds. Nothing you have set changes, and the history already indexed is still there.
 
-  Blocks whose miner is not in the known pool list now show the name the miner wrote into the block itself, rather than Unknown. A recognised pool still shows its own name and icon.
+  Knots 29.4.2.knots20260508 changed two things this reads. A block with the new
+  header format reports "difficulty_blake2b" and no longer reports "difficulty"
+  at all, so against an updated node every block arrived with no difficulty and
+  the figure stopped being recorded. And the getdifficulty RPC was removed
+  outright, which the hashrate chart called and quietly fell back to zero on.
 
-  The optional indexing features work on a pruned node for the first time. Block summaries, Goggles and CPFP indexing all read whole blocks, and they now stop where your node's blocks stop. A single block that cannot be read is skipped rather than restarting the whole backfill.
+
+  Both now read whichever name applies, so blocks either side of the BLAKE2b
+  activation work and the current difficulty is reported again.
+
+
+  Nothing else changes and no reindex is needed. Blocks recorded while the
+  figure was missing keep whatever was stored for them; the chart fills in again
+  from here.
+
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
