@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.3-beta-blake2b.7.2"
+version: "0.21.3-beta-blake2b.12.0"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -27,17 +27,18 @@ description: >-
 
 
   The two chains share their history, addresses and keys, so a Lightning node
-  cannot tell them apart by any ordinary check. Lightning Fork advertises the
-  BLAKE2b chain in every peer handshake and drops peers that do not, and issues
-  invoices that start with lnblake, which no Bitcoin wallet will pay. It cannot
-  connect to, pay, or be paid from the Bitcoin Lightning network by accident.
+  cannot tell them apart by any ordinary check. Lightning Fork marks its peer
+  handshakes, invoices and offers with a required feature bit that a Lightning
+  node or wallet on Bitcoin following the specification refuses, and refuses
+  any invoice or offer without it. It cannot connect to, pay, or be paid from the Bitcoin Lightning
+  network by accident.
 
 
   REAL MONEY ON A YOUNG CHAIN
 
 
-  Coins that existed before block 961640 exist on both chains. Until Lightning
-  Fork signs with the chain's replay-protected signature type, prefer funding
+  Coins that existed before block 961640 exist on both chains. Lightning Fork
+  signs with the chain's replay-protected signature type, but prefer funding
   channels with coins received after that block, and keep amounts modest. Back
   up after every channel open or close.
 
@@ -79,18 +80,46 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Onion messages from any peer. A pool's invoice requests for your offers,
-  and the replies to your own requests, come from nodes that have no channel
-  with you; the node now takes them (lnd dropped them by default), with rate
-  limits still in place, and answers a request it sent directly with a reply
-  path that starts at itself. Found while testing against the Core Lightning
-  port of this chain: as released, that port keeps Bitcoin's chain identity,
-  so the two refuse each other; a patch series giving it this chain's
-  identity, with which the two peer, open channels, pay each other's
-  invoices and offers and close, is proposed to its maintainer.
+  The coordinated upgrade of Lightning on this chain. Lightning Fork and
+  privkeyio's Core Lightning (from v26.06.8-blake2b.5) now mark themselves
+  with the feature bits both projects agreed on. Updated nodes connect to
+  each other; they do not connect to nodes that have not updated, in either
+  direction. Update now: a channel whose peer has not updated yet stays
+  inactive until it does, then resumes on its own.
 
 
-  Lightning Fork 0.21.3-beta-blake2b.9, dashboard 1.3.2-blake2b.11.
+  You do not need to close any channels. The first start converts the
+  node's channel database once, and every open channel carries over,
+  including one that is still closing. A channel whose peer has not updated
+  yet shows as inactive, and becomes active again as soon as that peer
+  updates. Do not force close a channel only because it is inactive right
+  after the update. In the hour before you update, avoid sending or routing
+  payments, so that none is still pending while your peers are updating too.
+
+
+  The conversion cannot be undone. Once this version has started, an
+  earlier version refuses to start on the same data, so there is no going
+  back to it.
+
+
+  Invoices and offers created before this update can no longer be paid.
+  Offers are switched off automatically on the first start and show as
+  disabled. Create new ones, and if a mining pool pays you to an offer,
+  give the pool the new offer's string.
+
+
+  This version also follows the chain's temporary long coinbase maturity
+  rule, which raises the wait on newly mined coins from 100 blocks to 6480,
+  roughly 45 days. It does not affect channels that are already open. A
+  channel funded directly by a coinbase transaction now waits the full 6480
+  before it is treated as usable. This node's own wallet still offers
+  freshly mined coins after 100 confirmations, and a transaction spending
+  them is refused when it is broadcast; nothing is lost, but keep freshly
+  mined coins out of this node's wallet. If you run the Bitcoin node this
+  connects to, update it as well.
+
+
+  Lightning Fork 0.21.3-beta-blake2b.12, dashboard 1.3.2-blake2b.11.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:

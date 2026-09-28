@@ -84,10 +84,10 @@ and restart the app:
 LND with the changes needed to follow the Bitcoin BLAKE2b chain, behind the
 same dashboard the official Lightning Node app uses. It opens and closes
 channels, routes payments, and sends and receives over the Lightning Network on
-that chain. It advertises the BLAKE2b chain in every peer handshake and drops
-peers that do not, and issues invoices that start with `lnblake`, which no
-Bitcoin wallet will pay, so it cannot reach the Bitcoin Lightning network by
-accident.
+that chain. It marks its peer handshakes, invoices and offers with a required
+feature bit that a Lightning node or wallet on Bitcoin following the
+specification refuses, and refuses any invoice or offer without it, so it cannot reach the Bitcoin
+Lightning network by accident.
 
 Which Bitcoin node it follows is chosen in the app's node selector, the same one
 every app that depends on a Bitcoin node gets. Two qualify: **Knots (BLAKE2b)
@@ -97,9 +97,9 @@ the BLAKE2b chain; the app's tile then shows why, in words, rather than a
 spinner. Bitcoin Core and any Knots below 29.4.1 are refused.
 
 > **Real money on a young chain.** Coins that existed before block 961640 exist
-> on both chains. Until Lightning Fork signs with the chain's replay-protected
-> signature type, prefer funding channels with coins received after that block,
-> and keep amounts modest. Back up after every channel open or close.
+> on both chains. Lightning Fork signs with the chain's replay-protected
+> signature type, but prefer funding channels with coins received after that
+> block, and keep amounts modest. Back up after every channel open or close.
 
 **Connecting:** wallets that speak lndconnect (Zeus and the like) connect
 exactly as to LND, through the dashboard's connect modal. The app listens on
