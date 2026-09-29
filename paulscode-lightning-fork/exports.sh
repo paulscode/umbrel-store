@@ -24,21 +24,46 @@ export APP_LIGHTNING_FORK_NODE_REST_PORT="8180"
 export APP_LIGHTNING_FORK_NODE_DATA_DIR="${EXPORTS_APP_DIR}/data/lnd"
 
 # ---------------------------------------------------------------------------
-# Mempool Pruned is OPTIONAL: the dashboard can take its fee rates (the Low,
-# Medium and High its page shows) and its transaction links from it. umbrelOS
-# only injects the env of an app's required dependencies, so an installed
-# Mempool Pruned is detected here, host-side, the way the official Mempool
-# app detects Lightning. Two values: the app's web UI on the app network
-# (its nginx serves the fee endpoint the page reads) for the dashboard's
-# own requests, and the UI's port on this host for the links a browser
-# follows. The official Mempool app follows the other chain, so it is not
-# offered. Nothing here may exit non-zero (see the top of this file).
-installed="$("${UMBREL_ROOT:-/home/umbrel/umbrel}/scripts/app" ls-installed 2>/dev/null | tr ' ' '\n' || true)"
-if echo "${installed}" | grep -qxF "paulscode-mempool-pruned"; then
+# The Mempool apps are OPTIONAL: the dashboard can take its fee rates (the
+# Low, Medium and High the app's page shows) and its transaction links from
+# one. umbrelOS only injects the env of an app's required dependencies, so an
+# installed Mempool app is detected here, host-side, the way the official
+# Mempool app detects Lightning. For each: the app's web UI on the app
+# network (its nginx serves the fee endpoint the page reads) for the
+# dashboard's own requests, the UI's port on this host for the links a
+# browser follows, and its onion address for a page opened over Tor.
+#
+# Both Mempool Pruned and the official Mempool are offered. Which chain an
+# app follows depends on the Bitcoin node it is connected to, not on the
+# app, so the dashboard asks each app for the first BLAKE2b block and will
+# not use one on the other chain.
+#
+# The list of installed apps comes from umbreld's legacy-compat script, which
+# is what the official Mempool app uses; umbrelOS 1.x and 2.x ship it, and
+# earlier releases had scripts/app instead. As a last resort an app counts as
+# installed if its data directory exists. Nothing here may exit non-zero
+# (see the top of this file).
+umbrel_root="${UMBREL_ROOT:-/home/umbrel/umbrel}"
+installed="$(/opt/umbreld/source/modules/apps/legacy-compat/app-script ls-installed 2>/dev/null \
+  || "${umbrel_root}/scripts/app" ls-installed 2>/dev/null \
+  || true)"
+installed="$(echo "${installed}" | tr ' ' '\n' || true)"
+app_installed() {
+  echo "${installed}" | grep -qxF "$1" && return 0
+  [ -d "${EXPORTS_APP_DIR:-/nonexistent}/../$1" ] && return 0
+  return 1
+}
+
+if app_installed "paulscode-mempool-pruned"; then
   export APP_LIGHTNING_FORK_MEMPOOL_PRUNED_API="http://10.21.21.243:8080"
   export APP_LIGHTNING_FORK_MEMPOOL_PRUNED_UI_PORT="3032"
-  # Its onion address, for a dashboard page opened over Tor.
   export APP_LIGHTNING_FORK_MEMPOOL_PRUNED_HIDDEN_SERVICE="$(cat "${EXPORTS_TOR_DATA_DIR:-/nonexistent}/app-paulscode-mempool-pruned/hostname" 2>/dev/null || true)"
+fi
+
+if app_installed "mempool"; then
+  export APP_LIGHTNING_FORK_MEMPOOL_API="http://10.21.21.26:3006"
+  export APP_LIGHTNING_FORK_MEMPOOL_UI_PORT="3006"
+  export APP_LIGHTNING_FORK_MEMPOOL_HIDDEN_SERVICE="$(cat "${EXPORTS_TOR_DATA_DIR:-/nonexistent}/app-mempool/hostname" 2>/dev/null || true)"
 fi
 
 # Where the daemon writes its verdict on the selected node

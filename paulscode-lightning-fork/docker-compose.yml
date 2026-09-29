@@ -112,10 +112,10 @@ services:
   # after the icon, its port note and explorer links corrected, fiat amounts
   # removed. It speaks LND's RPC, which Lightning Fork keeps, and reads
   # getinfo.chains as bitcoin/mainnet, which Lightning Fork reports. The
-  # official Mempool app follows the other chain, so the explorer link is
-  # left unset; Mempool Pruned, when installed, is offered for fee rates and
-  # transaction links (see exports.sh), and links otherwise fall back to
-  # mempool.guide.
+  # explorer link is left unset: Mempool Pruned and the official Mempool,
+  # when installed, are offered for fee rates and transaction links (see
+  # exports.sh), the dashboard refuses one that follows the other chain, and
+  # links otherwise fall back to mempool.guide.
   app:
     image: paulscode/umbrel-lightning-fork:1.3.2-blake2b.11@sha256:6a8473ca8a4effdf1cead8d81a3cf1ed1ce793d97e6999480d3ca0b3a299f95a
     restart: on-failure
@@ -151,6 +151,12 @@ services:
       DEVICE_DOMAIN_NAME: "${DEVICE_DOMAIN_NAME}"
       EXPLORER_PORT: ""
       EXPLORER_HIDDEN_SERVICE: ""
+      # The official Mempool app, under the dashboard's "mempool" entry,
+      # named for what it is on umbrelOS.
+      MEMPOOL_GUIDE_API: "${APP_LIGHTNING_FORK_MEMPOOL_API:-}"
+      MEMPOOL_GUIDE_UI_PORT: "${APP_LIGHTNING_FORK_MEMPOOL_UI_PORT:-}"
+      MEMPOOL_GUIDE_HIDDEN_SERVICE: "${APP_LIGHTNING_FORK_MEMPOOL_HIDDEN_SERVICE:-}"
+      MEMPOOL_GUIDE_NAME: "Mempool"
       MEMPOOL_PRUNED_API: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_API:-}"
       MEMPOOL_PRUNED_UI_PORT: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_UI_PORT:-}"
       MEMPOOL_PRUNED_HIDDEN_SERVICE: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_HIDDEN_SERVICE:-}"
