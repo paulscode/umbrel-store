@@ -60,8 +60,10 @@ description: >-
   forked: named Lightning Fork, styled after this icon, its port-forwarding
   note corrected to 9737, and its transaction links pointed at mempool.guide,
   which follows the BLAKE2b chain, rather than mempool.space. With Mempool
-  Pruned installed, the dashboard can take its fee rates and transaction
-  links from it instead.
+  Pruned or Mempool installed, the dashboard can take its fee rates and
+  transaction links from it instead, once it has checked that the app
+  follows the BLAKE2b chain: a Mempool app connected to a node on the other
+  chain is shown as such and not used.
 developer: Paul Lamb
 website: https://github.com/paulscode/lightning-fork
 dependencies:

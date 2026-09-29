@@ -43,28 +43,32 @@ export APP_LIGHTNING_FORK_NODE_DATA_DIR="${EXPORTS_APP_DIR}/data/lnd"
 # earlier releases had scripts/app instead. As a last resort an app counts as
 # installed if its data directory exists. Nothing here may exit non-zero
 # (see the top of this file).
-umbrel_root="${UMBREL_ROOT:-/home/umbrel/umbrel}"
-installed="$(/opt/umbreld/source/modules/apps/legacy-compat/app-script ls-installed 2>/dev/null \
-  || "${umbrel_root}/scripts/app" ls-installed 2>/dev/null \
+lightning_fork_umbrel_root="${UMBREL_ROOT:-/home/umbrel/umbrel}"
+lightning_fork_installed="$(/opt/umbreld/source/modules/apps/legacy-compat/app-script ls-installed 2>/dev/null \
+  || "${lightning_fork_umbrel_root}/scripts/app" ls-installed 2>/dev/null \
   || true)"
-installed="$(echo "${installed}" | tr ' ' '\n' || true)"
-app_installed() {
-  echo "${installed}" | grep -qxF "$1" && return 0
+lightning_fork_installed="$(echo "${lightning_fork_installed}" | tr ' ' '\n' || true)"
+lightning_fork_app_installed() {
+  echo "${lightning_fork_installed}" | grep -qxF "$1" && return 0
   [ -d "${EXPORTS_APP_DIR:-/nonexistent}/../$1" ] && return 0
   return 1
 }
 
-if app_installed "paulscode-mempool-pruned"; then
+if lightning_fork_app_installed "paulscode-mempool-pruned"; then
   export APP_LIGHTNING_FORK_MEMPOOL_PRUNED_API="http://10.21.21.243:8080"
   export APP_LIGHTNING_FORK_MEMPOOL_PRUNED_UI_PORT="3032"
   export APP_LIGHTNING_FORK_MEMPOOL_PRUNED_HIDDEN_SERVICE="$(cat "${EXPORTS_TOR_DATA_DIR:-/nonexistent}/app-paulscode-mempool-pruned/hostname" 2>/dev/null || true)"
 fi
 
-if app_installed "mempool"; then
+if lightning_fork_app_installed "mempool"; then
   export APP_LIGHTNING_FORK_MEMPOOL_API="http://10.21.21.26:3006"
   export APP_LIGHTNING_FORK_MEMPOOL_UI_PORT="3006"
   export APP_LIGHTNING_FORK_MEMPOOL_HIDDEN_SERVICE="$(cat "${EXPORTS_TOR_DATA_DIR:-/nonexistent}/app-mempool/hostname" 2>/dev/null || true)"
 fi
+# umbreld sources several apps' exports in one shell; leave nothing behind
+# for the next one. Prefixed names, so nothing of another app's is touched.
+unset -f lightning_fork_app_installed
+unset lightning_fork_installed lightning_fork_umbrel_root
 
 # Where the daemon writes its verdict on the selected node
 # (chain-identity.json), kept apart from the wallet so the status container
