@@ -117,7 +117,7 @@ services:
   # exports.sh), the dashboard refuses one that follows the other chain, and
   # links otherwise fall back to mempool.guide.
   app:
-    image: paulscode/umbrel-lightning-fork:1.3.2-blake2b.11@sha256:6a8473ca8a4effdf1cead8d81a3cf1ed1ce793d97e6999480d3ca0b3a299f95a
+    image: paulscode/umbrel-lightning-fork:1.3.2-blake2b.12@sha256:ba940c9f2cbad8726ef6bf5841add725399ce0804c2518b6425b46aada6dc59c
     restart: on-failure
     volumes:
       - "${APP_LIGHTNING_FORK_NODE_DATA_DIR}:/data/.lnd"
@@ -170,7 +170,7 @@ services:
   # and a wallet on the LAN agree.
   lnd:
     hostname: "${DEVICE_DOMAIN_NAME}" # Needed so LND can generate a valid cert
-    image: paulscode/lightning-fork:0.21.3-beta-blake2b.12@sha256:66418aa4cecd03c5f6761499797efbe2376dd71df832e0d58a1fc79c1f6c0909
+    image: paulscode/lightning-fork:0.21.3-beta-blake2b.13@sha256:93ebb298742baf99de9f04799eb3bed9781b02c68766078c3285fafa88680b81
     command: "${APP_LIGHTNING_FORK_COMMAND}"
     user: 1000:1000
     restart: unless-stopped

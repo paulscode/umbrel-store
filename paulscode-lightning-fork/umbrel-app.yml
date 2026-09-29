@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.3-beta-blake2b.12.0"
+version: "0.21.3-beta-blake2b.13.0"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -82,46 +82,44 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  The coordinated upgrade of Lightning on this chain. Lightning Fork and
-  privkeyio's Core Lightning (from v26.06.8-blake2b.5) now mark themselves
-  with the feature bits both projects agreed on. Updated nodes connect to
-  each other; they do not connect to nodes that have not updated, in either
-  direction. Update now: a channel whose peer has not updated yet stays
-  inactive until it does, then resumes on its own.
+  Coins from mining now wait for the chain's relay rule. A coinbase output
+  paid to this node's wallet, for example by a mining pool, is spendable once
+  a spend of it will relay: 6480 confirmations, roughly 45 days, while the
+  long coinbase maturity rule is deployed. Until then the wallet no longer
+  offers it, so a send or channel open is refused up front instead of
+  failing at broadcast, and it is not counted in the wallet's balance: the
+  dashboard shows it under the Bitcoin balance as coins from mining,
+  maturing. If you received coinbase outputs in the last 45 days, your
+  balance drops by that amount on this update and returns as each output
+  matures. Nothing is lost.
 
 
-  You do not need to close any channels. The first start converts the
-  node's channel database once, and every open channel carries over,
-  including one that is still closing. A channel whose peer has not updated
-  yet shows as inactive, and becomes active again as soon as that peer
-  updates. Do not force close a channel only because it is inactive right
-  after the update. In the hour before you update, avoid sending or routing
-  payments, so that none is still pending while your peers are updating too.
+  Mempool apps are found again on umbrelOS 1.x and 2.x, where no Mempool app
+  was offered before. Both Mempool Pruned and the official Mempool are
+  offered, and each is checked against block 961640: an app connected to a
+  node on the other chain is shown as such and not used.
 
 
-  The conversion cannot be undone. Once this version has started, an
-  earlier version refuses to start on the same data, so there is no going
-  back to it.
+  Channel details show whether a channel's signatures are bound to this
+  chain, and a Connect To line with the peer's key@host:port and a copy
+  button, for opening a channel back to it. A node holding a chain-bound
+  channel must not go back to a version before 0.21.3-beta-blake2b.10.
 
 
-  Invoices and offers created before this update can no longer be paid.
-  Offers are switched off automatically on the first start and show as
-  disabled. Create new ones, and if a mining pool pays you to an offer,
-  give the pool the new offer's string.
+  Also: a channel funded by a coinbase is no longer given up on by the
+  receiving side after a restart while it matures, and this node no longer
+  asks upgraded Core Lightning peers for the stale Bitcoin channels some of
+  them still hold.
 
 
-  This version also follows the chain's temporary long coinbase maturity
-  rule, which raises the wait on newly mined coins from 100 blocks to 6480,
-  roughly 45 days. It does not affect channels that are already open. A
-  channel funded directly by a coinbase transaction now waits the full 6480
-  before it is treated as usable. This node's own wallet still offers
-  freshly mined coins after 100 confirmations, and a transaction spending
-  them is refused when it is broadcast; nothing is lost, but keep freshly
-  mined coins out of this node's wallet. If you run the Bitcoin node this
-  connects to, update it as well.
+  Updating from 0.21.3-beta-blake2b.7.2 or earlier? That crosses the
+  coordinated feature-bit change, whose notes still apply: channels carry
+  over, the conversion cannot be undone, a channel stays inactive until its
+  peer has updated too, and invoices and offers created before it can no
+  longer be paid.
 
 
-  Lightning Fork 0.21.3-beta-blake2b.12, dashboard 1.3.2-blake2b.11.
+  Lightning Fork 0.21.3-beta-blake2b.13, dashboard 1.3.2-blake2b.12.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
