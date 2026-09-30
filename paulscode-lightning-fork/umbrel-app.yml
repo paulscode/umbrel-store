@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.3-beta-blake2b.13.0"
+version: "0.21.3-beta-blake2b.14.0"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -82,34 +82,36 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Coins from mining now wait for the chain's relay rule. A coinbase output
-  paid to this node's wallet, for example by a mining pool, is spendable once
-  a spend of it will relay: 6480 confirmations, roughly 45 days, while the
-  long coinbase maturity rule is deployed. Until then the wallet no longer
-  offers it, so a send or channel open is refused up front instead of
-  failing at broadcast, and it is not counted in the wallet's balance: the
-  dashboard shows it under the Bitcoin balance as coins from mining,
-  maturing. If you received coinbase outputs in the last 45 days, your
-  balance drops by that amount on this update and returns as each output
-  matures. Nothing is lost.
+  Watchtowers now check which chain they serve. A tower and its client used
+  to recognise each other only by a value this chain shares with Bitcoin
+  nodes that have not upgraded, so a client could hold sessions with a stock
+  tower that watched the wrong chain and would never act on a breach here.
+  Every tower and client of Lightning Fork now says it follows the BLAKE2b
+  rules, and refuses one that does not. If you use a watchtower, update the
+  node running it too: a client on this release cannot use a tower on an
+  earlier one until that tower is updated.
 
 
-  Mempool apps are found again on umbrelOS 1.x and 2.x, where no Mempool app
-  was offered before. Both Mempool Pruned and the official Mempool are
-  offered, and each is checked against block 961640: an app connected to a
-  node on the other chain is shown as such and not used.
+  Public channels opened before 17 September are announced again. Their
+  announcements were signed in a form only Lightning Fork can check, so Core
+  Lightning nodes never learned them. Once both ends of such a channel run
+  this release, the two sign it again and it is announced to everyone.
 
 
-  Channel details show whether a channel's signatures are bound to this
-  chain, and a Connect To line with the peer's key@host:port and a copy
-  button, for opening a channel back to it. A node holding a chain-bound
-  channel must not go back to a version before 0.21.3-beta-blake2b.10.
+  A channel is only opened with a peer that says it follows the BLAKE2b
+  rules. Every Lightning Fork release and privkeyio's Core Lightning do; this
+  only affects clients that connect for other purposes.
 
 
-  Also: a channel funded by a coinbase is no longer given up on by the
-  receiving side after a restart while it matures, and this node no longer
-  asks upgraded Core Lightning peers for the stale Bitcoin channels some of
-  them still hold.
+  Channel backups now keep each node's copy in a folder of its own inside
+  the folder you named, so several nodes can share one account without
+  overwriting each other; a restore still finds a copy an earlier release
+  made directly in that folder. Nextcloud takes the address you open it at,
+  and a saved address is completed to the form the backup tool needs.
+
+
+  Also: stricter checks from the specification shared with privkeyio's Core
+  Lightning, merged on 29 September.
 
 
   Updating from 0.21.3-beta-blake2b.7.2 or earlier? That crosses the
@@ -119,7 +121,7 @@ releaseNotes: >-
   longer be paid.
 
 
-  Lightning Fork 0.21.3-beta-blake2b.13, dashboard 1.3.2-blake2b.12.
+  Lightning Fork 0.21.3-beta-blake2b.14, dashboard 1.3.2-blake2b.13.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
