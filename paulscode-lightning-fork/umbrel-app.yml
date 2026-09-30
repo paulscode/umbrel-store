@@ -82,15 +82,17 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Watchtowers now check which chain they serve. A tower and its client used
-  to recognise each other only by a value this chain shares with Bitcoin
-  nodes that have not upgraded, so a client could hold sessions with a stock
-  tower that watched the wrong chain and would never act on a breach here.
+  Watchtowers now check that they follow the BLAKE2b rules. A tower and its
+  client used to recognise each other only by a value Bitcoin nodes that
+  have not upgraded carry too, so a client could hold sessions with a stock
+  tower that never saw the blocks this node follows and would never act on a
+  breach.
   Every tower and client of Lightning Fork now says it follows the BLAKE2b
   rules, and refuses one that does not. If you use a watchtower, update the
   node running it too: a client on this release cannot use a tower on an
   earlier one, or the other way round, and backups to it wait until both are
-  on this release, then resume.
+  on this release, then resume. (These are watchtower backups, not the
+  channel backups below.)
 
 
   Public channels opened before 17 September are announced again. Their
@@ -100,15 +102,16 @@ releaseNotes: >-
 
 
   A channel is only opened with a peer that says it follows the BLAKE2b
-  rules. Every Lightning Fork release and privkeyio's Core Lightning do; this
-  only affects clients that connect for other purposes.
+  rules. Every current Lightning Fork release and privkeyio's Core Lightning
+  do; this only affects clients that connect for other purposes.
 
 
   Channel backups now keep each node's copy in a folder of its own inside
   the folder you named, so several nodes can share one account without
   overwriting each other; a restore still finds a copy an earlier release
   made directly in that folder. Nextcloud takes the address you open it at,
-  and a saved address is completed to the form the backup tool needs.
+  and a saved address is completed to the form the backup tool needs. The
+  SFTP folder path says which directory it is relative to.
 
 
   Also: stricter checks from the specification shared with privkeyio's Core
