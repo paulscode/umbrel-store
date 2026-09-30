@@ -89,7 +89,8 @@ releaseNotes: >-
   Every tower and client of Lightning Fork now says it follows the BLAKE2b
   rules, and refuses one that does not. If you use a watchtower, update the
   node running it too: a client on this release cannot use a tower on an
-  earlier one until that tower is updated.
+  earlier one, or the other way round, and backups to it wait until both are
+  on this release, then resume.
 
 
   Public channels opened before 17 September are announced again. Their
