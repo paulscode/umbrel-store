@@ -2,8 +2,8 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.2.0"
-tagline: Solo mine the BLAKE2b chain with a Sia-style ASIC you already own
+version: "1.2.1"
+tagline: Mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
 
@@ -75,23 +75,18 @@ description: >-
   miss.
 
 
-  Then fill in **Host** and **Port**. Convoy is the pool for this chain:
+  Then fill in **Host**, **Port** and **Pubkey** from the pool's own website.
+  Lazarus and Convoy both run DATUM pools on this chain:
 
-    - Host: `datum-beta1.mine.convoy.xyz`
+    - Lazarus: Host `datum.lazarus-xbt.xyz`, Port `28915`
 
-    - Port: `28915`
-
-
-  **Pubkey** is already filled in with Convoy's, so a host and a port are all you
-  need to add. It should read:
+    - Convoy: Host `datum-beta1.mine.convoy.xyz`, Port `28915`
 
 
-  `dbb11fa0c2b5403e4f798fa6071bb97e6079d219598366032fdf2ae01962b13c5e66e2be7d6b008f0b2603f3e6f6fc64768fa786c8129c46d3e30a5867734b62`
-
-
-  That key is what authenticates the pool to you, so it is worth checking against
-  the one Convoy publishes rather than taking it from here. If Convoy ever changes
-  it, paste the new one into that box. It is always 128 hex characters, a signing
+  **Pubkey** is filled in with Convoy's, so for Convoy a host and a port are all
+  you need to add. For any other pool, paste the key that pool publishes. Either
+  way, check it against the pool's website rather than taking it from here, and
+  if the pool ever changes it, paste the new one into that box. It is always 128 hex characters, a signing
   key and an encryption key one after the other, and a key of any other length
   stops the gateway from starting.
 
@@ -111,8 +106,10 @@ description: >-
 
     - Stratum URL: `stratum+tcp://192.168.1.50:23336`
 
-    - Username/Worker: anything readable, so you can tell miners apart. It is not
-    used for payment.
+    - Username/Worker: mining solo, anything readable, so you can tell miners
+    apart; it is not used for payment. Mining at a pool, use
+    `youraddress.workername`: the part before the first `.` is the address the
+    pool pays.
 
     - Password: leave blank, or use `d=1024` to ask for a starting share
     difficulty if you are renting hashrate.
@@ -149,25 +146,32 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  Update Knots (BLAKE2b) Companion as well as this app. If you mine against a
-  node that has not taken the chain's new coinbase maturity rule, the blocks you
-  find will be rejected.
+  Pooled mining now puts the pool's whole payout list in the blocks your gateway
+  finds. Every earlier version of this app put at most about 17 pool payouts in a
+  block; everyone else in the pool's window was left out of that block and had to
+  be paid later by the pool, as a make-good.
 
 
-  The gateway takes its list of transactions straight from the node and does not
-  check them, so this is not something it can protect you from. A node without
-  the rule will offer transactions that stopped being valid at block 973440, and
-  any block built from them is invalid. Update the node app to 1.1.9 or later,
-  which is the first version carrying the rule.
+  The cause was a size limit meant for SHA256 mining hardware, which rebuilds the
+  coinbase itself. The gateway applied a 750-byte limit to any miner it did not
+  recognise, which is every BLAKE2b miner, and BLAKE2b miners never see the
+  coinbase, so the limit protected nothing. The coinbase can now hold up to 1024
+  payouts, sized to the room the block has left. At the node's default block size
+  there is room for about 900, more than twice the payout list of the largest pool
+  on this chain today.
 
 
-  Nothing about how the gateway mines changes and you do not need to reconfigure
-  your miners. This release also documents how long mined coins are locked,
-  which the setup notes did not say at all: the wait used to be 100 blocks,
-  about 16 hours, and is now 6480 blocks, roughly 45 days at a ten minute block
-  target, applying to coins already mined as well as new ones. Nothing is lost,
-  but a first block arriving and then sitting unspendable is expected rather
-  than a fault.
+  Also from upstream work by CONVOY, iohzrd and Lazarus Pool: a large coinbase in
+  a nearly full block is now measured against the BLAKE2b header, so it cannot
+  push the block over the weight limit; while pooled, the gateway no longer hands
+  out work whose coinbase pays only the pool, which used to happen for a moment
+  after each new block; and payouts are kept within the block's signature
+  operation limit.
+
+
+  The "Fingerprint and workaround known miner bugs" setting is gone from the
+  Config page, because the gateway no longer has it. Your other settings are kept
+  and you do not need to reconfigure your miners. Solo mining is unchanged.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
