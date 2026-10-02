@@ -162,7 +162,18 @@ rest_hidden_service_file="${EXPORTS_TOR_DATA_DIR}/app-${EXPORTS_APP_ID}-rest/hos
 grpc_hidden_service_file="${EXPORTS_TOR_DATA_DIR}/app-${EXPORTS_APP_ID}-grpc/hostname"
 export APP_LIGHTNING_FORK_REST_HIDDEN_SERVICE="$(cat "${rest_hidden_service_file}" 2>/dev/null || echo "notyetset.onion")"
 export APP_LIGHTNING_FORK_GRPC_HIDDEN_SERVICE="$(cat "${grpc_hidden_service_file}" 2>/dev/null || echo "notyetset.onion")"
-# Empty until Tor has published it; the dashboard then offers phones the LAN
-# only, and the onion from the app's next start.
-mobile_hidden_service_file="${EXPORTS_TOR_DATA_DIR}/app-${EXPORTS_APP_ID}-mobile/hostname"
+# Empty until Tor has published it. The dashboard also reads the hostname
+# file itself, through a read-only mount of this directory, so it offers
+# phones the onion as soon as Tor writes it.
+mobile_hidden_service_dir="${EXPORTS_TOR_DATA_DIR}/app-${EXPORTS_APP_ID}-mobile"
+mobile_hidden_service_file="${mobile_hidden_service_dir}/hostname"
 export APP_LIGHTNING_FORK_MOBILE_HIDDEN_SERVICE="$(cat "${mobile_hidden_service_file}" 2>/dev/null || true)"
+# Docker would create a missing mount source as root, and Tor (uid 1000)
+# refuses a hidden service directory it does not own, which would take the
+# app's Tor down. So make it here first, empty, as Tor wants it: owned by
+# 1000 and private. Tor fills it. An existing directory is left alone.
+if [[ ! -e "${mobile_hidden_service_dir}" ]] && [[ -d "${EXPORTS_TOR_DATA_DIR:-/nonexistent}" ]]; then
+	mkdir -m 700 "${mobile_hidden_service_dir}" 2>/dev/null || true
+	chown 1000:1000 "${mobile_hidden_service_dir}" 2>/dev/null || true
+fi
+unset mobile_hidden_service_dir mobile_hidden_service_file

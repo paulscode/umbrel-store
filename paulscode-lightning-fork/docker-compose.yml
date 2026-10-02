@@ -122,6 +122,10 @@ services:
     volumes:
       - "${APP_LIGHTNING_FORK_NODE_DATA_DIR}:/data/.lnd"
       - "${APP_DATA_DIR}/data/lightning:/data"
+      # The companion app's hidden service (torrc.template), read-only, so the
+      # dashboard sees its onion as soon as Tor publishes it rather than at
+      # the next start. exports.sh creates the directory for Tor first.
+      - "${TOR_DATA_DIR}/app-${APP_ID}-mobile:/tor-mobile:ro"
     environment:
       PORT: "3006"
       TOR_PROXY_IP: "${TOR_PROXY_IP}"
@@ -153,6 +157,7 @@ services:
       # and behind its own onion (torrc.template).
       MOBILE_TLS_PORT: "3443"
       MOBILE_PUBLIC_PORT: "${APP_LIGHTNING_FORK_MOBILE_PORT}"
+      MOBILE_ONION_FILE: "/tor-mobile/hostname"
       MOBILE_ONION: "${APP_LIGHTNING_FORK_MOBILE_HIDDEN_SERVICE:-}"
       MOBILE_LAN_IP: "${APP_LIGHTNING_FORK_LAN_IP:-}"
       EXPLORER_PORT: ""
