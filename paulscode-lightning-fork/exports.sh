@@ -21,6 +21,11 @@ export APP_LIGHTNING_FORK_STATUS_IP="10.21.22.67" # the tile's front door
 export APP_LIGHTNING_FORK_NODE_PORT="9737"
 export APP_LIGHTNING_FORK_NODE_GRPC_PORT="10010"
 export APP_LIGHTNING_FORK_NODE_REST_PORT="8180"
+# The watchtower, when turned on in Advanced Settings, for an address other
+# than its own Tor onion. Published as 9913, which the official Lightning app
+# does not take, onto LND's default 9911 inside: moving the listener would
+# change the port in a running tower's onion URI and strand its clients.
+export APP_LIGHTNING_FORK_WATCHTOWER_PORT="9913"
 export APP_LIGHTNING_FORK_NODE_DATA_DIR="${EXPORTS_APP_DIR}/data/lnd"
 
 # ---------------------------------------------------------------------------
