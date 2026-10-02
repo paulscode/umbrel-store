@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.3-beta-blake2b.14.0"
+version: "0.21.3-beta-blake2b.14.1"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -56,7 +56,8 @@ description: >-
 
 
   Runs beside the official Lightning Node app: it uses ports 9737, 10010 and
-  8180 where that app uses 9735, 10009 and 8080. The dashboard is that app's,
+  8180 where that app uses 9735, 10009 and 8080, plus 7157 for the Lightning
+  Fork mobile app and 9913 for the watchtower server when it is turned on. The dashboard is that app's,
   forked: named Lightning Fork, styled after this icon, its port-forwarding
   note corrected to 9737, and its transaction links pointed at mempool.guide,
   which follows the BLAKE2b chain, rather than mempool.space. With Mempool
@@ -82,50 +83,28 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Watchtowers now check that they follow the BLAKE2b rules. A tower and its
-  client used to recognise each other only by a value Bitcoin nodes that
-  have not upgraded carry too, so a client could hold sessions with a stock
-  tower that never saw the blocks this node follows and would never act on a
-  breach.
-  Every tower and client of Lightning Fork now says it follows the BLAKE2b
-  rules, and refuses one that does not. If you use a watchtower, update the
-  node running it too: a client on this release cannot use a tower on an
-  earlier one, or the other way round, and backups to it wait until both are
-  on this release, then resume. (These are watchtower backups, not the
-  channel backups below.)
+  Lightning Fork for Android, in testing with a small group first: pair a
+  phone from the dashboard's menu (Mobile app) to see your on-chain and
+  Lightning balances, and send and receive from it. At home the phone
+  reaches the dashboard over your network, on port 7157; anywhere else over
+  Tor, at an onion of the app's own. Tor publishes that onion a few minutes
+  after this update: restart Lightning Fork once after that, and phones
+  paired from then on can use it away from home. Each phone gets a key of
+  its own, listed under Mobile app, where removing it stops it at once.
 
 
-  Public channels opened before 17 September are announced again. Their
-  announcements were signed in a form only Lightning Fork can check, so Core
-  Lightning nodes never learned them. Once both ends of such a channel run
-  this release, the two sign it again and it is announced to everyone.
+  Peers: connect to another node without opening a channel, from the menu or
+  the peer count, so that it can open one to you.
 
 
-  A channel is only opened with a peer that says it follows the BLAKE2b
-  rules. Every current Lightning Fork release and privkeyio's Core Lightning
-  do; this only affects clients that connect for other purposes.
+  Watchtowers: Advanced Settings shows which towers accepted this node (its
+  sessions with each), and removing one of a tower's addresses no longer
+  removes the whole tower. The watchtower server can be given an address
+  besides its Tor onion, a LAN or public one; it is published on port 9913.
 
 
-  Channel backups now keep each node's copy in a folder of its own inside
-  the folder you named, so several nodes can share one account without
-  overwriting each other; a restore still finds a copy an earlier release
-  made directly in that folder. Nextcloud takes the address you open it at,
-  and a saved address is completed to the form the backup tool needs. The
-  SFTP folder path says which directory it is relative to.
-
-
-  Also: stricter checks from the specification shared with privkeyio's Core
-  Lightning, merged on 29 September.
-
-
-  Updating from 0.21.3-beta-blake2b.7.2 or earlier? That crosses the
-  coordinated feature-bit change, whose notes still apply: channels carry
-  over, the conversion cannot be undone, a channel stays inactive until its
-  peer has updated too, and invoices and offers created before it can no
-  longer be paid.
-
-
-  Lightning Fork 0.21.3-beta-blake2b.14, dashboard 1.3.2-blake2b.13.
+  Lightning Fork 0.21.3-beta-blake2b.14 (unchanged), dashboard
+  1.3.2-blake2b.14.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
