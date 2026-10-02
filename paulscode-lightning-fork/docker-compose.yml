@@ -154,6 +154,7 @@ services:
       MOBILE_TLS_PORT: "3443"
       MOBILE_PUBLIC_PORT: "${APP_LIGHTNING_FORK_MOBILE_PORT}"
       MOBILE_ONION: "${APP_LIGHTNING_FORK_MOBILE_HIDDEN_SERVICE:-}"
+      MOBILE_LAN_IP: "${APP_LIGHTNING_FORK_LAN_IP:-}"
       EXPLORER_PORT: ""
       EXPLORER_HIDDEN_SERVICE: ""
       # The official Mempool app, under the dashboard's "mempool" entry,

@@ -30,6 +30,10 @@ export APP_LIGHTNING_FORK_WATCHTOWER_PORT="9913"
 # (umbrelOS puts plain HTTP on the LAN and its own login in front of the
 # tile's port), and over a hidden service of its own.
 export APP_LIGHTNING_FORK_MOBILE_PORT="7157"
+# The server's LAN IP, which the dashboard offers phones beside its .local
+# name (not every phone resolves .local). Empty if it can't be read here.
+APP_LIGHTNING_FORK_LAN_IP="$(ip route get 1.1.1.1 2>/dev/null | sed -n 's/.* src \([0-9.]*\).*/\1/p' | head -n 1 || true)"
+export APP_LIGHTNING_FORK_LAN_IP
 export APP_LIGHTNING_FORK_NODE_DATA_DIR="${EXPORTS_APP_DIR}/data/lnd"
 
 # ---------------------------------------------------------------------------
