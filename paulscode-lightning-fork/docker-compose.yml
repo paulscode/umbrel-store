@@ -117,7 +117,7 @@ services:
   # exports.sh), the dashboard refuses one that follows the other chain, and
   # links otherwise fall back to mempool.guide.
   app:
-    image: paulscode/umbrel-lightning-fork:1.3.2-blake2b.13@sha256:c36bb717da116c363d8c30f87a86e1260cccb3d05563c94ab388fc2a95dd4036
+    image: paulscode/umbrel-lightning-fork:1.3.2-blake2b.14@sha256:13e7ca92076e0b468fe7371d340c8555f3ede78ac2232d52916e6c0d819203df
     restart: on-failure
     volumes:
       - "${APP_LIGHTNING_FORK_NODE_DATA_DIR}:/data/.lnd"
