@@ -149,6 +149,11 @@ services:
       LND_CONF_FILEPATH: "/data/.lnd/lnd.conf"
       LND_INITIALIZE_WITH_TOR_ONLY: "unset"
       DEVICE_DOMAIN_NAME: "${DEVICE_DOMAIN_NAME}"
+      # The companion app's API: its own TLS listener, published on the LAN
+      # and behind its own onion (torrc.template).
+      MOBILE_TLS_PORT: "3443"
+      MOBILE_PUBLIC_PORT: "${APP_LIGHTNING_FORK_MOBILE_PORT}"
+      MOBILE_ONION: "${APP_LIGHTNING_FORK_MOBILE_HIDDEN_SERVICE:-}"
       EXPLORER_PORT: ""
       EXPLORER_HIDDEN_SERVICE: ""
       # The official Mempool app, under the dashboard's "mempool" entry,
@@ -160,6 +165,8 @@ services:
       MEMPOOL_PRUNED_API: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_API:-}"
       MEMPOOL_PRUNED_UI_PORT: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_UI_PORT:-}"
       MEMPOOL_PRUNED_HIDDEN_SERVICE: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_HIDDEN_SERVICE:-}"
+    ports:
+      - "${APP_LIGHTNING_FORK_MOBILE_PORT}:3443"
     networks:
       default:
         ipv4_address: $APP_LIGHTNING_FORK_IP

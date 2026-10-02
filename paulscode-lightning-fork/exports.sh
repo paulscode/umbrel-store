@@ -26,6 +26,10 @@ export APP_LIGHTNING_FORK_NODE_REST_PORT="8180"
 # does not take, onto LND's default 9911 inside: moving the listener would
 # change the port in a running tower's onion URI and strand its clients.
 export APP_LIGHTNING_FORK_WATCHTOWER_PORT="9913"
+# The companion app's API, served by the dashboard on a TLS port of its own
+# (umbrelOS puts plain HTTP on the LAN and its own login in front of the
+# tile's port), and over a hidden service of its own.
+export APP_LIGHTNING_FORK_MOBILE_PORT="7157"
 export APP_LIGHTNING_FORK_NODE_DATA_DIR="${EXPORTS_APP_DIR}/data/lnd"
 
 # ---------------------------------------------------------------------------
@@ -154,3 +158,7 @@ rest_hidden_service_file="${EXPORTS_TOR_DATA_DIR}/app-${EXPORTS_APP_ID}-rest/hos
 grpc_hidden_service_file="${EXPORTS_TOR_DATA_DIR}/app-${EXPORTS_APP_ID}-grpc/hostname"
 export APP_LIGHTNING_FORK_REST_HIDDEN_SERVICE="$(cat "${rest_hidden_service_file}" 2>/dev/null || echo "notyetset.onion")"
 export APP_LIGHTNING_FORK_GRPC_HIDDEN_SERVICE="$(cat "${grpc_hidden_service_file}" 2>/dev/null || echo "notyetset.onion")"
+# Empty until Tor has published it; the dashboard then offers phones the LAN
+# only, and the onion from the app's next start.
+mobile_hidden_service_file="${EXPORTS_TOR_DATA_DIR}/app-${EXPORTS_APP_ID}-mobile/hostname"
+export APP_LIGHTNING_FORK_MOBILE_HIDDEN_SERVICE="$(cat "${mobile_hidden_service_file}" 2>/dev/null || true)"
