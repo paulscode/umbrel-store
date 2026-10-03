@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.3-beta-blake2b.14.1"
+version: "0.21.3-beta-blake2b.15.0"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -23,14 +23,14 @@ description: >-
   then says so in words rather than spinning.
 
 
-  HOW IT STAYS AWAY FROM THE BITCOIN LIGHTNING NETWORK
+  HOW IT STAYS AWAY FROM THE SHA256 CHAIN'S LIGHTNING NETWORK
 
 
   The two chains share their history, addresses and keys, so a Lightning node
   cannot tell them apart by any ordinary check. Lightning Fork marks its peer
   handshakes, invoices and offers with a required feature bit that a Lightning
-  node or wallet on Bitcoin following the specification refuses, and refuses
-  any invoice or offer without it. It cannot connect to, pay, or be paid from the Bitcoin Lightning
+  node or wallet on the SHA256 chain following the specification refuses, and refuses
+  any invoice or offer without it. It cannot connect to, pay, or be paid from the SHA256 chain's Lightning
   network by accident.
 
 
@@ -83,28 +83,28 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Lightning Fork for Android, in testing with a small group first: pair a
-  phone from the dashboard's menu (Mobile app) to see your on-chain and
-  Lightning balances, and send and receive from it. At home the phone
-  reaches the dashboard over your network, on port 7157; anywhere else over
-  Tor, at an onion of the app's own. Tor publishes that onion a few minutes
-  after this update: restart Lightning Fork once after that, and phones
-  paired from then on can use it away from home. Each phone gets a key of
-  its own, listed under Mobile app, where removing it stops it at once.
+  Offers on mainnet: paying a BOLT 12 offer between two Lightning Fork nodes
+  failed with "message names no chain". Fixed; both nodes need this release.
 
 
-  Peers: connect to another node without opening a channel, from the menu or
-  the peer count, so that it can open one to you.
+  Paying SHA256 invoices: the dashboard pays Lightning invoices from the
+  SHA256 chain through a service run by someone you trust, from the code they
+  give you (menu, Paying SHA256 invoices). You pay the service with an
+  invoice that carries the SHA256 invoice's own payment hash, so it is paid
+  only if it pays yours, and its price is checked against the market before
+  anything is paid. The Android app (0.2.0) pays them too.
 
 
-  Watchtowers: Advanced Settings shows which towers accepted this node (its
-  sessions with each), and removing one of a tower's addresses no longer
-  removes the whole tower. The watchtower server can be given an address
-  besides its Tor onion, a LAN or public one; it is published on port 9913.
+  The mobile app away from home: the dashboard now picks up the app's onion
+  address as soon as Tor publishes it, with no restart, and its Mobile app
+  screen says whether away-from-home use is set up.
 
 
-  Lightning Fork 0.21.3-beta-blake2b.14 (unchanged), dashboard
-  1.3.2-blake2b.14.
+  Errors on the wallet cards stay in place and can be dismissed, and offer
+  failures are explained in words.
+
+
+  Lightning Fork 0.21.3-beta-blake2b.15, dashboard 1.3.2-blake2b.15.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
