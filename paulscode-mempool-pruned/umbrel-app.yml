@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-mempool-pruned
 category: bitcoin
 name: Mempool Pruned
-version: "3.3.1.7"
+version: "3.3.1.8"
 tagline: A block explorer that works with a pruned Bitcoin node
 description: >-
   Run your own mempool.space against a pruned node. The official Mempool app
@@ -49,6 +49,18 @@ description: >-
   database, which is separate from the chain and still needs room.
 
 
+  LIGHTNING
+
+
+  With Lightning Fork installed, the Lightning pages show the Lightning network
+  on the BLAKE2b chain as Lightning Fork sees it: nodes, channels, capacity and
+  how they change over time. There is nothing to set up. The pages stay off
+  while this explorer's Bitcoin node is on the SHA256 chain, where those
+  channels do not exist, and until Lightning Fork has a wallet. This app looks
+  for Lightning Fork when it starts, so restart it after installing Lightning
+  Fork and creating its wallet.
+
+
   Installs alongside the official Mempool and the BIP-110 fork. All three keep
   their own database, address and port, so you can run more than one.
 developer: Paul Lamb
@@ -68,24 +80,24 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Keeps the difficulty figure working against a Bitcoin Knots node on the
-  BLAKE2b chain.
+  Shows the Lightning network from Lightning Fork, and makes the Lightning pages
+  work on a pruned node.
 
 
-  Knots 29.4.2.knots20260508 changed two things this reads. A block with the new
-  header format reports "difficulty_blake2b" and no longer reports "difficulty"
-  at all, so against an updated node every block arrived with no difficulty and
-  the figure stopped being recorded. And the getdifficulty RPC was removed
-  outright, which the hashrate chart called and quietly fell back to zero on.
+  With Lightning Fork installed, the explorer's Lightning pages read its view
+  of the network on the BLAKE2b chain, with nothing to set up. They stay off
+  while this explorer's Bitcoin node is on the SHA256 chain, and until Lightning
+  Fork has a wallet. If you install Lightning Fork after this app, restart this
+  app once its wallet exists.
 
 
-  Both now read whichever name applies, so blocks either side of the BLAKE2b
-  activation work and the current difficulty is reported again.
+  The Lightning pages also left out every channel on a pruned node. To date and
+  size a channel, the explorer looked up the transaction that opened it by its
+  id, which only a node keeping a full transaction index can answer, and a
+  pruned node cannot keep one. It now takes the capacity from the Lightning
+  node and the date from the block header, which a pruned node keeps for every
+  block.
 
-
-  Nothing else changes and no reindex is needed. Blocks recorded while the
-  figure was missing keep whatever was stored for them; the chart fills in again
-  from here.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

@@ -12,8 +12,39 @@ services:
     init: true
     restart: on-failure
     stop_grace_period: 1m
-    command: "./wait-for db:3306 --timeout=720 -- nginx -g 'daemon off;'"
+    # The Lightning tab shows only when LIGHTNING is set, and whether the api
+    # turned the Lightning pages on is decided there, at its start (see its
+    # command). So with Lightning Fork installed this asks the api, once it
+    # answers, and sets LIGHTNING from what it says. The api first waits for the
+    # database and may take a minute to ask its node which chain it is on, so
+    # this waits up to three minutes, then leaves the tab off. Without
+    # Lightning Fork it goes straight on. Either way it then runs the image's
+    # own entrypoint with the command this app always used.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ "$${LIGHTNING_FORK:-false}" = "true" ]; then
+          info=""
+          attempt=0
+          while [ "$$attempt" -lt 36 ]; do
+            info="$$(curl -fsS --max-time 5 "http://$${BACKEND_MAINNET_HTTP_HOST}:$${BACKEND_MAINNET_HTTP_PORT}/api/v1/backend-info" 2>/dev/null || true)"
+            [ -n "$$info" ] && break
+            attempt=$$((attempt + 1))
+            sleep 5
+          done
+          case "$$info" in
+            *'"lightning":true'*)
+              echo "web: Lightning tab on"
+              export LIGHTNING=true ;;
+            "")
+              echo "web: the api did not answer; Lightning tab off until the next start" ;;
+            *)
+              echo "web: the api has the Lightning pages off; Lightning tab off" ;;
+          esac
+        fi
+        exec /patch/entrypoint.sh ./wait-for db:3306 --timeout=720 -- nginx -g 'daemon off;'
     environment:
+      LIGHTNING_FORK: $APP_MEMPOOL_PRUNED_LIGHTNING_FORK
       FRONTEND_HTTP_PORT: $APP_MEMPOOL_PRUNED_PORT
       BACKEND_MAINNET_HTTP_HOST: $APP_MEMPOOL_PRUNED_API_IP
       BACKEND_MAINNET_HTTP_PORT: "8999"
@@ -65,6 +96,70 @@ services:
           echo "api: authenticating to the proxy with $$COOKIE"
           export CORE_RPC_COOKIE=true
           export CORE_RPC_COOKIE_PATH="$$COOKIE"
+        fi
+        # The Lightning pages, from Lightning Fork, when exports.sh found it
+        # installed. Two more things must hold, and either failing leaves the
+        # pages off for this run (the next start checks again) rather than
+        # stopping the explorer:
+        #
+        # - Lightning Fork has a wallet. Until it does there is no macaroon,
+        #   and the backend stops at start on one it cannot read.
+        # - This explorer's node is on the BLAKE2b chain, where Lightning
+        #   Fork's channels are funded. Each app picks its own Bitcoin node, so
+        #   this one may be reading the SHA256 chain, which would date and size
+        #   every channel from a block that does not hold it. The chains are
+        #   told apart by the first BLAKE2b block, 961640, as Lightning Fork's
+        #   dashboard does. The node may still be starting, so it is asked for
+        #   a minute before giving up.
+        if [ "$${LIGHTNING_ENABLED:-false}" = "true" ]; then
+          if [ ! -r "$${LND_MACAROON_PATH}" ]; then
+            echo "api: Lightning Fork is installed but has no wallet yet; Lightning pages off until the next start"
+            export LIGHTNING_ENABLED=false
+          else
+            chain=""
+            for attempt in 1 2 3 4 5 6; do
+              chain="$$(node -e '
+                const http = require("http"), fs = require("fs"), env = process.env;
+                const BLAKE2B_961640 = "0000000000000050c1e5f69672f459293be14f46e5a494e7a8c8541396f18eeb";
+                let auth;
+                try {
+                  auth = env.CORE_RPC_COOKIE === "true"
+                    ? fs.readFileSync(env.CORE_RPC_COOKIE_PATH, "utf8").trim()
+                    : env.CORE_RPC_USERNAME + ":" + env.CORE_RPC_PASSWORD;
+                } catch (e) { process.exit(0); }
+                const req = http.request({ host: env.CORE_RPC_HOST, port: env.CORE_RPC_PORT, method: "POST", auth,
+                  headers: { "content-type": "application/json" }, timeout: 10000 }, (res) => {
+                  let body = "";
+                  res.on("data", (c) => { body += c; });
+                  res.on("end", () => {
+                    try {
+                      const r = JSON.parse(body);
+                      if (r.result) console.log(r.result === BLAKE2B_961640 ? "blake2b" : "other");
+                      else if (r.error && r.error.code === -8) console.log("behind");
+                    } catch (e) {}
+                  });
+                });
+                req.on("timeout", () => req.destroy());
+                req.on("error", () => {});
+                req.end(JSON.stringify({ jsonrpc: "1.0", id: "mempool-pruned", method: "getblockhash", params: [961640] }));
+              ' 2>/dev/null || true)"
+              [ -n "$$chain" ] && break
+              sleep 10
+            done
+            case "$$chain" in
+              blake2b)
+                echo "api: Lightning pages on, from Lightning Fork at $${LND_REST_API_URL}" ;;
+              other)
+                echo "api: this explorer's node is on the SHA256 chain and Lightning Fork's channels are on the BLAKE2b chain; Lightning pages off"
+                export LIGHTNING_ENABLED=false ;;
+              behind)
+                echo "api: this explorer's node has not reached the BLAKE2b chain's first block, so its chain is unknown; Lightning pages off until the next start"
+                export LIGHTNING_ENABLED=false ;;
+              *)
+                echo "api: could not ask this explorer's node which chain it is on; Lightning pages off until the next start"
+                export LIGHTNING_ENABLED=false ;;
+            esac
+          fi
         fi
         # Drop an oversized RBF cache before handing over to the backend.
         #
@@ -166,6 +261,18 @@ services:
       MEMPOOL_AUDIT: "false"
       MEMPOOL_ALLOW_UNREACHABLE: "true"
 
+      # Lightning Fork, when installed (exports.sh). The command above turns
+      # this off again unless the node is on the BLAKE2b chain and Lightning
+      # Fork has a wallet. The paths are inside the mount below.
+      LIGHTNING_ENABLED: $APP_MEMPOOL_PRUNED_LIGHTNING_FORK
+      LIGHTNING_BACKEND: "lnd"
+      LIGHTNING_STATS_REFRESH_INTERVAL: "3600"
+      LIGHTNING_GRAPH_REFRESH_INTERVAL: "3600"
+      LND_REST_API_URL: $APP_MEMPOOL_PRUNED_LND_REST_URL
+      LND_TLS_CERT_PATH: "/lnd/tls.cert"
+      LND_MACAROON_PATH: "/lnd/data/chain/bitcoin/mainnet/readonly.macaroon"
+      LND_TIMEOUT: "120000"
+
       MAXMIND_ENABLED: "false"
 
       NODE_OPTIONS: "--max-old-space-size=2048"
@@ -175,6 +282,10 @@ services:
       # the Electrum server, not through this mount. Mounted at /bitcoin rather than
       # /backend, which is where the application itself lives.
       - ${APP_BITCOIN_DATA_DIR}:/bitcoin:ro
+      # Lightning Fork's lnd directory, read-only, when it is installed, for
+      # its TLS certificate and read-only macaroon; an empty directory of this
+      # app's own when it is not (see exports.sh).
+      - ${APP_MEMPOOL_PRUNED_LND_DIR}:/lnd:ro
     depends_on:
       - db
     networks:
