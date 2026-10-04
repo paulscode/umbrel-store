@@ -180,3 +180,7 @@ backupIgnore:
   - data/lnd/sha256-node/data/chain/bitcoin/mainnet/walletkit.macaroon
   - data/lnd/data/chain/bitcoin/mainnet/bridge/sha256/bridge.macaroon
   - data/lnd/data/chain/bitcoin/mainnet/bridge/sha256/bridge.macaroon.perms
+  # Which node on the SHA256 chain it reads, with that node's credentials:
+  # written again by the dashboard from what is installed where it is
+  # restored.
+  - data/lnd/bridge-sha256.conf

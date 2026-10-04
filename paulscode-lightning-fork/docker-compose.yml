@@ -232,6 +232,9 @@ services:
     image: lightninglabs/lnd:v0.21.4-beta@sha256:04d06edcc0f6e99a5e797ea34959f330add222226f840cd86afbc31f8f29627d
     user: 1000:1000
     restart: unless-stopped
+    # lnd closes its databases on the way out; Docker's ten seconds can cut
+    # that short.
+    stop_grace_period: 1m
     volumes:
       - "${APP_LIGHTNING_FORK_NODE_DATA_DIR}:/data/.lnd"
     environment:
@@ -247,6 +250,8 @@ services:
         trap 'exit 0' TERM INT
         until [ -s "$$pw" ] && [ -s "$$conf" ]; do sleep 5 & wait $$!; done
         sum=$$(cksum < "$$conf")
+        lnd=""
+        trap '[ -n "$$lnd" ] && kill -TERM $$lnd && wait $$lnd; exit 0' TERM INT
         lnd \
           --lnddir=/data/.lnd/sha256-node \
           --configfile="$$conf" \
@@ -263,7 +268,6 @@ services:
           --wallet-unlock-password-file="$$pw" \
           --wallet-unlock-allow-create &
         lnd=$$!
-        trap 'kill -TERM $$lnd; wait $$lnd; exit 0' TERM INT
         # A different chain node chosen in the dashboard: stop, and the
         # restart policy starts lnd again reading it.
         while kill -0 $$lnd 2>/dev/null; do
