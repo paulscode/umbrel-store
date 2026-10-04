@@ -78,6 +78,25 @@ if lightning_fork_app_installed "mempool"; then
   export APP_LIGHTNING_FORK_MEMPOOL_UI_PORT="3006"
   export APP_LIGHTNING_FORK_MEMPOOL_HIDDEN_SERVICE="$(cat "${EXPORTS_TOR_DATA_DIR:-/nonexistent}/app-mempool/hostname" 2>/dev/null || true)"
 fi
+# The bridge's SHA256 Lightning node (sha256-lnd in docker-compose.yml) reads
+# a node on the SHA256 chain: Knots (SHA256) Companion from this store, at its
+# static address. Its RPC credentials are in its own .env, which its exports
+# write on first run; read here with sed, never sourced, so nothing of that
+# file can run in this shell. Absent or unreadable: the bridge cannot be
+# turned on, and the dashboard says what to install.
+if lightning_fork_app_installed "paulscode-knots-sha256"; then
+  lightning_fork_sha256_env="${EXPORTS_APP_DIR:-/nonexistent}/../paulscode-knots-sha256/.env"
+  lightning_fork_sha256_user="$(sed -n "s/^export APP_KNOTS_SHA256_RPC_USER='\([A-Za-z0-9_=-]*\)'$/\1/p" "${lightning_fork_sha256_env}" 2>/dev/null | tail -n 1 || true)"
+  lightning_fork_sha256_pass="$(sed -n "s/^export APP_KNOTS_SHA256_RPC_PASS='\([A-Za-z0-9_=-]*\)'$/\1/p" "${lightning_fork_sha256_env}" 2>/dev/null | tail -n 1 || true)"
+  if [[ -n "${lightning_fork_sha256_user}" ]] && [[ -n "${lightning_fork_sha256_pass}" ]]; then
+    export APP_LIGHTNING_FORK_SHA256_RPCHOST="10.21.21.64:19332"
+    export APP_LIGHTNING_FORK_SHA256_RPCUSER="${lightning_fork_sha256_user}"
+    export APP_LIGHTNING_FORK_SHA256_RPCPASS="${lightning_fork_sha256_pass}"
+    export APP_LIGHTNING_FORK_SHA256_BACKEND="Knots (SHA256) Companion"
+  fi
+  unset lightning_fork_sha256_env lightning_fork_sha256_user lightning_fork_sha256_pass
+fi
+
 # umbreld sources several apps' exports in one shell; leave nothing behind
 # for the next one. Prefixed names, so nothing of another app's is touched.
 unset -f lightning_fork_app_installed

@@ -171,6 +171,10 @@ services:
       MEMPOOL_PRUNED_API: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_API:-}"
       MEMPOOL_PRUNED_UI_PORT: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_UI_PORT:-}"
       MEMPOOL_PRUNED_HIDDEN_SERVICE: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_HIDDEN_SERVICE:-}"
+      # The node on the SHA256 chain the bridge's SHA256 node would read
+      # (exports.sh), named for the dashboard's bridge switch; empty when
+      # none is installed, and then the switch says what to install.
+      BRIDGE_SHA256_BACKEND: "${APP_LIGHTNING_FORK_SHA256_BACKEND:-}"
     ports:
       - "${APP_LIGHTNING_FORK_MOBILE_PORT}:3443"
     networks:
@@ -200,6 +204,58 @@ services:
     networks:
       default:
         ipv4_address: $APP_LIGHTNING_FORK_NODE_IP
+
+  # The bridge's SHA256 Lightning node: stock upstream lnd, unmodified and
+  # pinned, for paying invoices on the SHA256 chain. It does nothing until the
+  # bridge is turned on in the dashboard: Lightning Fork then writes its
+  # wallet password and creates its wallet from a seed derived from its own,
+  # and this starts lnd. Until then the shell waits, using no network and no
+  # disk.
+  #
+  # It shares lnd's network namespace, so Lightning Fork reaches it at
+  # 127.0.0.1:10019, and lnd's data directory, as sha256-node/, so one app
+  # backup holds both. Its REST port (8089) is for the dashboard, which funds
+  # it and opens its channels; nothing is published to the host. It reads Knots
+  # (SHA256) Companion over RPC (exports.sh); once created it keeps running
+  # even with the bridge off, because it may hold channels to watch.
+  sha256-lnd:
+    image: lightninglabs/lnd:v0.21.4-beta@sha256:04d06edcc0f6e99a5e797ea34959f330add222226f840cd86afbc31f8f29627d
+    user: 1000:1000
+    restart: unless-stopped
+    network_mode: "service:lnd"
+    depends_on:
+      - lnd
+    volumes:
+      - "${APP_LIGHTNING_FORK_NODE_DATA_DIR}:/data/.lnd"
+    environment:
+      HOME: /data
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        pw=/data/.lnd/data/chain/bitcoin/mainnet/bridge/sha256/wallet.password
+        trap 'exit 0' TERM INT
+        until [ -s "$$pw" ]; do sleep 5 & wait $$!; done
+        trap - TERM INT
+        if [ -z "${APP_LIGHTNING_FORK_SHA256_RPCHOST:-}" ]; then
+          echo "The bridge is on but no node on the SHA256 chain is installed: install Knots (SHA256) Companion" >&2
+          exec sleep 300
+        fi
+        exec lnd \
+          --lnddir=/data/.lnd/sha256-node \
+          --bitcoin.mainnet \
+          --bitcoin.node=bitcoind \
+          --bitcoind.rpchost=${APP_LIGHTNING_FORK_SHA256_RPCHOST:-} \
+          --bitcoind.rpcuser=${APP_LIGHTNING_FORK_SHA256_RPCUSER:-} \
+          --bitcoind.rpcpass=${APP_LIGHTNING_FORK_SHA256_RPCPASS:-} \
+          --bitcoind.rpcpolling \
+          --bitcoind.blockpollinginterval=10s \
+          --bitcoind.txpollinginterval=10s \
+          --rpclisten=127.0.0.1:10019 \
+          --restlisten=0.0.0.0:8089 \
+          --listen=0.0.0.0:9739 \
+          --alias="Lightning Fork bridge (SHA256)" \
+          --wallet-unlock-password-file="$$pw" \
+          --wallet-unlock-allow-create
 
   tor:
     image: getumbrel/tor:0.4.7.8@sha256:2ace83f22501f58857fa9b403009f595137fa2e7986c4fda79d82a8119072b6a
