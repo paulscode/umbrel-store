@@ -171,10 +171,12 @@ services:
       MEMPOOL_PRUNED_API: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_API:-}"
       MEMPOOL_PRUNED_UI_PORT: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_UI_PORT:-}"
       MEMPOOL_PRUNED_HIDDEN_SERVICE: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_HIDDEN_SERVICE:-}"
-      # The node on the SHA256 chain the bridge's SHA256 node would read
-      # (exports.sh), named for the dashboard's bridge switch; empty when
-      # none is installed, and then the switch says what to install.
-      BRIDGE_SHA256_BACKEND: "${APP_LIGHTNING_FORK_SHA256_BACKEND:-}"
+      # The installed nodes that may be on the SHA256 chain, with their RPC
+      # credentials (exports.sh). The dashboard asks each which chain it
+      # follows, offers those on the SHA256 one, and writes the chosen one
+      # into BRIDGE_SHA256_CONF for the bridge's SHA256 node.
+      BRIDGE_SHA256_NODES: "${APP_LIGHTNING_FORK_SHA256_NODES:-}"
+      BRIDGE_SHA256_CONF: "/data/.lnd/bridge-sha256.conf"
       # Where the bridge's SHA256 node listens: written into umbrel-lnd.conf
       # for Lightning Fork, and dialled by the dashboard.
       BRIDGE_SHA256_RPCHOST: "${APP_LIGHTNING_FORK_SHA256_IP}:10019"
@@ -222,9 +224,10 @@ services:
   # another's loses its network whenever that one restarts, which every
   # settings change does, and this node must keep watching its channels.
   # It shares lnd's data directory, as sha256-node/, so one app backup holds
-  # both. It reads Knots
-  # (SHA256) Companion over RPC (exports.sh); once created it keeps running
-  # even with the bridge off, because it may hold channels to watch.
+  # both. The chain node it reads is the dashboard's choice, written to
+  # bridge-sha256.conf there; it starts once that and the wallet password
+  # exist, and restarts when the choice changes. Once created it keeps
+  # running even with the bridge off, because it may hold channels to watch.
   sha256-lnd:
     image: lightninglabs/lnd:v0.21.4-beta@sha256:04d06edcc0f6e99a5e797ea34959f330add222226f840cd86afbc31f8f29627d
     user: 1000:1000
@@ -240,20 +243,15 @@ services:
     command:
       - |
         pw=/data/.lnd/data/chain/bitcoin/mainnet/bridge/sha256/wallet.password
+        conf=/data/.lnd/bridge-sha256.conf
         trap 'exit 0' TERM INT
-        until [ -s "$$pw" ]; do sleep 5 & wait $$!; done
-        trap - TERM INT
-        if [ -z "${APP_LIGHTNING_FORK_SHA256_RPCHOST:-}" ]; then
-          echo "The bridge is on but no node on the SHA256 chain is installed: install Knots (SHA256) Companion" >&2
-          exec sleep 300
-        fi
-        exec lnd \
+        until [ -s "$$pw" ] && [ -s "$$conf" ]; do sleep 5 & wait $$!; done
+        sum=$$(cksum < "$$conf")
+        lnd \
           --lnddir=/data/.lnd/sha256-node \
+          --configfile="$$conf" \
           --bitcoin.mainnet \
           --bitcoin.node=bitcoind \
-          --bitcoind.rpchost=${APP_LIGHTNING_FORK_SHA256_RPCHOST:-} \
-          --bitcoind.rpcuser=${APP_LIGHTNING_FORK_SHA256_RPCUSER:-} \
-          --bitcoind.rpcpass=${APP_LIGHTNING_FORK_SHA256_RPCPASS:-} \
           --bitcoind.rpcpolling \
           --bitcoind.blockpollinginterval=10s \
           --bitcoind.txpollinginterval=10s \
@@ -263,7 +261,18 @@ services:
           --tlsextraip=${APP_LIGHTNING_FORK_SHA256_IP} \
           --alias="Lightning Fork bridge (SHA256)" \
           --wallet-unlock-password-file="$$pw" \
-          --wallet-unlock-allow-create
+          --wallet-unlock-allow-create &
+        lnd=$$!
+        trap 'kill -TERM $$lnd; wait $$lnd; exit 0' TERM INT
+        # A different chain node chosen in the dashboard: stop, and the
+        # restart policy starts lnd again reading it.
+        while kill -0 $$lnd 2>/dev/null; do
+          sleep 10 & wait $$!
+          if [ "$$(cksum < "$$conf" 2>/dev/null)" != "$$sum" ]; then
+            kill -TERM $$lnd; wait $$lnd; exit 0
+          fi
+        done
+        wait $$lnd
 
   tor:
     image: getumbrel/tor:0.4.7.8@sha256:2ace83f22501f58857fa9b403009f595137fa2e7986c4fda79d82a8119072b6a

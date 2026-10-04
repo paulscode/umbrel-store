@@ -80,23 +80,37 @@ if lightning_fork_app_installed "mempool"; then
   export APP_LIGHTNING_FORK_MEMPOOL_HIDDEN_SERVICE="$(cat "${EXPORTS_TOR_DATA_DIR:-/nonexistent}/app-mempool/hostname" 2>/dev/null || true)"
 fi
 # The bridge's SHA256 Lightning node (sha256-lnd in docker-compose.yml) reads
-# a node on the SHA256 chain: Knots (SHA256) Companion from this store, at its
-# static address. Its RPC credentials are in its own .env, which its exports
-# write on first run; read here with sed, never sourced, so nothing of that
-# file can run in this shell. Absent or unreadable: the bridge cannot be
-# turned on, and the dashboard says what to install.
-if lightning_fork_app_installed "paulscode-knots-sha256"; then
-  lightning_fork_sha256_env="${EXPORTS_APP_DIR:-/nonexistent}/../paulscode-knots-sha256/.env"
-  lightning_fork_sha256_user="$(sed -n "s/^export APP_KNOTS_SHA256_RPC_USER='\([A-Za-z0-9_=-]*\)'$/\1/p" "${lightning_fork_sha256_env}" 2>/dev/null | tail -n 1 || true)"
-  lightning_fork_sha256_pass="$(sed -n "s/^export APP_KNOTS_SHA256_RPC_PASS='\([A-Za-z0-9_=-]*\)'$/\1/p" "${lightning_fork_sha256_env}" 2>/dev/null | tail -n 1 || true)"
-  if [[ -n "${lightning_fork_sha256_user}" ]] && [[ -n "${lightning_fork_sha256_pass}" ]]; then
-    export APP_LIGHTNING_FORK_SHA256_RPCHOST="10.21.21.64:19332"
-    export APP_LIGHTNING_FORK_SHA256_RPCUSER="${lightning_fork_sha256_user}"
-    export APP_LIGHTNING_FORK_SHA256_RPCPASS="${lightning_fork_sha256_pass}"
-    export APP_LIGHTNING_FORK_SHA256_BACKEND="Knots (SHA256) Companion"
-  fi
-  unset lightning_fork_sha256_env lightning_fork_sha256_user lightning_fork_sha256_pass
-fi
+# a node on the SHA256 chain. Which one depends on how this Umbrel runs the
+# two chains: Knots (SHA256) Companion beside a main node on BLAKE2b, or the
+# main node itself (Bitcoin Knots, or Bitcoin Node) beside the BLAKE2b
+# Companion. Every installed candidate is handed to the dashboard, which asks
+# each one which chain it follows (Bitcoin Knots can run either, by the
+# version picked in its own settings) and offers only those on the SHA256
+# chain, never the node Lightning Fork reads.
+#
+# One "id|host:port|user|password" per candidate, joined with ";". The RPC
+# credentials are read from each app's own .env with sed, never sourced, so
+# nothing of those files runs in this shell; only url-safe base64 and plain
+# names are accepted, so nothing in them can break the list either.
+lightning_fork_rpc_cred() {
+  sed -n "s/^export $2='\\([A-Za-z0-9_=-]*\\)'$/\\1/p" "${EXPORTS_APP_DIR:-/nonexistent}/../$1/.env" 2>/dev/null | tail -n 1 || true
+}
+lightning_fork_sha256_nodes=""
+lightning_fork_sha256_add() {
+  # id, host:port, the .env's user and password variable names
+  local user pass
+  lightning_fork_app_installed "$1" || return 0
+  user="$(lightning_fork_rpc_cred "$1" "$3")"
+  pass="$(lightning_fork_rpc_cred "$1" "$4")"
+  [[ -n "${user}" ]] && [[ -n "${pass}" ]] || return 0
+  lightning_fork_sha256_nodes="${lightning_fork_sha256_nodes:+${lightning_fork_sha256_nodes};}$1|$2|${user}|${pass}"
+}
+lightning_fork_sha256_add "paulscode-knots-sha256" "10.21.21.64:19332" APP_KNOTS_SHA256_RPC_USER APP_KNOTS_SHA256_RPC_PASS || true
+lightning_fork_sha256_add "bitcoin-knots" "10.21.21.7:9332" APP_BITCOIN_KNOTS_RPC_USER APP_BITCOIN_KNOTS_RPC_PASS || true
+lightning_fork_sha256_add "bitcoin" "10.21.21.8:8332" APP_BITCOIN_RPC_USER APP_BITCOIN_RPC_PASS || true
+export APP_LIGHTNING_FORK_SHA256_NODES="${lightning_fork_sha256_nodes}"
+unset -f lightning_fork_rpc_cred lightning_fork_sha256_add
+unset lightning_fork_sha256_nodes
 
 # umbreld sources several apps' exports in one shell; leave nothing behind
 # for the next one. Prefixed names, so nothing of another app's is touched.
@@ -164,6 +178,7 @@ else
 	BIN_ARGS+=( "--bitcoind.txpollinginterval=10s" )
 	export APP_LIGHTNING_FORK_BLOCK_SOURCE="rpcpolling"
 fi
+unset lightning_fork_zmq
 
 # [tor]
 BIN_ARGS+=( "--tor.active" )
