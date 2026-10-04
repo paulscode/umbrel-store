@@ -162,3 +162,21 @@ widgets:
 backupIgnore:
   - data/lnd/data/graph/mainnet/channel.db
   - data/status
+  # The bridge's SHA256 node: like this node, its channel database must
+  # never come back from the past. Its wallet and macaroons go too, so that
+  # on a restore Lightning Fork creates its wallet again from the derived
+  # seed and restores its channels from the channel.backup kept beside them.
+  # Files listed one by one, not by pattern.
+  - data/lnd/sha256-node/data/graph/mainnet/channel.db
+  - data/lnd/sha256-node/data/chain/bitcoin/mainnet/wallet.db
+  - data/lnd/sha256-node/data/chain/bitcoin/mainnet/macaroons.db
+  - data/lnd/sha256-node/data/chain/bitcoin/mainnet/admin.macaroon
+  - data/lnd/sha256-node/data/chain/bitcoin/mainnet/readonly.macaroon
+  - data/lnd/sha256-node/data/chain/bitcoin/mainnet/invoice.macaroon
+  - data/lnd/sha256-node/data/chain/bitcoin/mainnet/invoices.macaroon
+  - data/lnd/sha256-node/data/chain/bitcoin/mainnet/chainnotifier.macaroon
+  - data/lnd/sha256-node/data/chain/bitcoin/mainnet/router.macaroon
+  - data/lnd/sha256-node/data/chain/bitcoin/mainnet/signer.macaroon
+  - data/lnd/sha256-node/data/chain/bitcoin/mainnet/walletkit.macaroon
+  - data/lnd/data/chain/bitcoin/mainnet/bridge/sha256/bridge.macaroon
+  - data/lnd/data/chain/bitcoin/mainnet/bridge/sha256/bridge.macaroon.perms
