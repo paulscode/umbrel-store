@@ -13,6 +13,7 @@
 export APP_LIGHTNING_FORK_IP="10.21.22.66"        # the dashboard
 export APP_LIGHTNING_FORK_NODE_IP="10.21.21.66"   # lnd
 export APP_LIGHTNING_FORK_STATUS_IP="10.21.22.67" # the tile's front door
+export APP_LIGHTNING_FORK_SHA256_IP="10.21.21.68" # the bridge's SHA256 lnd
 
 # Ports. The official Lightning Node app holds 9735, 10009 and 8080 on the
 # host, so this app takes 9737, 10010 and 8180, and listens on those same

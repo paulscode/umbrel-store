@@ -175,6 +175,10 @@ services:
       # (exports.sh), named for the dashboard's bridge switch; empty when
       # none is installed, and then the switch says what to install.
       BRIDGE_SHA256_BACKEND: "${APP_LIGHTNING_FORK_SHA256_BACKEND:-}"
+      # Where the bridge's SHA256 node listens: written into umbrel-lnd.conf
+      # for Lightning Fork, and dialled by the dashboard.
+      BRIDGE_SHA256_RPCHOST: "${APP_LIGHTNING_FORK_SHA256_IP}:10019"
+      SHA256_LND_REST: "https://${APP_LIGHTNING_FORK_SHA256_IP}:8089"
     ports:
       - "${APP_LIGHTNING_FORK_MOBILE_PORT}:3443"
     networks:
@@ -212,23 +216,26 @@ services:
   # and this starts lnd. Until then the shell waits, using no network and no
   # disk.
   #
-  # It shares lnd's network namespace, so Lightning Fork reaches it at
-  # 127.0.0.1:10019, and lnd's data directory, as sha256-node/, so one app
-  # backup holds both. Its REST port (8089) is for the dashboard, which funds
-  # it and opens its channels; nothing is published to the host. It reads Knots
+  # Its own address on the app network, where Lightning Fork reaches its gRPC
+  # and the dashboard its REST (to fund it and open its channels); nothing is
+  # published to the host. Not lnd's network namespace: a container joined to
+  # another's loses its network whenever that one restarts, which every
+  # settings change does, and this node must keep watching its channels.
+  # It shares lnd's data directory, as sha256-node/, so one app backup holds
+  # both. It reads Knots
   # (SHA256) Companion over RPC (exports.sh); once created it keeps running
   # even with the bridge off, because it may hold channels to watch.
   sha256-lnd:
     image: lightninglabs/lnd:v0.21.4-beta@sha256:04d06edcc0f6e99a5e797ea34959f330add222226f840cd86afbc31f8f29627d
     user: 1000:1000
     restart: unless-stopped
-    network_mode: "service:lnd"
-    depends_on:
-      - lnd
     volumes:
       - "${APP_LIGHTNING_FORK_NODE_DATA_DIR}:/data/.lnd"
     environment:
       HOME: /data
+    networks:
+      default:
+        ipv4_address: $APP_LIGHTNING_FORK_SHA256_IP
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -250,9 +257,10 @@ services:
           --bitcoind.rpcpolling \
           --bitcoind.blockpollinginterval=10s \
           --bitcoind.txpollinginterval=10s \
-          --rpclisten=127.0.0.1:10019 \
+          --rpclisten=0.0.0.0:10019 \
           --restlisten=0.0.0.0:8089 \
           --listen=0.0.0.0:9739 \
+          --tlsextraip=${APP_LIGHTNING_FORK_SHA256_IP} \
           --alias="Lightning Fork bridge (SHA256)" \
           --wallet-unlock-password-file="$$pw" \
           --wallet-unlock-allow-create
