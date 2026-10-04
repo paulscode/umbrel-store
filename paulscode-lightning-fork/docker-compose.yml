@@ -228,6 +228,9 @@ services:
   # bridge-sha256.conf there; it starts once that and the wallet password
   # exist, and restarts when the choice changes. Once created it keeps
   # running even with the bridge off, because it may hold channels to watch.
+  # Its peers are reached as Lightning Fork's are: onion addresses through
+  # Umbrel's Tor, others directly. Its options are this command and the
+  # dashboard's file; it reads no lnd.conf of its own.
   sha256-lnd:
     image: lightninglabs/lnd:v0.21.4-beta@sha256:04d06edcc0f6e99a5e797ea34959f330add222226f840cd86afbc31f8f29627d
     user: 1000:1000
@@ -264,6 +267,9 @@ services:
           --restlisten=0.0.0.0:8089 \
           --listen=0.0.0.0:9739 \
           --tlsextraip=${APP_LIGHTNING_FORK_SHA256_IP} \
+          --tor.active \
+          --tor.socks=${TOR_PROXY_IP}:${TOR_PROXY_PORT} \
+          --tor.skip-proxy-for-clearnet-targets \
           --alias="Lightning Fork bridge (SHA256)" \
           --wallet-unlock-password-file="$$pw" \
           --wallet-unlock-allow-create &
@@ -272,7 +278,7 @@ services:
         # restart policy starts lnd again reading it.
         while kill -0 $$lnd 2>/dev/null; do
           sleep 10 & wait $$!
-          if [ "$$(cksum < "$$conf" 2>/dev/null)" != "$$sum" ]; then
+          if [ "$$({ cksum < "$$conf"; } 2>/dev/null)" != "$$sum" ]; then
             kill -TERM $$lnd; wait $$lnd; exit 0
           fi
         done
