@@ -102,7 +102,8 @@ releaseNotes: >-
   so hashrate, difficulty and pool statistics never ran. Those blocks' figures
   now come from the block itself and match the node's own, except that an older
   block shows its average fee rate across its fee range. The catch-up runs once
-  and takes a while.
+  and takes a while. Each new block also no longer waits up to a
+  minute while the explorer asks peers for stale blocks the node has pruned.
 
 
   On the BLAKE2b chain every fiat figure was the price of bitcoin on the SHA256
