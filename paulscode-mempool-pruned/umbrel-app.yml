@@ -80,8 +80,9 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Shows the Lightning network from Lightning Fork, and makes the Lightning pages
-  work on a pruned node.
+  Shows the Lightning network from Lightning Fork, makes the Lightning and
+  mining pages work on a pruned node, and on the BLAKE2b chain shows fiat
+  values in BTCB2's own price.
 
 
   With Lightning Fork installed, the explorer's Lightning pages read its view
@@ -91,12 +92,25 @@ releaseNotes: >-
   app once its wallet exists.
 
 
-  The Lightning pages also left out every channel on a pruned node. To date and
-  size a channel, the explorer looked up the transaction that opened it by its
-  id, which only a node keeping a full transaction index can answer, and a
-  pruned node cannot keep one. It now takes the capacity from the Lightning
-  node and the date from the block header, which a pruned node keeps for every
-  block.
+  The Lightning pages left out every channel on a pruned node, because dating
+  and sizing a channel needed a full transaction index. The capacity now comes
+  from the Lightning node and the date from the block header.
+
+
+  The mining pages stopped filling in on a pruned node: indexing reached the
+  first block below the prune height, failed, and retried every ten seconds,
+  so hashrate, difficulty and pool statistics never ran. Those blocks' figures
+  now come from the block itself and match the node's own, except that an older
+  block shows its average fee rate across its fee range. The catch-up runs once
+  and takes a while.
+
+
+  On the BLAKE2b chain every fiat figure was the price of bitcoin on the SHA256
+  chain, about two hundred times too high. Prices now come from BTCB2's dollar
+  market on neoxa.exchange, as in Lightning Fork and Sparrow BLAKE2b, with past
+  values from Neoxa's hourly prices since BTCB2 listed on 1 September 2026.
+  Prices recorded after the fork are replaced on first start. On the SHA256
+  chain nothing about prices changes.
 
 
 submitter: Paul Lamb
