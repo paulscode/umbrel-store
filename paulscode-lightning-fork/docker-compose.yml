@@ -233,9 +233,10 @@ services:
   # an onion of its own, which lnd makes through Tor's control port and is
   # the only address it advertises, so other nodes on the SHA256 chain can
   # open channels to it. It needs Tor's control port to start, as Lightning
-  # Fork does; once running, losing it costs only the onion (lnd's Tor health
-  # check is off), not the node watching its channels. Its options are this
-  # command and the dashboard's file; it reads no lnd.conf of its own.
+  # Fork does. Once running, lnd's Tor check keeps retrying (which is what
+  # brings the onion back after Tor restarts) but practically never gives up
+  # and stops the node watching its channels. Its options are this command
+  # and the dashboard's file; it reads no lnd.conf of its own.
   sha256-lnd:
     image: lightninglabs/lnd:v0.21.4-beta@sha256:04d06edcc0f6e99a5e797ea34959f330add222226f840cd86afbc31f8f29627d
     user: 1000:1000
@@ -279,7 +280,7 @@ services:
           --tor.control=${TOR_PROXY_IP}:29051 \
           --tor.password=${TOR_PASSWORD} \
           --tor.targetipaddress=${APP_LIGHTNING_FORK_SHA256_IP} \
-          --healthcheck.torconnection.attempts=0 \
+          --healthcheck.torconnection.attempts=1000000 \
           --alias="Lightning Fork bridge (SHA256)" \
           --wallet-unlock-password-file="$$pw" \
           --wallet-unlock-allow-create &
