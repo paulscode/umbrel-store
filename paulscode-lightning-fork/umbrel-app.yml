@@ -180,6 +180,14 @@ backupIgnore:
   - data/lnd/sha256-node/data/chain/bitcoin/mainnet/walletkit.macaroon
   - data/lnd/data/chain/bitcoin/mainnet/bridge/sha256/bridge.macaroon
   - data/lnd/data/chain/bitcoin/mainnet/bridge/sha256/bridge.macaroon.perms
+  - data/lnd/data/chain/bitcoin/mainnet/bridge/sha256/operator.macaroon
+  - data/lnd/data/chain/bitcoin/mainnet/bridge/sha256/operator.macaroon.perms
+  # Its channel backup agent's state, and above all its record of having
+  # kept the copy a target already held: left out, so that after a restore
+  # it keeps that copy again before its first one.
+  - data/lnd/.channel-backup-sha256-state.json
+  - data/lnd/.channel-backup-sha256-state.json.kept
+  - data/lnd/.channel-backup-sha256.lock
   # Which node on the SHA256 chain it reads, with that node's credentials:
   # written again by the dashboard from what is installed where it is
   # restored.
