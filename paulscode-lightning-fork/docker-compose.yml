@@ -13,6 +13,14 @@ services:
   # other signal that the wrong node was selected. The verdict is read from
   # the status directory only; this container never sees the wallet.
   #
+  # It is also the only way in. Every app on Umbrel shares one Docker network,
+  # and neither this page nor the dashboard has a sign-in of its own: Umbrel's
+  # signs users in before a request gets here. So this answers only Umbrel's
+  # proxy, from wherever it runs: umbreld on the host on umbrelOS 2 (the
+  # network's gateway address), or the app_proxy container on umbrelOS 1. Any
+  # other app's container is refused, and the dashboard in turn answers only
+  # this container (TRUSTED_PROXY_IPS below).
+  #
   # Everything the container needs is in this file, on purpose: on an update
   # umbreld refreshes only docker-compose.yml, *.template, exports.sh, torrc
   # and hooks, so a script shipped in its own directory would be frozen at
@@ -24,6 +32,7 @@ services:
       - "${APP_LIGHTNING_FORK_STATUS_DIR}:/status:ro"
     environment:
       DASHBOARD_UPSTREAM: "http://${APP_LIGHTNING_FORK_IP}:3006"
+      PROXY_CONTAINER: "${APP_ID}_app_proxy_1"
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -39,6 +48,7 @@ services:
         }
         server {
             listen 80;
+            include /etc/nginx/allow.conf;
             root /var/lib/status;
             location / {
                 try_files /index.html @dashboard;
@@ -57,6 +67,28 @@ services:
             }
         }
         NGINX
+
+        # Who may connect: the network's gateway, which is the host and so
+        # umbreld (its app gateway on umbrelOS 2), and the app_proxy
+        # container when there is one (umbrelOS 1), by its name, since its
+        # address is not fixed. Everyone else is denied, and so is everyone
+        # until the gateway is known. Checked every five seconds; nginx
+        # reloads when the list changes, as when app_proxy is recreated.
+        allowed() {
+            gw=$$(ip route | sed -n 's/^default via \([0-9.]*\).*/\1/p' | head -n 1)
+            proxy=$$(getent hosts "$$PROXY_CONTAINER" 2>/dev/null | sed -n 's/^\([0-9.]*\) .*/\1/p' | head -n 1)
+            [ -n "$$gw" ] && echo "allow $$gw;"
+            [ -n "$$proxy" ] && echo "allow $$proxy;"
+            echo "deny all;"
+        }
+        allowed > /etc/nginx/allow.conf
+        check_allowed() {
+            allowed > /etc/nginx/allow.conf.new
+            if ! cmp -s /etc/nginx/allow.conf.new /etc/nginx/allow.conf; then
+                mv -f /etc/nginx/allow.conf.new /etc/nginx/allow.conf
+                nginx -s reload 2>/dev/null || true
+            fi
+        }
 
         # Every five seconds, read the daemon's verdict and keep index.html in
         # step with it. The file is small, flat JSON with known keys, read
@@ -101,7 +133,7 @@ services:
                 printf '<p><small>Last checked %s. This page refreshes on its own.</small></p>\n</main></body></html>\n' "$$(escape "$${updated:-unknown}")"
             } > /var/lib/status/index.html.tmp && mv -f /var/lib/status/index.html.tmp /var/lib/status/index.html
         }
-        ( while :; do render; sleep 5; done ) &
+        ( while :; do render; check_allowed; sleep 5; done ) &
         exec /docker-entrypoint.sh nginx -g 'daemon off;'
     networks:
       default:
@@ -181,6 +213,10 @@ services:
       # for Lightning Fork, and dialled by the dashboard.
       BRIDGE_SHA256_RPCHOST: "${APP_LIGHTNING_FORK_SHA256_IP}:10019"
       SHA256_LND_REST: "https://${APP_LIGHTNING_FORK_SHA256_IP}:8089"
+      # The API answers only the tile's front door (the status container,
+      # which answers only Umbrel's proxy); the home screen widgets are read
+      # by umbreld from the host, the network's gateway.
+      TRUSTED_PROXY_IPS: "${APP_LIGHTNING_FORK_STATUS_IP}"
     ports:
       - "${APP_LIGHTNING_FORK_MOBILE_PORT}:3443"
     networks:
