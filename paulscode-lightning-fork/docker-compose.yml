@@ -19,7 +19,10 @@ services:
   # proxy, from wherever it runs: umbreld on the host on umbrelOS 2 (the
   # network's gateway address), or the app_proxy container on umbrelOS 1. Any
   # other app's container is refused, and the dashboard in turn answers only
-  # this container (TRUSTED_PROXY_IPS below).
+  # this container (TRUSTED_PROXY_IPS below). What this cannot keep out: an
+  # app that runs on the host's network (it comes from the gateway, as
+  # umbreld does), and an app whose manifest names itself after this one's
+  # app_proxy; both are already trusted with more than this app.
   #
   # Everything the container needs is in this file, on purpose: on an update
   # umbreld refreshes only docker-compose.yml, *.template, exports.sh, torrc
@@ -81,14 +84,19 @@ services:
             [ -n "$$proxy" ] && echo "allow $$proxy;"
             echo "deny all;"
         }
-        allowed > /etc/nginx/allow.conf
         check_allowed() {
-            allowed > /etc/nginx/allow.conf.new
+            # A list that did not get written whole (a full disk) is not
+            # used: an empty one would let everyone in.
+            allowed > /etc/nginx/allow.conf.new || return 0
+            [ "$$(tail -n 1 /etc/nginx/allow.conf.new)" = "deny all;" ] || return 0
             if ! cmp -s /etc/nginx/allow.conf.new /etc/nginx/allow.conf; then
                 mv -f /etc/nginx/allow.conf.new /etc/nginx/allow.conf
                 nginx -s reload 2>/dev/null || true
             fi
         }
+        # Nobody until the list is known, then the list.
+        echo 'deny all;' > /etc/nginx/allow.conf
+        check_allowed
 
         # Every five seconds, read the daemon's verdict and keep index.html in
         # step with it. The file is small, flat JSON with known keys, read
