@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.2.1"
+version: "1.2.2"
 tagline: Mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -146,32 +146,27 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  Pooled mining now puts the pool's whole payout list in the blocks your gateway
-  finds. Every earlier version of this app put at most about 17 pool payouts in a
-  block; everyone else in the pool's window was left out of that block and had to
-  be paid later by the pool, as a make-good.
+  Moves the gateway onto CONVOY's current code: about 80 upstream changes since
+  the last version, most of them fixes to how the gateway runs rather than what it
+  builds. The full pool payout list from the last version is carried over
+  unchanged.
 
 
-  The cause was a size limit meant for SHA256 mining hardware, which rebuilds the
-  coinbase itself. The gateway applied a 750-byte limit to any miner it did not
-  recognise, which is every BLAKE2b miner, and BLAKE2b miners never see the
-  coinbase, so the limit protected nothing. The coinbase can now hold up to 1024
-  payouts, sized to the room the block has left. At the node's default block size
-  there is room for about 900, more than twice the payout list of the largest pool
-  on this chain today.
+  Difficulty is now shown with SI units on the dashboard, and is correct for
+  BLAKE2b work. A miner that submits work before subscribing, or for a coinbase
+  the gateway never built, is refused with a reason. A found block that the node
+  answers with "duplicate" is counted as accepted, which it already was. There are
+  also fixes to how threads start and share state, bounds checks on what the pool
+  sends, and a validation state that survives a reconnect to the pool. Some of these were rare crashes.
 
 
-  Also from upstream work by CONVOY, iohzrd and Lazarus Pool: a large coinbase in
-  a nearly full block is now measured against the BLAKE2b header, so it cannot
-  push the block over the weight limit; while pooled, the gateway no longer hands
-  out work whose coinbase pays only the pool, which used to happen for a moment
-  after each new block; and payouts are kept within the block's signature
-  operation limit.
-
-
-  The "Fingerprint and workaround known miner bugs" setting is gone from the
-  Config page, because the gateway no longer has it. Your other settings are kept
-  and you do not need to reconfigure your miners. Solo mining is unchanged.
+  The gateway now reads the minimum difficulty as a full difficulty, and will not
+  start on one written the old way that is not a power of two. This update
+  rewrites it on start in the form the gateway now expects, rounded down to a
+  power of two as the gateway used to do on its own, so a value that worked before
+  keeps working. The dashboard shows it as the full difficulty: 64 appears as
+  274.9G. Your other settings are kept and you do not need to reconfigure your
+  miners.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

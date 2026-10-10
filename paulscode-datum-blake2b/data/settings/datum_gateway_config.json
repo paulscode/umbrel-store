@@ -17,7 +17,7 @@
   },
   "stratum": {
     "listen_port": 23336,
-    "vardiff_min": 64
+    "vardiff_min": "274877906944"
   },
   "logger": {
     "log_level_console": 2

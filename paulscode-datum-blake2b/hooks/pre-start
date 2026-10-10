@@ -54,7 +54,7 @@ if [ ! -f "${DATUM_CONFIG_FILE}" ]; then
   },
   "stratum": {
     "listen_port": 23336,
-    "vardiff_min": 64
+    "vardiff_min": "274877906944"
   },
   "logger": {
     "log_level_console": 2
@@ -131,6 +131,42 @@ if [ -n "${HOST_IP}" ]; then
      "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
 else
   echo "Could not determine this device's LAN address; the status page will fall back to the address you open it with."
+fi
+
+# A DIFFICULTY FLOOR THE GATEWAY WOULD REFUSE, REWRITTEN IN THE FORM IT WANTS.
+#
+# Versions of this app before 1.2.2 took stratum.vardiff_min as a bare integer,
+# and their gateway rounded it down to a power of two. From 1.2.2 a bare integer
+# that is not a power of two stops the gateway at startup, and one that is draws a
+# warning on every start, because the new parser reads a bare integer in the old
+# units. The floor
+# is now written as the difficulty itself, a quoted decimal: that integer times
+# 2^32. Left alone, a value that used to work would crash-loop the gateway, and
+# with it the dashboard, which is the only place to correct it.
+#
+# So a bare integer up to INT_MAX is converted here, rounded down to a power of two
+# exactly as the old gateway did. Above INT_MAX the gateway already reads a bare
+# integer as a full difficulty, so that is left alone, except above its ceiling of
+# 2^62, which it refuses: that is set to the ceiling. A string is the new form
+# already and is left alone. The arithmetic is done in bash rather than jq, whose
+# numbers are doubles and print values this large inexactly.
+VARDIFF_MIN_RAW="$(jq -r '.stratum.vardiff_min | if type != "number" then empty
+  elif . > 4611686018427387904 then "ceiling"
+  elif . > 2147483647 then empty
+  else floor | tostring end' "$DATUM_CONFIG_FILE")"
+if [ "${VARDIFF_MIN_RAW}" = "ceiling" ]; then
+  echo "stratum.vardiff_min is above the gateway's ceiling; setting it to 2^62."
+  jq '.stratum.vardiff_min = "4611686018427387904"' \
+     "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+elif [ -n "${VARDIFF_MIN_RAW}" ]; then
+  VARDIFF_MIN_INT="${VARDIFF_MIN_RAW}"
+  [ "${VARDIFF_MIN_INT}" -ge 1 ] 2>/dev/null || VARDIFF_MIN_INT=1
+  [ "${VARDIFF_MIN_INT}" -le 1073741824 ] || VARDIFF_MIN_INT=1073741824
+  VARDIFF_POT=1
+  while [ $((VARDIFF_POT * 2)) -le "${VARDIFF_MIN_INT}" ]; do VARDIFF_POT=$((VARDIFF_POT * 2)); done
+  echo "Rewriting stratum.vardiff_min ${VARDIFF_MIN_RAW} as the difficulty $((VARDIFF_POT << 32))."
+  jq --arg diff "$((VARDIFF_POT << 32))" '.stratum.vardiff_min = $diff' \
+     "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
 fi
 
 # A payout address that is not one. Earlier versions of this app asked the node
