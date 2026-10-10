@@ -61,8 +61,8 @@ description: >-
   Fork and creating its wallet.
 
 
-  Installs alongside the official Mempool and the BIP-110 fork. All three keep
-  their own database, address and port, so you can run more than one.
+  Installs alongside the official Mempool. Each keeps its own database,
+  address and port, so you can run both.
 developer: Paul Lamb
 website: https://github.com/paulscode/mempool-pruned
 dependencies:

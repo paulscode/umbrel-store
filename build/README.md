@@ -11,7 +11,6 @@ takes an environment-variable override for the source location:
 |--------|--------|--------------------------------------|
 | `agent-wallet/build-umbrel-images.sh` | `paulscode/agent-wallet-umbrel` | `AGENT_WALLET_STARTOS_DIR` → `../../../agent-wallet-startos` |
 | `electrs-liquid/build-umbrel-images.sh` | `paulscode/elements-electrs` | `ELECTRS_LIQUID_STARTOS_DIR` → `../../../electrs-liquid-startos` |
-| `mempool-bip110/build-umbrel-images.sh` | `paulscode/mempool-bip110-{frontend,backend}` | `MEMPOOL_BIP110_DIR` → `/mnt/1Lane/bip110-apps/mempool-bip110` |
 | `blake2b/build-umbrel-images.sh` | `paulscode/knots-blake2b`, `paulscode/datum-blake2b` | `BLAKE2B_STARTOS_DIR` → `/mnt/Black/bitcoin-blake2b-regtest/startos` |
 
 The default relative paths assume `umbrel-store` is checked out under
@@ -20,9 +19,6 @@ repos live in their own lab workspace, so that script defaults to an absolute
 path and builds both images, since the node and the gateway are released together
 and a mismatched pair does not work.
 
-`mempool-bip110/docker/` holds the Dockerfiles and mining-pool logos consumed by
-that build (the logos are `.gitignored` in the upstream mempool-bip110 repo, so
-they are vendored here).
 
 HashGG's image is built from its own repo
 ([paulscode/hashgg](https://github.com/paulscode/hashgg)); there is no build

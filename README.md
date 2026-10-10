@@ -29,7 +29,6 @@ An [Umbrel](https://umbrel.com) community app store bringing together all of
 | [Electrs Pruned](#electrs-pruned) | An Electrum server that indexes from a pruned node, beside the official Electrs | Bitcoin Node |
 | [HashGG](#hashgg) | Sovereign hash routing — exposes your Datum stratum port to the public internet | Datum (→ Bitcoin Knots) |
 | [HashGG Companion](#hashgg-companion) | The same hash routing, pointed at the Companion Datum Gateway | Datum (BLAKE2b) Companion |
-| [Mempool BIP-110](#mempool-bip-110) | Mempool block explorer fork that visualizes BIP-110 activation activity | Bitcoin Node (+ Electrs) |
 | [Mempool Pruned](#mempool-pruned) | Mempool block explorer that works against a pruned Bitcoin node | Bitcoin Node + Electrs Pruned |
 | [Pickhash](#pickhash) | Autonomously rents Bitcoin hashrate from MiningRigRentals and points it at your own pool | none (optional: HashGG) |
 
@@ -41,7 +40,7 @@ A self-custodial Bitcoin and Lightning wallet that connects to your Umbrel's
 **Lightning Node (LND)** and exposes a dashboard plus a programmatic API designed
 for AI agents to initiate payments within configured limits. It uses your
 installed Electrum indexer (Electrs **or** Fulcrum) for on-chain lookups, and an
-optional Mempool explorer (the official **Mempool** or **Mempool BIP-110** below)
+optional Mempool explorer (the official **Mempool**)
 for fee estimates and links. It also includes a BOLT 12 onion-message gateway and
 an optional, experimental Anonymize feature (with an optional Liquid hop that can
 use **Electrs Liquid** below).
@@ -395,22 +394,6 @@ Companion.
 
 ---
 
-### Mempool BIP-110
-
-A specialized fork of the [Mempool](https://mempool.space) block explorer that
-visualizes [BIP-110 (Reduced Data Temporary Softfork)](https://github.com/dathonohm/bips/blob/reduced-data/bip-0110.mediawiki)
-activity on the Bitcoin network:
-
-- **Miner signaling detection** — blocks from miners signaling BIP-110 support glow green/gold
-- **Violation highlighting** — transactions that would be invalid under BIP-110 rules glow neon orange
-- **Full Mempool functionality** — all standard explorer features (mempool, blocks, transactions, mining dashboard)
-
-**Requirements:** a fully synced **Bitcoin Node**; **Electrs** recommended.
-
-- Source: https://github.com/paulscode/mempool-bip110
-
----
-
 ### Mempool Pruned
 
 Your own [mempool.space](https://mempool.space) against a pruned node. The
@@ -440,8 +423,8 @@ an old block page is slower than a recent one, and the page says so while it
 works. Recent history is unaffected. The explorer keeps its own database, which
 is separate from the chain and still needs room.
 
-Installs alongside the official Mempool and the BIP-110 fork above. All three
-keep their own database, address and port.
+Installs alongside the official Mempool. Each keeps its own database, address
+and port.
 
 - Source: https://github.com/paulscode/mempool-pruned-startos
 - Upstream: https://github.com/paulscode/mempool-pruned
@@ -493,8 +476,7 @@ scripts that build and push them live in [`build/`](build/) — see
 
 ## License
 
-MIT — see [LICENSE](LICENSE). The Mempool BIP-110 fork itself is licensed under
-the GNU Affero General Public License v3.0.
+MIT — see [LICENSE](LICENSE).
 
 ## Notes
 
