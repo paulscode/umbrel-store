@@ -110,6 +110,19 @@ if ! jq -e '.api.modify_conf' "$DATUM_CONFIG_FILE" > /dev/null; then
      "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
 fi
 
+# PASSWORD DIFFICULTY, ON UNLESS YOU TURNED IT OFF.
+#
+# The gateway reads a difficulty request from the Stratum password (d=N, fd=N)
+# only when stratum.password_difficulty is set, once it carries the opt-in from
+# review of OCEAN #234; the image this app pins predates that, always reads the
+# password and ignores the key. This app has always offered it and renters depend
+# on it, so it is set here when absent, ready for that image. A value already in
+# the file, true or false, is yours and is left alone.
+if ! jq -e '.stratum | has("password_difficulty")' "$DATUM_CONFIG_FILE" > /dev/null 2>&1; then
+  jq '.stratum.password_difficulty = true' \
+     "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+fi
+
 # A payout address that is not one. Earlier versions of this app asked the node
 # for an address on first start; this one leaves it empty and the dashboard asks,
 # which is what the official app does. Clear the upstream placeholder if a config
