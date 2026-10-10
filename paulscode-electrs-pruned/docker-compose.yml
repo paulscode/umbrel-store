@@ -101,31 +101,35 @@ services:
   # authenticates the same whether it is pointed at the node or at the proxy,
   # and no second secret is generated, stored or shared by this app.
   proxy:
-    # Our build of upstream v0.8.1, which is one patch on top rather than the
-    # three the v0.8.0 line carried: the witness-commitment check and the
-    # read-once passthrough cookie (PR #34) are fixed upstream in 0.8.1. The one
-    # remaining delta is BLAKE2b header support, still open upstream as PR #33.
-    # Without it the proxy cannot parse a 164-byte header, and it parses the
-    # block for any request it intercepts, so every verbose `getblock` and every
-    # intercepted `getrawtransaction` above block 961640 came back "IO error:
-    # failed to fill whole buffer". That is Mempool Pruned's entire block path
-    # and this app's own verbose transaction lookups. Not a pruning problem: it
-    # failed on blocks the node still had.
+    # Our build of upstream v0.8.2, which answers JSON-RPC 2.0 requests in kind
+    # and keeps a batch's replies in request order, with three changes of ours on
+    # top. The witness-commitment check and the read-once passthrough cookie
+    # (PR #34) that the v0.8.0 line carried are upstream since 0.8.1.
     #
-    # blake2b.2 is what this chain needs after Bitcoin Knots
-    # 29.4.2.knots20260508. That release (knots#420) stopped reporting a
-    # `difficulty` field for header-v2 blocks and reports `difficulty_blake2b`
-    # instead; the proxy declared the old field required, in a struct that
-    # `getblock` flattens, so it could not read a single block header on this
-    # chain. It matters doubly here because the proxy re-serializes that struct
-    # when it rebuilds a verbose `getblock` for a pruned block, so a field it
-    # does not name is dropped on the way back to the caller rather than merely
-    # unread.
+    # BLAKE2b header support, still open upstream as PR #33. Without it the proxy
+    # cannot parse a 164-byte header, and it parses the block for any request it
+    # intercepts, so every verbose `getblock` and every intercepted
+    # `getrawtransaction` above block 961640 came back "IO error: failed to fill
+    # whole buffer". That is Mempool Pruned's entire block path and this app's own
+    # verbose transaction lookups. Not a pruning problem: it failed on blocks the
+    # node still had.
+    #
+    # A `difficulty` field that may be absent, first shipped as blake2b.2. Bitcoin
+    # Knots 29.4.2.knots20260508 (knots#420) stopped reporting `difficulty` for
+    # header-v2 blocks and reports `difficulty_blake2b` instead; the proxy declared
+    # the old field required, in a struct that `getblock` flattens, so it could not
+    # read a single block header on this chain. It matters doubly here because the
+    # proxy re-serializes that struct when it rebuilds a verbose `getblock` for a
+    # pruned block, so a field it does not name is dropped on the way back to the
+    # caller rather than merely unread.
+    #
+    # A single flight for peer fetches, so concurrent requests for the same pruned
+    # block share one fetch rather than each going to the network.
     #
     # This is the same image the StartOS package runs; the two lines were split
     # and are now one. Swap back to ghcr.io/start9labs/btc-rpc-proxy once #33 is
     # merged.
-    image: paulscode/btc-rpc-proxy:v0.8.1-blake2b.2@sha256:a69b0e9294093efe3e764b47ff5370f4b6e3ed0db0cbef6907051146bfdd4684
+    image: paulscode/btc-rpc-proxy:v0.8.2-blake2b.1@sha256:b5583a718747c360f9dc549fc0cc45c442799048a13d93ed5b8894939988c947
     restart: on-failure
     environment:
       BITCOIND_HOST: ${APP_BITCOIN_NODE_IP}
@@ -247,7 +251,7 @@ services:
   # daemon_p2p_addr points at the node directly, because that path only carries
   # blocks the node still has and gains nothing from the detour.
   server:
-    image: paulscode/electrs-pruned:0.11.5@sha256:2b097702acaf05cb49ce9062c35a7f66b4540d8b425d974f0b3b64229d1bc863
+    image: paulscode/electrs-pruned:0.11.6@sha256:68d954a2ec24650552cd9d41f2c160eae3debfa7cedea6071cf3a031fee2323a
     restart: always
     stop_grace_period: 5m
     depends_on:

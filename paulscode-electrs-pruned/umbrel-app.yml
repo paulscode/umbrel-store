@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.14"
+version: "0.11.15"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
@@ -92,37 +92,19 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes wallet history failing to load when it reaches back past the point
-  Bitcoin pruned.
+  Two fixes from upstream electrs 0.12.0 for wallets that follow the Electrum
+  protocol strictly: the server features reply now lists its host the way the
+  protocol specifies, and looking up a transaction by block position works
+  without the optional merkle flag.
 
 
-  Blocks older than the pruned window are not on disk, so they are fetched from
-  network peers, which takes seconds each rather than milliseconds. The server
-  gave up after ten seconds, which was less than a single fetch often needed, so
-  a wallet with older history was shown an error instead of its transactions.
-  Sparrow and Electrum both report this as a failure to fetch history.
+  The proxy in front of Bitcoin moves to upstream v0.8.2, which answers JSON-RPC
+  2.0 requests in kind and keeps a batch's replies in order, and now fetches a
+  pruned block once when several requests ask for it at the same time, rather
+  than once per request.
 
 
-  Raising the ten seconds on its own would have made every other wallet wait
-  behind the slow one, so three things changed first: old blocks are now fetched
-  several at a time rather than one after another, the connection to Bitcoin is
-  a small pool rather than a single shared socket, and wallets are answered
-  together rather than in turn, so a round of lookups takes as long as its
-  slowest wallet instead of all of them added up. With those in place the wait
-  is raised to sixty seconds, which is long enough for a peer fetch to finish.
-
-
-  One effect to expect: while a wallet is loading history from below the pruned
-  point, Electrs can stop answering other requests for the length of that
-  lookup. That is the lookup being given time to finish rather than a problem,
-  and it clears by itself.
-
-
-  Wallets with recent history only were never affected, and are unchanged.
-  Loading long histories over Tor is still slow, just no longer a failure.
-
-
-  No reindex is needed and nothing was lost.
+  Nothing changes for an existing index.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
