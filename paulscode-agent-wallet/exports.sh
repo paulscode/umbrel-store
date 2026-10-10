@@ -25,7 +25,14 @@ export APP_AGENT_WALLET_IP="10.21.21.60"
 #                        ports: official Mempool 3006, Mempool BIP-110 3026.
 # Both the official Mempool and the Mempool BIP-110 fork serve their backend API
 # on :8999. When no Mempool is installed, neither var is set and the app uses the
-# public mempool.space API + explorer.
+# public mempool.space API + explorer. Mempool BIP-110 is retired; it stays here
+# only so an install still running it keeps working.
+#
+# Mempool Pruned is deliberately NOT picked up here. It can run on the BLAKE2b
+# Knots app, which also implements `bitcoin`, while this app's Lightning node is
+# on the other chain, and fee and transaction lookups would then come from the
+# wrong chain. Telling the two apart would mean querying a node from this file,
+# where any failing command breaks the app and everything that depends on it.
 installed="$("${UMBREL_ROOT}/scripts/app" ls-installed 2>/dev/null | tr ' ' '\n' || true)"
 device="${DEVICE_DOMAIN_NAME:-umbrel.local}"
 if echo "${installed}" | grep -qxF "mempool"; then
