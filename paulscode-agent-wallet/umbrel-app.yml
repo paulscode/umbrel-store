@@ -38,7 +38,7 @@ description: >-
   - Electrs — required (the on-chain indexer). Fulcrum also works: it re-exports
     the same connection variables, so either indexer satisfies the app.
 
-  - Mempool — optional (official Mempool or Mempool BIP-110); used for fee
+  - Mempool — optional (the official Mempool); used for fee
     estimates when present, otherwise the public mempool.space API is used.
 
 
