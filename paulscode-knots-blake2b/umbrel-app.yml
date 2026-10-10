@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.1.10"
+version: "1.1.11"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change, following the
@@ -66,51 +66,19 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Updates the node to Bitcoin Knots 29.4.2.knots20260508, which carries the
-  chain's temporary long coinbase maturity rule. Newly mined coins now need 6480
-  confirmations before they can be spent, roughly 45 days at a ten minute block
-  target, where the old wait was 100 blocks. The consensus rule begins being
-  enforced at block 973440.
+  Updates the bundled I2P router from 2.44.0 to 2.59.0, the version the official
+  Bitcoin Knots app moved to in May. Fifteen minor versions of fixes to the router that
+  carries the node's I2P connections; its data directory and settings carry over
+  unchanged, and nothing about the node itself changes in this version.
 
 
-  This also affects coins you have already mined. Nodes require the longer wait
-  of every coinbase spend they will relay, whatever height the coin was mined
-  at, so a payout from the last 45 days that was spendable before this update
-  will not be spendable after it. Nothing is lost; the wait is longer.
-
-
-  Update before your node reaches block 973440 if you can. A node running this
-  build from before that height checks the new rule as it goes and never has to
-  look back.
-
-
-  A node updated after it has passed 973440 has to rewind to that block and
-  recheck everything since, which takes a while and needs the block data for
-  that stretch still on disk. This app prunes, so that data does not stay
-  forever. At the default pruning size there is plenty of room, but if you have
-  set pruning low and update long after 973440, the node can refuse to start and
-  report that required block data has been pruned. Recovering from that means
-  downloading the chain again. Updating promptly avoids the question entirely.
-
-
-  UPDATE ELECTRS PRUNED TOO, TO 0.11.12 OR LATER
-
-
-  This node no longer reports a "difficulty" field for blocks with the new
-  header format, which on this chain is every block above the activation. It
-  reports "difficulty_blake2b" instead, because the two are different units and
-  were never comparable.
-
-
-  That is not only a display change, which is what these notes said at 1.1.9.
-  Electrs Pruned treated the old field as mandatory and cannot start against
-  this node without its own update: it loads its headers, then exits reporting
-  "daemon not available", and the app shows as crashed. Nothing is wrong with
-  your node or your index if you see that, and no reindex is needed. Update
-  Electrs Pruned and it starts again.
-
-
-  Mempool Pruned needed an update for the same reason and has one, at 3.3.1.7.
+  IF YOU ARE UPDATING FROM 1.1.9 OR EARLIER, 1.1.10 still applies: it moved the
+  node to Bitcoin Knots 29.4.2.knots20260508, with the chain's long coinbase
+  maturity rule enforced from block 973440. Update before your node reaches that
+  block if you can; a node that passes it first has to rewind and recheck, and
+  with pruning set low it can need the chain downloaded again. Update Electrs
+  Pruned to 0.11.12 or later and Mempool Pruned to 3.3.1.7 or later too, because
+  they cannot read this node's blocks without it.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

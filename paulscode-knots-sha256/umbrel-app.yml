@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (SHA256) Companion
-version: "1.0.7"
+version: "1.0.8"
 tagline: A pruned Bitcoin Knots node for the SHA256 chain, to run beside your main one
 description: >-
   A Bitcoin Knots node on the SHA256 chain: the same chain your Bitcoin or
@@ -72,10 +72,10 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Description update only: the app is described as what it is — a pruned Bitcoin Knots node for the
-  SHA256 chain to run beside your main one — and the notes about a pinned release and BIP-110 are gone.
-  Nothing about the node or its settings changes in this version. The next node update moves this app onto
-  the Bitcoin Knots SHA256 image shared with the full-node app, in lock-step from then on.
+  Updates the bundled I2P router from 2.44.0 to 2.59.0, the version the official
+  Bitcoin Knots app moved to in May. Fifteen minor versions of fixes to the router that
+  carries the node's I2P connections; its data directory and settings carry over
+  unchanged, and nothing about the node itself changes in this version.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
