@@ -107,10 +107,16 @@ releaseNotes: >-
   backups made after a resize carry the new funding output.
 
 
-  Also: pairing a phone asks for the dashboard password first, the dashboard
-  says so when LND can't follow a channel's funding output, and a node on a
-  pruned Knots can fetch the blocks it pruned from peers again (it refused
-  them and banned the peer that sent them).
+  Also: the dashboard says so when LND can't follow a channel's funding
+  output, and a node on a pruned Knots can fetch the blocks it pruned from
+  peers again (it refused them and banned the peer that sent them).
+
+
+  From 0.21.4-beta-blake2b.18.0, if you are updating from an earlier version:
+  built on LND 0.21.4. Every new channel carries chain-bound signatures, and a
+  peer that has not upgraded gets no new channel; no new taproot or legacy
+  channels. Apps can get their own macaroon from the dashboard's menu. Only
+  Umbrel's own sign-in reaches the app.
 
 
   Lightning Fork 0.21.4-beta-blake2b.19, dashboard 1.3.2-blake2b.19.
