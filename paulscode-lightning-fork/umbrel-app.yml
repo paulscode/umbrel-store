@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.4-beta-blake2b.18.0"
+version: "0.21.4-beta-blake2b.19.0"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -83,40 +83,37 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Built on LND 0.21.4. It fixes HTLCs that could be left pending while a
-  channel changed state (and end in a needless force close), keeps a peer from
-  flooding a channel with fee updates or other messages, and fixes breach
-  handling for old channel states.
+  Resize channels without closing them. A channel's details in the dashboard
+  have Add funds (from your on-chain wallet) and Move funds out (to your
+  wallet or an address). The channel keeps working while the change confirms
+  and costs one on-chain transaction. This is splicing, and it is off until
+  you turn it on in Advanced Settings, Channels, Resize Channels (Splicing).
 
 
-  New channels are bound to this chain. Every new channel now carries
-  chain-bound signatures (option_unified_sigs), as the BLAKE2b Lightning spec
-  requires: a peer that has not upgraded can still connect and route over the
-  channels you already have, but gets no new channel. New taproot channels
-  can't be opened any more, and LND no longer opens old-style (legacy)
-  channels at all; channels you already have keep working. A channel funded
-  directly from a block reward is refused.
+  Before you turn it on: it upgrades the node's channel database at the next
+  start, and after that the app can't go back to an older version of
+  Lightning Fork. Both nodes of a channel need splicing (Lightning Fork from
+  this version, or the Core Lightning port), and only channels with
+  chain-bound signatures can be resized.
 
 
-  Macaroons: give an app its own key to your node with only the access it
-  needs (read only, receive payments, a Lightning wallet, or your own choice
-  of permissions), with an optional expiry, and revoke it on its own. Menu,
-  Macaroons.
+  A resize counts once both nodes have seen six confirmations; one your peer
+  puts coins into waits longer, up to 36, the more it puts in. Until then the
+  channel works at its old size. If your peer adds its own coins, your node
+  won't let the peer spend them through the channel until the resize has 36
+  confirmations, so a peer that undoes its deposit by reorganising the chain
+  can't take your funds with it. Moving funds out: the amount you enter is
+  what arrives, and the fee comes from your side of the channel. Channel
+  backups made after a resize carry the new funding output.
 
 
-  Safer on a shared Umbrel: only Umbrel's own sign-in now reaches the app.
-  Before, any other app on the same Umbrel could reach the dashboard directly.
-  Advanced Settings refuses values that could add lines to LND's settings,
-  and the dashboard's dependencies are up to date.
+  Also: pairing a phone asks for the dashboard password first, the dashboard
+  says so when LND can't follow a channel's funding output, and a node on a
+  pruned Knots can fetch the blocks it pruned from peers again (it refused
+  them and banned the peer that sent them).
 
 
-  The bridge: it no longer counts the blocks before LND gives up on a held
-  payment, quotes only invoices its node would pay, refunds a payment that
-  never left, and stops quoting at a 10% market move. Offers are rate limited
-  per offer and can't fill the disk.
-
-
-  Lightning Fork 0.21.4-beta-blake2b.18, dashboard 1.3.2-blake2b.18.
+  Lightning Fork 0.21.4-beta-blake2b.19, dashboard 1.3.2-blake2b.19.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
