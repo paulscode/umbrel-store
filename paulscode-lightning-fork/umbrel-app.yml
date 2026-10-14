@@ -98,13 +98,14 @@ releaseNotes: >-
 
 
   A resize counts once both nodes have seen six confirmations; one your peer
-  puts coins into waits longer, up to 36, the more it puts in. Until then the
+  adds coins to waits longer, up to 36, the larger the coins. Until then the
   channel works at its old size. If your peer adds its own coins, your node
   won't let the peer spend them through the channel until the resize has 36
   confirmations, so a peer that undoes its deposit by reorganising the chain
   can't take your funds with it. Moving funds out: the amount you enter is
-  what arrives, and the fee comes from your side of the channel. Channel
-  backups made after a resize carry the new funding output.
+  what arrives, and the fee comes from your side of the channel. With a
+  Core Lightning peer, let one resize finish before either side starts
+  another. Channel backups made after a resize carry the new funding output.
 
 
   Also: the dashboard says so when LND can't follow a channel's funding
