@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.4-beta-blake2b.19.0"
+version: "0.21.4-beta-blake2b.19.1"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -83,7 +83,13 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Resize channels without closing them. A channel's details in the dashboard
+  0.21.4-beta-blake2b.19.1: the app's Tor moves to 0.4.9.11, the version
+  Umbrel's own apps run. The one it had, 0.4.7.8, is no longer supported
+  and may fail to connect to the Tor network, leaving the node's onion
+  addresses unreachable. Nothing else changes.
+
+
+  From 0.21.4-beta-blake2b.19.0: resize channels without closing them. A channel's details in the dashboard
   have Add funds (from your on-chain wallet) and Move funds out (to your
   wallet or an address). The channel keeps working while the change confirms
   and costs one on-chain transaction. This is splicing, and it is off until
