@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.2.2"
+version: "1.2.3"
 tagline: Mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -146,6 +146,23 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
+  Two fixes to how the gateway gets the pool's payout split for each job.
+
+
+  When the pool sent its split before the gateway was waiting for it, the
+  gateway missed it and sat out a 5-second timeout before asking again. It now
+  takes the reply as soon as it arrives, so miners get full-payout work sooner
+  after each new block.
+
+
+  After a missed reply, the gateway could also fetch a split for the empty job it
+  sends on a new block and change that job while miners were already working on
+  it. A block found in that moment would have been lost. It no longer does this.
+
+
+  IF YOU ARE UPDATING FROM 1.2.1 OR EARLIER, the notes from 1.2.2 also apply:
+
+
   Moves the gateway onto CONVOY's current code: about 80 upstream changes since
   the last version, most of them fixes to how the gateway runs rather than what it
   builds. The full pool payout list from the last version is carried over
