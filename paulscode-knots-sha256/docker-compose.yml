@@ -33,6 +33,13 @@ services:
   # is seeded with a 5-second work update instead. DATUM's own default is 40
   # seconds with a polling fallback, so the cost of having no blocknotify is
   # bounded either way.
+  #
+  # `rejecttokens` IS SEEDED ON. Retropex moved the image default to on in
+  # 1.2.20 (4bcf1fd); this pin predates that, so the seed carries it instead.
+  # Like the rest of the seed it reaches fresh installs only: the image writes
+  # settings.json in full on every start, so an existing install already has
+  # rejecttokens stored and keeps its value. Advanced Settings' "Restore
+  # defaults" still uses this image's default (off) until the image moves.
   app:
     image: ghcr.io/retropex/umbrel-bitcoin-knots:1.2.16@sha256:6564271b2214c1eb1883b2d406e6aee3383966037960113673dd73a7ad98f69d
     user: "1000:1000"

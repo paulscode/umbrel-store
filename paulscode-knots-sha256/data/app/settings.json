@@ -3,5 +3,6 @@
   "prune": 5,
   "datum": false,
   "blockfilterindex": false,
-  "peerblockfilters": false
+  "peerblockfilters": false,
+  "rejecttokens": true
 }

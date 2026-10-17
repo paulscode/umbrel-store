@@ -1,5 +1,6 @@
 {
   "prune": 5,
   "blockfilterindex": false,
-  "peerblockfilters": false
+  "peerblockfilters": false,
+  "rejecttokens": true
 }
