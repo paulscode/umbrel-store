@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.4-beta-blake2b.20.0"
+version: "0.21.4-beta-blake2b.21.0"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -83,38 +83,31 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  A safer bridge. A private security review found a way for a payer who also
-  controls the recipient to make a bridge lose a payout, and several smaller
-  problems; all are fixed. If you run the bridge, update.
+  Pay short-lived SHA256 invoices through a bridge. Shops often issue
+  invoices that live about a minute; the bridge refused anything with less
+  than 15 minutes left and now quotes an invoice while it has at least 20
+  seconds. The phone app (0.2.3) gets a firm price as soon as an invoice is
+  scanned, shows its countdown, and pays in one tap. Both the bridge and the
+  paying node need this version. If a payout can't arrive in time, the payer
+  is refunded within seconds.
 
 
-  The bridge now refuses to quote an invoice again once an attempt to pay it
-  was funded (the payer is told to ask for a new invoice), each expiring
-  invoice cancels only itself, and before paying it checks for a route and
-  waits while there is none. A swap stopped while paying can be decided with
-  lncli bridge resolve. It keeps quoting through a difficulty retarget on
-  either chain instead of stopping for about a day. Participants see a fixed
-  sentence for each refusal and a rounded maximum.
+  Channel backups: a warning before Google ends a Drive sign-in (a Google
+  Cloud app still in Testing ends it after 7 days), and a refused sign-in
+  explained, with the sign-in link offered again. Bridge hold invoices carry
+  the destination invoice's payment metadata.
 
 
-  Pricing reads two exchanges, Neoxa and NonKYC, from their order books at
-  the largest swap size, and each direction trades at whichever is worse for
-  its payer; a direction stops when they are more than 4% apart. Drift from
-  the 24 hour median, a thin book or a stopped exchange widens the fee rather
-  than stopping quotes. Quotes now hold for 60 seconds. Paying SHA256
-  invoices through a service checks prices against both exchanges and allows
-  what the service widened its fee by, up to 5%.
+  From 0.21.4-beta-blake2b.20.0, if you are updating from an earlier version:
+  a hardened bridge after a private security review by cguida (thank you),
+  bridge pricing from two exchanges, and no bridge outage after a difficulty
+  retarget. From 0.21.4-beta-blake2b.19.0: resize channels without closing
+  them, off until you turn it on in Advanced Settings, Channels, Resize
+  Channels (Splicing); turning it on upgrades the channel database, and the
+  app can't go back to an older version of Lightning Fork after that.
 
 
-  From 0.21.4-beta-blake2b.19.0, if you are updating from an earlier version:
-  resize channels without closing them (Add funds and Move funds out in a
-  channel's details), off until you turn it on in Advanced Settings, Channels,
-  Resize Channels (Splicing). Turning it on upgrades the channel database, and
-  the app can't go back to an older version of Lightning Fork after that. The
-  app's Tor is 0.4.9.11 (from .19.1).
-
-
-  Lightning Fork 0.21.4-beta-blake2b.20, dashboard 1.3.2-blake2b.20.
+  Lightning Fork 0.21.4-beta-blake2b.21, dashboard 1.3.2-blake2b.21.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
