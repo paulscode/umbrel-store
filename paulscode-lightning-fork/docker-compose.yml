@@ -237,7 +237,7 @@ services:
   # and a wallet on the LAN agree.
   lnd:
     hostname: "${DEVICE_DOMAIN_NAME}" # Needed so LND can generate a valid cert
-    image: paulscode/lightning-fork:0.21.4-beta-blake2b.21@sha256:300698fb53a30b148bad65c4dd0f2bdd87c70d6c7854855806db204aab307efd
+    image: paulscode/lightning-fork:0.21.4-beta-blake2b.21.1@sha256:ddd976d192db5bd2cb5a82a3849512117b19e9d0ed6f3d4923171e577d122b30
     command: "${APP_LIGHTNING_FORK_COMMAND}"
     user: 1000:1000
     restart: unless-stopped
