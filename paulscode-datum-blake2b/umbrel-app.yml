@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.2.3"
+version: "1.2.4"
 tagline: Mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -146,6 +146,18 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
+  The gateway is now built on CONVOY's current v0.5.0 beta and reports that
+  version, so Lazarus no longer lists it as out of date. Your payout settings,
+  the full pool payout list and BLAKE2b support are unchanged.
+
+
+  On the gateway's Config page, changing the Extranonce2 size is now marked as
+  needing a restart.
+
+
+  IF YOU ARE UPDATING FROM 1.2.2 OR EARLIER, the notes from 1.2.3 also apply:
+
+
   Two fixes to how the gateway gets the pool's payout split for each job.
 
 
