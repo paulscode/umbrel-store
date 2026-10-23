@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.15"
+version: "0.11.16"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
@@ -92,19 +92,20 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  Two fixes from upstream electrs 0.12.0 for wallets that follow the Electrum
-  protocol strictly: the server features reply now lists its host the way the
-  protocol specifies, and looking up a transaction by block position works
-  without the optional merkle flag.
+  Fixes a server that stays at "Starting up" and never indexes, with
+  "unexpected HTTP code: 401" in its log, when it starts at the same time as
+  the Bitcoin node, as on a reboot or an update.
 
 
-  The proxy in front of Bitcoin moves to upstream v0.8.2, which answers JSON-RPC
-  2.0 requests in kind and keeps a batch's replies in order, and now fetches a
-  pruned block once when several requests ask for it at the same time, rather
-  than once per request.
+  The proxy in front of Bitcoin decides at startup which credentials to accept.
+  If it started before the node had written its login cookie, it never accepted
+  that cookie, and the server, which logs in with it, was refused on every
+  attempt until the proxy itself was restarted. The proxy now waits for the
+  cookie before starting.
 
 
-  Nothing changes for an existing index.
+  If your server is in that state, this update fixes it. Nothing changes for an
+  existing index.
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

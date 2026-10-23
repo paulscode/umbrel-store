@@ -157,11 +157,33 @@ services:
         # for anything but mainnet, exactly as the electrs entrypoint does. It is
         # looked for whether or not a user and password were exported, because it
         # is needed for more than one thing below.
+        #
+        # Waited for, not just probed. The server below always authenticates with
+        # this cookie, whatever the node exports, so a proxy that starts before
+        # the node has written it never accepts it: the proxy loads its
+        # passthrough users once, at startup, and does not look again. That is a
+        # 401 loop for electrs which no electrs restart clears, and it is what a
+        # reboot produces whenever this container wins the race against the
+        # node. Seen on a test server: the proxy started at 21:23:06.95 and the
+        # node wrote its cookie at 21:23:07, and electrs crash-looped for twelve
+        # days. Bounded like the electrs entrypoint's own wait, then exit so
+        # `restart: on-failure` tries again rather than running without it.
         COOKIE=""
-        for sub in regtest testnet4 testnet signet ""; do
-          if [ -n "$$sub" ]; then C="/bitcoin/$$sub/.cookie"; else C="/bitcoin/.cookie"; fi
-          if [ -r "$$C" ]; then COOKIE="$$C"; break; fi
+        waited=0
+        while [ "$$waited" -lt 300 ]; do
+          for sub in regtest testnet4 testnet signet ""; do
+            if [ -n "$$sub" ]; then C="/bitcoin/$$sub/.cookie"; else C="/bitcoin/.cookie"; fi
+            if [ -r "$$C" ]; then COOKIE="$$C"; break; fi
+          done
+          [ -n "$$COOKIE" ] && break
+          [ "$$waited" -eq 0 ] && echo "proxy: no .cookie under /bitcoin yet; waiting for the node" >&2
+          sleep 1
+          waited=$$((waited + 1))
         done
+        if [ -z "$$COOKIE" ]; then
+          echo "proxy: no readable .cookie under /bitcoin after $${waited}s; is the chosen node running?" >&2
+          exit 1
+        fi
 
         # Every rpcauth= line the node actually uses, which is not necessarily in
         # the file it names. bitcoin.conf is allowed to be a stub that pulls the
@@ -193,10 +215,6 @@ services:
         if [ -n "$${BITCOIND_USER}" ]; then
           AUTH=$$(printf 'bitcoind_user = "%s"\nbitcoind_password = "%s"' "$$U" "$$P")
         else
-          if [ -z "$$COOKIE" ]; then
-            echo "proxy: no readable .cookie under /bitcoin; is the chosen node running?" >&2
-            exit 1
-          fi
           echo "proxy: authenticating to the node with $$COOKIE"
           AUTH=$$(printf 'cookie_file = "%s"' "$$COOKIE")
         fi
@@ -211,14 +229,8 @@ services:
           echo "proxy: accepting the node's rpcauth credentials"
           AUTH=$$(printf '%s\npassthrough_rpcauth = "/tmp/rpcauth.conf"' "$$AUTH")
         fi
-        if [ -n "$$COOKIE" ]; then
-          echo "proxy: accepting the node's cookie at $$COOKIE"
-          AUTH=$$(printf '%s\npassthrough_rpccookie = "%s"' "$$AUTH" "$$COOKIE")
-        fi
-        if [ ! -s /tmp/rpcauth.conf ] && [ -z "$$COOKIE" ]; then
-          echo "proxy: no rpcauth and no cookie found; nothing could authenticate" >&2
-          exit 1
-        fi
+        echo "proxy: accepting the node's cookie at $$COOKIE"
+        AUTH=$$(printf '%s\npassthrough_rpccookie = "%s"' "$$AUTH" "$$COOKIE")
         cat > /tmp/btc_rpc_proxy.toml <<EOF
         bitcoind_address = "$$H"
         bitcoind_port = $${BITCOIND_PORT}
