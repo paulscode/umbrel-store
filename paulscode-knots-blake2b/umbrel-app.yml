@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "1.1.12"
+version: "1.1.13"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change, following the
@@ -66,6 +66,14 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
+  Updates the bundled Tor to 0.4.9.14, a security release that fixes
+  high-severity issues affecting clients and onion services. Nothing else
+  changes.
+
+
+  IF YOU ARE UPDATING FROM 1.1.11 OR EARLIER, 1.1.12 also applies:
+
+
   "Reject tokens transactions" (rejecttokens) in Advanced Settings is now on by
   default, following the node app this one is built from. This applies to new installs and to Restore
   Defaults. An existing node keeps the value it already has, on or off, so if you
