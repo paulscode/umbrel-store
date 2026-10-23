@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-hashgg
 category: bitcoin
 name: HashGG
-version: "0.7.2.3"
+version: "0.7.2.5"
 tagline: Sovereign hash routing for your Bitcoin miners
 description: >-
   HashGG exposes your Datum Gateway stratum port to the public internet —
@@ -84,6 +84,16 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  The dashboard now checks that your public mining address actually carries
+  stratum. Every two minutes it connects to that address the way a hash buyer
+  would and confirms a stratum server answers, rather than only showing that the
+  tunnel is up. When the check fails, it says whether the tunnel or the Datum
+  Gateway is at fault.
+
+
+  IF YOU ARE UPDATING FROM 0.7.2.2 OR EARLIER, the notes from 0.7.2.3 also apply:
+
+
   Moves off port 3000, which the official ThunderHub app also uses. Umbrel gives each app its
   own port and refuses to install one whose port is already taken, so anyone running ThunderHub
   could not install HashGG, and the failure said only that the port was allocated.
