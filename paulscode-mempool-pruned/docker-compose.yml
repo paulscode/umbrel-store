@@ -7,7 +7,8 @@ services:
       APP_PORT: $APP_MEMPOOL_PRUNED_PORT
 
   web:
-    image: ghcr.io/paulscode/mempool-pruned-frontend:v3.3.1-pruned.9@sha256:070c9202205ea7d9d2764281f45dc1dd6052956ba2da7d453011eee9f6761a67
+    # TODO: pin @sha256 digest once v3.3.2-pruned.1 is pushed to ghcr
+    image: ghcr.io/paulscode/mempool-pruned-frontend:v3.3.2-pruned.1
     user: "1000:1000"
     init: true
     restart: on-failure
@@ -58,7 +59,8 @@ services:
         ipv4_address: $APP_MEMPOOL_PRUNED_IP
 
   api:
-    image: ghcr.io/paulscode/mempool-pruned-backend:v3.3.1-pruned.9@sha256:8e6a610e4896908df5953004f40b289c24028d2f27385f1124f9e7a82b3fc3fc
+    # TODO: pin @sha256 digest once v3.3.2-pruned.1 is pushed to ghcr
+    image: ghcr.io/paulscode/mempool-pruned-backend:v3.3.2-pruned.1
     user: "1000:1000"
     init: true
     restart: on-failure

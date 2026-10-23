@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-mempool-pruned
 category: bitcoin
 name: Mempool Pruned
-version: "3.3.1.9"
+version: "3.3.2.1"
 tagline: A block explorer that works with a pruned Bitcoin node
 description: >-
   Run your own mempool.space against a pruned node. The official Mempool app
@@ -80,6 +80,23 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  Mempool 3.3.2. The backend now runs on Node.js 26.12.1, which fixes the
+  Node.js security issues published on 21 October 2026, among them a remote
+  code execution flaw in its Brotli decoder and two ways to get past TLS
+  hostname checks.
+
+
+  The backend no longer trusts certificates issued under the compromised
+  eMudhra certificate authorities.
+
+
+  A request asking the backend to evaluate a transaction with thousands of
+  inputs and outputs is now refused instead of tying up the backend.
+
+
+  IF YOU ARE UPDATING FROM 3.3.1.8 OR EARLIER, the notes from 3.3.1.9 also apply:
+
+
   Fixes a memory leak in the backend and updates its dependencies for
   security fixes.
 
