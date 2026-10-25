@@ -15,7 +15,7 @@ services:
     # Pinned by digest, like every other app in this store. A bare tag is mutable:
     # pushing over it would change what an install resolves to without any version
     # here moving, which is the one thing a store entry exists to prevent.
-    image: paulscode/hashgg:0.7.2.6@sha256:TODO-pin-after-make-docker-buildx-DOCKER_TAG-0.7.2.6
+    image: paulscode/hashgg:0.7.2.6@sha256:de5f2e4a8cb736f4595f6c309d23855b7760ab62addb7c0404b931ce44157028
     restart: on-failure
     environment:
       # Selects the companion build. Without it this would behave as the ordinary

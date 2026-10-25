@@ -8,8 +8,7 @@ services:
       APP_PORT: 3030
 
   web:
-    # TODO(main session): build and push paulscode/pickhash:0.1.4.5 (amd64+arm64), pin its index digest here.
-    image: paulscode/pickhash:0.1.4.5@sha256:TODO
+    image: paulscode/pickhash:0.1.4.5@sha256:05ee465c59a4a0563875a4904fc8d53495c29dcfa552a15da91fe116939c002f
     restart: on-failure
     environment:
       PORT: "3030"
