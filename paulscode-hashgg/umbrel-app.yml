@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-hashgg
 category: bitcoin
 name: HashGG
-version: "0.7.2.5"
+version: "0.7.2.6"
 tagline: Sovereign hash routing for your Bitcoin miners
 description: >-
   HashGG exposes your Datum Gateway stratum port to the public internet —
@@ -84,6 +84,15 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  Security update. HashGG now runs on Node 24, replacing Node 18, which is end
+  of life. The playit agent is updated to its current stable release, 1.0.10,
+  and the image is rebuilt on a current Debian base with current CA
+  certificates. Nothing you have set changes.
+
+
+  IF YOU ARE UPDATING FROM 0.7.2.3 OR EARLIER, the notes from 0.7.2.5 also apply:
+
+
   The dashboard now checks that your public mining address actually carries
   stratum. Every two minutes it connects to that address the way a hash buyer
   would and confirms a stratum server answers, rather than only showing that the
