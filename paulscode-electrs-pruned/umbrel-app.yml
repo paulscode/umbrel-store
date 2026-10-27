@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.16"
+version: "0.11.17"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
@@ -92,6 +92,16 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  Keeps indexing the BLAKE2b chain when Knots (BLAKE2b) moves to Bitcoin Knots
+  29.4.3. That release stops serving blocks past the chain split to any peer
+  that does not say it follows the BLAKE2b chain. This server did not say so, so
+  it stopped at the last block it had while still answering wallets. It now says
+  so whenever its node does. Update this app before updating Knots (BLAKE2b).
+
+
+  IF YOU ARE UPDATING FROM 0.11.15 OR EARLIER, 0.11.16 also applies:
+
+
   Fixes a server that stays at "Starting up" and never indexes, with
   "unexpected HTTP code: 401" in its log, when it starts at the same time as
   the Bitcoin node, as on a reboot or an update.
