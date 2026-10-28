@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+
+# Adapted from the official Bitcoin Knots app's pre-start hook. Two jobs: fix
+# ownership of anything a previous run created as root, and hold the full start
+# back until Tor has published its hidden services, so the connect modal has
+# addresses to show rather than "notyetset.onion".
+
+APP_DATA_DIR="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/../data")"
+DESIRED_OWNER="1000:1000"
+
+set_correct_permissions() {
+	local -r path="${1}"
+
+	if [[ -e "${path}" ]]; then
+		owner=$(stat -c "%u:%g" "${path}")
+
+		if [[ "${owner}" != "${DESIRED_OWNER}" ]]; then
+			chown -R "${DESIRED_OWNER}" "${path}"
+			echo "Changed ownership of ${path} to ${DESIRED_OWNER}"
+		fi
+	fi
+}
+
+set_correct_permissions "${APP_DATA_DIR}/bitcoin/umbrel-bitcoin.conf"
+set_correct_permissions "${APP_DATA_DIR}/bitcoin/bitcoin.conf"
+set_correct_permissions "${APP_DATA_DIR}/bitcoin/bitcoin.conf.save"
+set_correct_permissions "${APP_DATA_DIR}/bitcoin/settings.json"
+
+# The app's own state: the settings the UI writes. The companion ships it seeded,
+# so it can exist before the container ever runs, and it must be writable by the
+# app or the Settings page will appear to work and silently discard every save.
+if [[ -d "${APP_DATA_DIR}/app" ]]; then
+	chown -R "${DESIRED_OWNER}" "${APP_DATA_DIR}/app"
+fi
+
+# BLOCK FILTER INDEX ON A PRUNED NODE.
+#
+# The UI defaults blockfilterindex on, which is right for an archival node. A
+# pruned node cannot build it (the companion prunes by default), and
+# bitcoind refuses to start when the index needs blocks that are already gone:
+#
+#   Index "basic block filter index" needs block data that has been pruned.
+#   A fatal internal error occurred ... Failed to start indexes, shutting down.
+#
+# Turned off only while pruning is on, and only if the user has not already
+# turned it off, so an archival install and a deliberate choice are both left
+# alone. Someone who wants block filters can set prune to 0 and switch them back
+# on in Advanced Settings.
+SETTINGS="${APP_DATA_DIR}/app/settings.json"
+if [[ -f "${SETTINGS}" ]]; then
+	# Heredoc is <<'PYEOF' and the body sits at column 0 on purpose. With <<-
+	# bash strips leading tabs from every line, which flattens Python's own
+	# indentation and the script dies with an IndentationError that this hook
+	# would swallow.
+	python3 - "${SETTINGS}" <<'PYEOF' || true
+import json, sys
+
+path = sys.argv[1]
+try:
+    with open(path) as f:
+        data = json.load(f)
+except Exception:
+    sys.exit(0)
+if not isinstance(data, dict):
+    sys.exit(0)
+
+prune = data.get("prune", 0)
+if isinstance(prune, bool) or not isinstance(prune, (int, float)) or prune <= 0:
+    sys.exit(0)
+if not (data.get("blockfilterindex") or data.get("peerblockfilters")):
+    sys.exit(0)
+
+data["blockfilterindex"] = False
+data["peerblockfilters"] = False
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+print("turned blockfilterindex off: it cannot run on a pruned node")
+PYEOF
+fi
+
+# Delay booting the full app until the RPC and P2P Tor Hidden Services are ready.
+
+HIDDEN_SERVICE_FILE="${TOR_DATA_DIR}/app-${APP_ID}-rpc/hostname"
+
+if [[ -f "${HIDDEN_SERVICE_FILE}" ]]; then
+	exit
+fi
+
+# `app-script`, not `${UMBREL_ROOT}/scripts/app`. That older path does not exist on
+# current umbrelOS: /home/umbrel/umbrel/scripts is gone entirely, so both lines
+# failed with "No such file or directory". This hook has no `set -e`, so the
+# failure was silent, the wait below always timed out, and the connect modal could
+# show notyetset.onion on a first start, which is the one thing this block exists
+# to prevent. Verified against the official Bitcoin Knots app's hook on a live
+# box, which calls the path used here.
+# Two umbrelOS generations put this in different places, and neither path exists
+# on the other. 1.7.x has app-script and no ${UMBREL_ROOT}/scripts at all; older
+# releases have scripts/app. Try both rather than assume, since guessing wrong
+# fails silently here and the wait below then always times out.
+APP_SCRIPT=""
+for candidate in \
+	"/opt/umbreld/source/modules/apps/legacy-compat/app-script" \
+	"${UMBREL_ROOT}/scripts/app"; do
+	if [[ -x "${candidate}" ]]; then
+		APP_SCRIPT="${candidate}"
+		break
+	fi
+done
+
+if [[ -n "${APP_SCRIPT}" ]]; then
+	"${APP_SCRIPT}" compose "${APP_ID}" up --detach app
+	"${APP_SCRIPT}" compose "${APP_ID}" up --detach tor
+else
+	echo "App: ${APP_ID} - found no app helper script; skipping the early start"
+fi
+
+echo "App: ${APP_ID} - Generating Tor Hidden Service..."
+
+for attempt in $(seq 1 100); do
+	if [[ -f "${HIDDEN_SERVICE_FILE}" ]]; then
+		echo "App: ${APP_ID} - Hidden service file created successfully!"
+		break
+	fi
+	sleep 0.1
+done
+
+if [[ ! -f "${HIDDEN_SERVICE_FILE}" ]]; then
+	echo "App: ${APP_ID} - Hidden service file wasn't created"
+fi

@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (SHA256) Companion
-version: "1.0.8"
+version: "1.1.0"
 tagline: A pruned Bitcoin Knots node for the SHA256 chain, to run beside your main one
 description: >-
   A Bitcoin Knots node on the SHA256 chain: the same chain your Bitcoin or
@@ -43,22 +43,17 @@ description: >-
   your existing one, which is the cost of being able to run both at once.
 
 
-  DO NOT TURN ON PEER BLOCK FILTERS WHILE THIS NODE IS PRUNED
+  BLOCK FILTERS NEED THE WHOLE CHAIN
 
 
-  It switches on the block filter index, and that index cannot run on a pruned
-  node: bitcoind stops with "Index basic block filter index needs block data that
-  has been pruned" and will not start again until the setting is off. The app
-  around it still reports healthy, so the node looks fine while it is down.
-
-
-  If it happens, set Peer Block Filters back off, or just restart the app: it
-  turns the index off at every start while pruning is on. To use block filters,
-  set pruning to 0 first and let the node sync the whole chain.
+  The block filter index cannot be built on a pruned node, so while pruning is
+  on, Peer Block Filters and the index are switched off when settings are saved.
+  To use block filters, set pruning to 0 first and let the node sync the whole
+  chain.
 developer: Paul Lamb
-website: https://github.com/paulscode/knots-prerdts-startos
+website: https://github.com/paulscode/knots-sha256
 dependencies: []
-repo: https://github.com/paulscode/knots-prerdts-startos
+repo: https://github.com/paulscode/knots-sha256
 support: https://paulscode.com/c/bitcoin/8
 # 7150 is the BLAKE2b companion's and 7153 its gateway's, so the SHA256 pair
 # takes 7151 and 7155. Not in the 3000s, where the app tiles crowd together and
@@ -72,10 +67,14 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Updates the bundled I2P router from 2.44.0 to 2.59.0, the version the official
-  Bitcoin Knots app moved to in May. Fifteen minor versions of fixes to the router that
-  carries the node's I2P connections; its data directory and settings carry over
-  unchanged, and nothing about the node itself changes in this version.
+  Moves the node to Bitcoin Knots SHA256 31.1 (31.1.knots-sha256.20261018), built
+  on Bitcoin Core 31.1, from Bitcoin Knots 29.3. It now runs the same image as the
+  Knots (SHA256) full-node app: one build, the published release, verified
+  against the maintainer's key. Your settings, pruning choice and chain carry
+  over; a Bitcoin Knots version chosen in the old Version setting is replaced by
+  this build. While pruning is on, block filters are switched off when settings
+  are saved instead of stopping the node. Release notes:
+  https://github.com/paulscode/knots-sha256/releases/tag/v31.1.knots-sha256.20261018
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

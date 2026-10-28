@@ -45,7 +45,7 @@ export APP_KNOTS_SHA256_ZMQ_HASHTX_PORT="49336"
 export APP_KNOTS_SHA256_DATA_DIR="${EXPORTS_APP_DIR}/data/bitcoin"
 
 # One chain, and it is the same chain the official Bitcoin and Bitcoin Knots apps
-# follow. This node's whole difference is that it never enforces BIP-110.
+# follow, which is the chain Bitcoin Knots SHA256 follows.
 export APP_KNOTS_SHA256_NETWORK="mainnet"
 export APP_KNOTS_SHA256_NETWORK_ELECTRS="bitcoin"
 
@@ -113,10 +113,8 @@ export APP_KNOTS_SHA256_P2P_HIDDEN_SERVICE="$(cat "${p2p_hidden_service_file}" 2
 #
 #   - It is pruned by default. An app that needs deep history should use an
 #     archival node, or you should turn pruning off in this one's settings.
-#   - It never enforces BIP-110. That is the reason it exists, and it only
-#     becomes visible if the network splits over that rule, at which point this
-#     node and an enforcing one would follow different chains. Point each app at
-#     the one whose chain it should follow.
+#   - It follows the chain Bitcoin Core follows. An app that should follow a
+#     chain with different rules (BIP 110, BLAKE2b) needs that chain's node.
 #
 # `:=` and not plain assignment: umbreld sets APP_BITCOIN_* from the
 # implementation the user actually selected, and this only fills what is still

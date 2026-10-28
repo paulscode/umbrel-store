@@ -1,0 +1,110 @@
+manifestVersion: 1.1
+id: paulscode-bitcoin-knots-sha256
+implements:
+  - bitcoin
+category: bitcoin
+name: Knots (SHA256)
+version: "31.1.0"
+tagline: Run your own node on Bitcoin Knots SHA256, Knots' policy on Bitcoin Core 31.1
+description: >-
+  A full Bitcoin node running Bitcoin Knots SHA256: Bitcoin Knots' relay and
+  mining policy maintained on top of Bitcoin Core for the SHA256 chain. It
+  accepts exactly the blocks Bitcoin Core accepts and follows the same chain as
+  the official Bitcoin app. What differs is policy: what the node relays and
+  what it puts in a block template follows Knots' stricter defaults (for
+  example, OP_RETURN data is limited to 42 bytes, token transactions and
+  inscription-style data are not relayed, and block templates are 1.2 million
+  weight units).
+
+
+  USE IT AS YOUR NODE
+
+
+  It stands in for the official Bitcoin node app: apps that need a Bitcoin node
+  (Electrs, Lightning, mempool, Datum and others) can use it. It is a full node
+  that keeps the whole chain by default, so plan for the disk space the
+  official app needs. The first sync downloads the chain from the network.
+
+
+  IT LOOKS AND WORKS LIKE THE OFFICIAL NODE APP
+
+
+  The dashboard, block and peer lists, connect modal, Advanced Settings and
+  widgets are the ones the official Bitcoin Knots app has. Every policy setting
+  can be changed under Advanced Settings.
+
+
+  VERIFIED RELEASES
+
+
+  The node inside is the published Bitcoin Knots SHA256 release, built
+  reproducibly with Guix and checked against the maintainer's signing key when
+  this app's image is built. Releases, release notes and source:
+  https://github.com/paulscode/knots-sha256
+
+
+  NOT TO BE CONFUSED WITH
+
+
+  The official Bitcoin Knots app, whose current releases enforce BIP 110 and so
+  follow a different chain from this one. Knots (SHA256) Companion is the same
+  node, pruned, to run beside another one.
+developer: Paul Lamb
+website: https://github.com/paulscode/knots-sha256
+dependencies: []
+repo: https://github.com/paulscode/knots-sha256
+support: https://github.com/paulscode/knots-sha256/issues
+# 7150/7153 are the BLAKE2b pair's and 7151/7155 the SHA256 companion pair's, so
+# the full node takes 7152 (not in getumbrel/umbrel-apps either, 2026-10-28).
+port: 7152
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-bitcoin-knots-sha256/icon.png
+gallery:
+  - 1.png
+path: ""
+defaultPassword: ""
+releaseNotes: >-
+  First release: Bitcoin Knots SHA256 31.1 (31.1.knots-sha256.20261018), built on
+  Bitcoin Core 31.1. Release notes:
+  https://github.com/paulscode/knots-sha256/releases/tag/v31.1.knots-sha256.20261018
+
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store
+widgets:
+  - id: "stats"
+    type: "four-stats"
+    refresh: "5s"
+    endpoint: "app:3000/api/widget/stats"
+    link: ""
+    example:
+      type: "four-stats"
+      link: ""
+      items:
+        - title: "Connections"
+          text: "11"
+          subtext: "peers"
+        - title: "Mempool"
+          text: "257"
+          subtext: "MB"
+        - title: "Hashrate"
+          text: "590"
+          subtext: "EH/s"
+        - title: "Blockchain size"
+          text: "5"
+          subtext: "GB"
+  - id: "sync"
+    type: "text-with-progress"
+    refresh: "2s"
+    endpoint: "app:3000/api/widget/sync"
+    link: ""
+    example:
+      type: "text-with-progress"
+      link: ""
+      title: "Blockchain sync"
+      text: "83%"
+      progressLabel: "In progress"
+      progress: 0.83
+backupIgnore:
+  - data/bitcoin/blocks
+  - data/bitcoin/chainstate
+  - data/bitcoin/indexes
+  - data/i2pd

@@ -26,9 +26,8 @@ set_correct_permissions "${APP_DATA_DIR}/bitcoin/bitcoin.conf"
 set_correct_permissions "${APP_DATA_DIR}/bitcoin/bitcoin.conf.save"
 set_correct_permissions "${APP_DATA_DIR}/bitcoin/settings.json"
 
-# The app's own state: the settings the UI writes, including the pinned bitcoind
-# version that makes this a pre-RDTS node rather than an ordinary one. It ships
-# seeded, so it exists before the container ever runs and must be writable by the
+# The app's own state: the settings the UI writes. The companion ships it seeded,
+# so it can exist before the container ever runs, and it must be writable by the
 # app or the Settings page will appear to work and silently discard every save.
 if [[ -d "${APP_DATA_DIR}/app" ]]; then
 	chown -R "${DESIRED_OWNER}" "${APP_DATA_DIR}/app"
@@ -36,8 +35,8 @@ fi
 
 # BLOCK FILTER INDEX ON A PRUNED NODE.
 #
-# The UI defaults blockfilterindex on, which is right for the official app
-# because that one is archival by default. This app prunes by default, and
+# The UI defaults blockfilterindex on, which is right for an archival node. A
+# pruned node cannot build it (the companion prunes by default), and
 # bitcoind refuses to start when the index needs blocks that are already gone:
 #
 #   Index "basic block filter index" needs block data that has been pruned.
