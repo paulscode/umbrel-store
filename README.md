@@ -23,7 +23,8 @@ An [Umbrel](https://umbrel.com) community app store bringing together all of
 | [Knots (BLAKE2b) Companion](#knots-blake2b-companion) | A pruned Bitcoin Knots node following the BLAKE2b chain, alongside your existing node | none (self-contained) |
 | [Lightning Fork](#lightning-fork) | A Lightning Network node (LND fork) for the BLAKE2b chain, beside the official Lightning Node | Knots (BLAKE2b) Companion (or Bitcoin Knots 29.4.1+) |
 | [Datum (BLAKE2b) Companion](#datum-blake2b-companion) | Solo mine the BLAKE2b chain with a Sia-style ASIC you already own | Knots (BLAKE2b) Companion |
-| [Knots (SHA256) Companion](#knots-sha256-companion) | A Bitcoin Knots node that never enforces BIP-110, beside your existing one | none (self-contained) |
+| [Knots (SHA256)](#knots-sha256) | A full node running Bitcoin Knots SHA256: Knots' policy on Bitcoin Core 31.1, as your Bitcoin node | none (self-contained) |
+| [Knots (SHA256) Companion](#knots-sha256-companion) | The same node, pruned, beside your existing one | none (self-contained) |
 | [Datum (SHA256) Companion](#datum-sha256-companion) | Solo or pooled mining against that node, with your own block templates | Knots (SHA256) Companion |
 | [Electrs Liquid](#electrs-liquid) | A Liquid (`liquidv1`) full node bundled with an Electrum indexer | none (self-contained) |
 | [Electrs Pruned](#electrs-pruned) | An Electrum server that indexes from a pruned node, beside the official Electrs | Bitcoin Node |
@@ -200,38 +201,38 @@ free account) or as a GitHub issue.
 
 ---
 
+### Knots (SHA256)
+
 ### Knots (SHA256) Companion
 
 ### Datum (SHA256) Companion
 
-The same shape as the BLAKE2b pair above, for the other side of a different
-split. These follow the SHA256 chain, the one your existing Bitcoin app already
-follows. What makes the node different is what it does not do: Knots ships the
-BIP-110 softfork, known as RDTS, and this node never enforces it. If the network
-ever splits over BIP-110, this one stays on the side that does not require it.
+Bitcoin nodes and a mining gateway for the SHA256 chain, the one your existing
+Bitcoin app already follows. Both nodes run **Bitcoin Knots SHA256**: Bitcoin
+Knots' relay and mining policy, maintained on top of Bitcoin Core 31.1. They
+accept exactly the blocks Bitcoin Core accepts; what differs is policy (what the
+node relays and what goes into its block templates follows Knots' stricter
+defaults). They never enforce BIP-110 (RDTS), which the official Bitcoin Knots
+app's current releases do, so they stay on the chain Bitcoin Core follows.
+Releases, notes and source: https://github.com/paulscode/knots-sha256
 
-Install it alongside your existing node, not instead of it. Then you have one
-node that enforces BIP-110 and one that does not, at the same time, and you can
-point each app at whichever chain it should follow. If you only want one Bitcoin
-node, the official Bitcoin Knots app is the one to install.
+**Knots (SHA256)** is a full node to use as your Bitcoin node: apps that need one
+(Electrs, Lightning, mempool, Datum…) can select it, and it keeps the whole chain
+by default. **Knots (SHA256) Companion** is the same node, pruned, to run beside
+the node your other apps already use, with its own data, ports and settings.
 
-The node runs the same image the official Bitcoin Knots app runs, unmodified, so
-the dashboard, block and peer lists, connect modal, Advanced Settings and widgets
-are all the ones you already know. The whole difference is one setting: it is
-pinned to Bitcoin Knots **v29.3.knots20260507**, the last release before RDTS
-enforcement.
+Both run one image, the web interface the official Bitcoin Knots app runs with
+one bitcoind inside: the published Bitcoin Knots SHA256 release, built
+reproducibly and checked against the maintainer's signing key when the image is
+built (https://github.com/paulscode/umbrel-bitcoin-knots-sha256). So the
+dashboard, block and peer lists, connect modal, Advanced Settings and widgets are
+the ones you already know, and the Version setting has one entry.
 
-> **That pin is the point.** It is on the Version tab under Advanced Settings.
-> Changing it to a newer build makes this an ordinary enforcing node and removes
-> the reason to have installed it, which during a BIP-110 split means changing
-> which chain it follows. The pin is seeded on install only, so a later change to
-> it in this store will not reach an existing install.
-
-**The BIP110 warning in the logs is expected.** On every start the node logs
-"This version of Bitcoin Knots does not support the upcoming BIP110 (RDTS)
-network upgrade". That is not a fault. It is the build telling you exactly what
-you installed it for, and a node that did not print it would be the wrong node
-for this app.
+> **Companion users, from 1.1.0:** the node moves from Bitcoin Knots 29.3 to
+> Bitcoin Knots SHA256 31.1. Settings, pruning and the synced chain carry over;
+> the old Version pin is replaced by the one build. While pruning is on, block
+> filters are switched off when settings are saved, because a pruned node cannot
+> build that index.
 
 **Datum (SHA256) Companion** connects to it automatically on install and mines
 its chain. Unlike the BLAKE2b gateway, where no pool can validate a share, this
@@ -250,17 +251,19 @@ click the app icon and choose "Show default credentials". The username is
 mDNS resolver, so a `.local` pool address fails silently and the miner reports
 only that the pool is not ready.
 
-**Disk:** about 5 GB of blocks by default rather than the whole chain, plus the
-node's own data. Change it under Advanced Settings. The first sync downloads the
-chain from the network and takes a while: this node shares no data with your
-existing one, which is the cost of being able to run both at once.
+**Disk:** the full node keeps the whole chain, like the official Bitcoin app. The
+companion keeps about 5 GB of blocks by default, plus the node's own data; change
+it under Advanced Settings. The first sync downloads the chain from the network
+and takes a while: neither shares data with another node app.
 
-**Ports:** RPC on **19332**, P2P on **19333**, Stratum on **23338**, and the two
-app tiles on **7151** (node) and **7155** (gateway). These avoid the official
-Bitcoin Knots app's `9332`/`9333` and the official Datum app's `23334`, so every
-one of them can be installed on the same server.
+**Ports:** the full node uses RPC **39332**, P2P **39333** and its tile on
+**7152**; the companion RPC **19332**, P2P **19333** and tile **7151**; the
+gateway Stratum **23338** and tile **7155**. These avoid the official Bitcoin
+Knots app's `9332`/`9333` and the official Datum app's `23334`, so every one of
+them can be installed on the same server.
 
-- Source: https://github.com/paulscode/knots-prerdts-startos
+- Source: https://github.com/paulscode/knots-sha256
+- Source: https://github.com/paulscode/umbrel-bitcoin-knots-sha256
 - Source: https://github.com/paulscode/datum-sha256-startos
 
 ---
