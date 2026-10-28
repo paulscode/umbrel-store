@@ -228,7 +228,7 @@ built (https://github.com/paulscode/umbrel-bitcoin-knots-sha256). So the
 dashboard, block and peer lists, connect modal, Advanced Settings and widgets are
 the ones you already know, and the Version setting has one entry.
 
-> **Companion users, from 1.1.0:** the node moves from Bitcoin Knots 29.3 to
+> **Companion users, from 31.1.0:** the node moves from Bitcoin Knots 29.3 to
 > Bitcoin Knots SHA256 31.1. Settings, pruning and the synced chain carry over;
 > the old Version pin is replaced by the one build. While pruning is on, block
 > filters are switched off when settings are saved, because a pruned node cannot
