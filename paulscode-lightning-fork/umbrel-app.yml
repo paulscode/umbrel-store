@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.4-beta-blake2b.21.1.0"
+version: "0.21.4-beta-blake2b.21.1.1"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -83,7 +83,20 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  A security update: Lightning Fork is now built with Go 1.27.3, which stops
+  Security: Lightning Fork's nodes now listen on plain TCP instead of
+  Multipath TCP. A serious Linux kernel bug, CVE-2026-98432, has a published
+  attack that takes over a server through a Multipath TCP listener, and Go
+  programs such as LND listen that way by default. This closes that route. It
+  does not fix the kernel bug, which needs an umbrelOS update with a patched
+  kernel; until then, if your node accepts peer connections from the internet
+  rather than only through Tor, consider turning that off.
+
+
+  Also Tor 0.4.9.14, a security release of Tor.
+
+
+  From 0.21.4-beta-blake2b.21.1.0, if you are updating from an earlier
+  version: Lightning Fork is built with Go 1.27.3, which stops
   trusting a set of compromised certificate authority intermediates
   (CVE-2026-111943). Earlier builds still trusted them for the node's
   outbound HTTPS: fee estimates from a fee URL and, if you run the bridge,

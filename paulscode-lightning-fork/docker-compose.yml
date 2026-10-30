@@ -251,6 +251,17 @@ services:
       - "${APP_LIGHTNING_FORK_STATUS_DIR}:/status"
     environment:
       HOME: /data
+      # Plain TCP listeners instead of Multipath TCP, which Go 1.24 and later
+      # use by default. The published remote-root exploit for the kernel bug
+      # CVE-2026-98432 needs an MPTCP listener; this closes that route, not
+      # the kernel bug, which needs an umbrelOS kernel update. Two layers, so
+      # either one alone does it: GODEBUG for lnd itself, and the sysctl for
+      # anything else that opens a socket in this container's network
+      # namespace. GODEBUG replaces the image's own value rather than adding
+      # to it, so netdns=cgo, which the image sets, is carried over.
+      GODEBUG: netdns=cgo,multipathtcp=0
+    sysctls:
+      net.mptcp.enabled: 0
     networks:
       default:
         ipv4_address: $APP_LIGHTNING_FORK_NODE_IP
@@ -292,6 +303,11 @@ services:
       - "${APP_LIGHTNING_FORK_NODE_DATA_DIR}:/data/.lnd"
     environment:
       HOME: /data
+      # Plain TCP, as for Lightning Fork's lnd above. The stock image sets no
+      # GODEBUG of its own.
+      GODEBUG: multipathtcp=0
+    sysctls:
+      net.mptcp.enabled: 0
     networks:
       default:
         ipv4_address: $APP_LIGHTNING_FORK_SHA256_IP
