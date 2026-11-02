@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.4-beta-blake2b.21.2.0"
+version: "0.21.4-beta-blake2b.21.3.0"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -83,7 +83,19 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Fixes:
+  Coinbase maturity under Bitcoin Knots 29.4.3: bitcoins mined in block 979919
+  or later need 25920 confirmations (about 180 days) before a spend of them is
+  accepted, until RDTS expires in September 2027, while bitcoins mined before
+  keep 6480 (about 45 days). The wallet now offers and counts each mined output
+  by the rule its block falls under, and a channel funded by your own mined
+  output waits as long. Earlier versions would have offered an output from
+  block 979919 after 6480 confirmations, which upgraded nodes refuse to relay;
+  that could first happen at block 986399, so nothing has gone wrong yet. This
+  only concerns a wallet paid directly by mining. Nothing else changes.
+
+
+  From 0.21.4-beta-blake2b.21.2.0, if you are updating from an earlier
+  version: Fixes:
 
 
   - Recover channels in the dashboard works. In every earlier release LND
@@ -152,7 +164,7 @@ releaseNotes: >-
   app can't go back to an older version of Lightning Fork after that.
 
 
-  Lightning Fork 0.21.4-beta-blake2b.21.2, dashboard 1.3.2-blake2b.21.
+  Lightning Fork 0.21.4-beta-blake2b.21.3, dashboard 1.3.2-blake2b.21.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
