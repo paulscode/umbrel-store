@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.4-beta-blake2b.21.1.1"
+version: "0.21.4-beta-blake2b.21.2.0"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -83,7 +83,31 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Security: Lightning Fork's nodes now listen on plain TCP instead of
+  Fixes:
+
+
+  - Recover channels in the dashboard works. In every earlier release LND
+  refused every backup restored there as one from another chain.
+
+  - Apps that follow channel events (SubscribeChannelEvents) no longer have
+  their stream cut with "internal server error" at the first payment on a
+  channel, which started in 0.21.4-beta-blake2b.19.
+
+  - The bridge's SHA256 node no longer stops answering while it learns the
+  SHA256 Lightning network. It checked every public channel against the
+  SHA256 Bitcoin node one block at a time, which on a pruned node took hours,
+  and the bridge timed out waiting. It now takes channel announcements as
+  given, as phone wallets do, so a payment may occasionally try a channel
+  that has since closed and then route around it. Its own channels are
+  watched on chain as before.
+
+  - The SHA256 node runs LND 0.21.6, and Lightning Fork's own LND now turns
+  off Multipath TCP listeners itself (CVE-2026-98432), as the app already
+  did for both.
+
+
+  From 0.21.4-beta-blake2b.21.1.1, if you are updating from an earlier
+  version: Security: Lightning Fork's nodes now listen on plain TCP instead of
   Multipath TCP. A serious Linux kernel bug, CVE-2026-98432, has a published
   attack that takes over a server through a Multipath TCP listener, and Go
   programs such as LND listen that way by default. This closes that route. It
@@ -128,7 +152,7 @@ releaseNotes: >-
   app can't go back to an older version of Lightning Fork after that.
 
 
-  Lightning Fork 0.21.4-beta-blake2b.21.1, dashboard 1.3.2-blake2b.21.
+  Lightning Fork 0.21.4-beta-blake2b.21.2, dashboard 1.3.2-blake2b.21.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:

@@ -237,7 +237,7 @@ services:
   # and a wallet on the LAN agree.
   lnd:
     hostname: "${DEVICE_DOMAIN_NAME}" # Needed so LND can generate a valid cert
-    image: paulscode/lightning-fork:0.21.4-beta-blake2b.21.1@sha256:ddd976d192db5bd2cb5a82a3849512117b19e9d0ed6f3d4923171e577d122b30
+    image: paulscode/lightning-fork:0.21.4-beta-blake2b.21.2@sha256:056639e85cbe273bfa82843cd2f723748dc6eea31e405356e098df71173089eb
     command: "${APP_LIGHTNING_FORK_COMMAND}"
     user: 1000:1000
     restart: unless-stopped
@@ -292,8 +292,16 @@ services:
   # brings the onion back after Tor restarts) but practically never gives up
   # and stops the node watching its channels. Its options are this command
   # and the dashboard's file; it reads no lnd.conf of its own.
+  # routing.assumechanvalid takes the public graph's channels on their
+  # announcements' word, as neutrino nodes do, instead of a getblock per
+  # channel over its one RPC connection: on a pruned chain node a graph sync
+  # queued hundreds of those for hours, and the bridge's GetInfo timed out
+  # behind them. A closed channel leaves the graph after two weeks without
+  # updates instead. A made-up one can make a payment try a path that fails,
+  # or hold its HTLC until it times out, as a real channel can; it cannot take
+  # funds. Its own channels are still watched on chain.
   sha256-lnd:
-    image: lightninglabs/lnd:v0.21.4-beta@sha256:04d06edcc0f6e99a5e797ea34959f330add222226f840cd86afbc31f8f29627d
+    image: lightninglabs/lnd:v0.21.6-beta@sha256:54b3c87ad0bc3fea3fab8af23ace6421147ea97e6b56bf3911592d7853c185b8
     user: 1000:1000
     restart: unless-stopped
     # lnd closes its databases on the way out; Docker's ten seconds can cut
@@ -342,6 +350,7 @@ services:
           --tor.targetipaddress=${APP_LIGHTNING_FORK_SHA256_IP} \
           --healthcheck.torconnection.attempts=1000000 \
           --alias="Lightning Fork bridge (SHA256)" \
+          --routing.assumechanvalid \
           --wallet-unlock-password-file="$$pw" \
           --wallet-unlock-allow-create &
         lnd=$$!
