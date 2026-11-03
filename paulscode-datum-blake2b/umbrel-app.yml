@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-blake2b
 category: bitcoin
 name: Datum (BLAKE2b) Companion
-version: "1.2.4"
+version: "1.1.0.0"
 tagline: Mine the BLAKE2b chain with a Sia-style ASIC you already own
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -146,13 +146,25 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  The gateway is now built on CONVOY's current v0.5.0 beta and reports that
-  version, so Lazarus no longer lists it as out of date. Your payout settings,
-  the full pool payout list and BLAKE2b support are unchanged.
+  The dashboard no longer reports "DATUM pool ignored a valid block" when the
+  pool did nothing wrong. Two different conditions shared that alarm, and the
+  usual one was local: the gateway could not keep shares for its
+  anti-withholding check once an assignment had outlived 256 work updates.
+  That now shows as a warning for the assignment it affects and clears when the
+  pool discloses it, and the cause is fixed: work updates with the same
+  transactions share one cached template. A real ignored block still shows as
+  CRITICAL and now names the block and the time.
 
 
-  On the gateway's Config page, changing the Extranonce2 size is now marked as
-  needing a restart.
+  The version number changes from 1.2.4 to 1.1.0.0. It now follows the version
+  of the gateway build, the same as the StartOS package, so a gateway change
+  shows as a new version. Umbrel offers it as an update as usual.
+
+
+  IF YOU ARE UPDATING FROM 1.2.3 OR EARLIER, the notes from 1.2.4 also apply:
+  the gateway is built on CONVOY's v0.5.0 beta and reports that version, so
+  Lazarus no longer lists it as out of date, and on the gateway's Config page,
+  changing the Extranonce2 size is marked as needing a restart.
 
 
   IF YOU ARE UPDATING FROM 1.2.2 OR EARLIER, the notes from 1.2.3 also apply:

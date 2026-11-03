@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-pickhash
 category: bitcoin
 name: Pickhash
-version: "0.1.5.0"
+version: "0.1.5.1"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
   Pickhash rents SHA-256 (AsicBoost) or BLAKE2b hashrate from MiningRigRentals
@@ -80,6 +80,20 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
+  Settings now save. Changing a value on the Settings page and clicking Save
+  showed "Saved", but the old value was what got stored, so it came back as soon
+  as the page reloaded. This affected every setting on that page, including the
+  spend guardrails (max session budget, max daily spend, blended rate ceiling
+  and per-rig backstop), on both SHA256 and BLAKE2b. If you set guardrails there
+  before, check them after updating and save them again: until now Pickhash has
+  been using the defaults. A blended rate ceiling you change in Settings now
+  also stays when you start Autopilot, and clearing a number that cannot be
+  left empty, such as a budget, asks for a number instead of saving 0. The
+  endpoint, the API keys, the algorithm and the ceiling set from the Autopilot
+  preview all saved as before.
+
+
+  IF YOU ARE UPDATING FROM 0.1.4.x, the notes from 0.1.5.0 also apply:
   Autopilot no longer pays far over the market to fill a target. With few rigs
   listed, it used to fill the last gap with whatever was left, at many times the
   going rate. It now skips any rig priced more than double the market rate (the
