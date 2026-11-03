@@ -95,6 +95,36 @@ lightning_fork_mempool_add() {
   lightning_fork_mempool_apps="${lightning_fork_mempool_apps:+${lightning_fork_mempool_apps};}$1|$2|$3|$4|${onion}"
 }
 lightning_fork_mempool_add "kilombino-mempool" "Mempool Kilombino" "http://kilombino-mempool_web_1:8080" "7162" || true
+# An app not named above can offer itself, from any store, with a line
+#   export APP_<ID>_MEMPOOL_API="http://<host>:<port>"
+# in its own exports.sh (<ID> its app id in capitals, "-" as "_"), naming
+# its web UI on the app network. umbreld does not source that file here
+# (this app does not depend on it), and nothing of it runs: the line is
+# read with sed, and only that exact shape is taken. The name and the UI's
+# port come from its umbrel-app.yml, the same way. The dashboard still
+# asks it which chain it follows, and the operator still has to choose it.
+lightning_fork_mempool_offer() {
+  # the app's directory
+  local id var dir="$1" api name port
+  id="$(basename "${dir}")"
+  [[ "${id}" =~ ^[a-z0-9-]+$ ]] || return 0
+  if [[ "${id}" = "mempool" ]] || [[ "${id}" = "paulscode-mempool-pruned" ]]; then
+    return 0
+  fi
+  case ";${lightning_fork_mempool_apps};" in *";${id}|"*) return 0 ;; esac
+  var="APP_$(echo "${id}" | tr 'a-z-' 'A-Z_')_MEMPOOL_API"
+  api="$(sed -n "s#^export ${var}=\"\(http://[A-Za-z0-9._-]*:[0-9]\{1,5\}\)\"\$#\1#p" "${dir}/exports.sh" 2>/dev/null | head -n 1 || true)"
+  [[ -n "${api}" ]] || return 0
+  name="$(sed -n 's/^name: *"\{0,1\}\([A-Za-z0-9 ()._-]\{1,40\}\)"\{0,1\} *$/\1/p' "${dir}/umbrel-app.yml" 2>/dev/null | head -n 1 || true)"
+  port="$(sed -n 's/^port: *\([0-9]\{1,5\}\) *$/\1/p' "${dir}/umbrel-app.yml" 2>/dev/null | head -n 1 || true)"
+  lightning_fork_mempool_add "${id}" "${name:-${id}}" "${api}" "${port}"
+}
+for lightning_fork_dir in "${EXPORTS_APP_DIR:-/nonexistent}"/../*/; do
+  [[ -f "${lightning_fork_dir}exports.sh" ]] || continue
+  lightning_fork_mempool_offer "${lightning_fork_dir%/}" || true
+done
+unset -f lightning_fork_mempool_offer
+unset lightning_fork_dir
 export APP_LIGHTNING_FORK_MEMPOOL_APPS="${lightning_fork_mempool_apps}"
 unset -f lightning_fork_mempool_add
 unset lightning_fork_mempool_apps
