@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.17"
+version: "0.11.1.18"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
@@ -92,6 +92,22 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  Fixes indexing that stops a few hundred blocks after the BLAKE2b chain split
+  and never moves on, on a pruned Knots (BLAKE2b) node. Blocks your node has
+  already dropped are fetched from its peers by the proxy that runs inside this
+  app, and peers on Bitcoin Knots 29.4.3 ignore those requests from a client
+  that does not say it follows the BLAKE2b chain. The proxy did not say so. It
+  now does whenever your node does. An index that stopped resumes from where it
+  was after this update, with no reindex.
+
+
+  The version number changes form: 0.11.1.18 is electrs 0.11.1, release 18 of
+  this app. It follows 0.11.17.
+
+
+  FROM 0.11.17:
+
+
   Keeps indexing the BLAKE2b chain when Knots (BLAKE2b) moves to Bitcoin Knots
   29.4.3. That release stops serving blocks past the chain split to any peer
   that does not say it follows the BLAKE2b chain. This server did not say so, so

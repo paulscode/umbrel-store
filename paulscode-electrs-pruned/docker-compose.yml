@@ -126,10 +126,15 @@ services:
     # A single flight for peer fetches, so concurrent requests for the same pruned
     # block share one fetch rather than each going to the network.
     #
+    # The NODE_BLAKE2B service bit in its handshake with peers, whenever the node
+    # advertises it. Knots 29.4.3 silently ignores a peer without it for every
+    # block past the chain split, so v0.8.2-blake2b.1, which advertised nothing,
+    # could not fetch one pruned post-split block and indexing stopped.
+    #
     # This is the same image the StartOS package runs; the two lines were split
     # and are now one. Swap back to ghcr.io/start9labs/btc-rpc-proxy once #33 is
     # merged.
-    image: paulscode/btc-rpc-proxy:v0.8.2-blake2b.1@sha256:b5583a718747c360f9dc549fc0cc45c442799048a13d93ed5b8894939988c947
+    image: paulscode/btc-rpc-proxy:v0.8.2-blake2b.2@sha256:1ca61fbc93ae6218af026712b63cfd257c9a3b838adb14e57b571be8fc0fc3f2
     restart: on-failure
     environment:
       BITCOIND_HOST: ${APP_BITCOIN_NODE_IP}
