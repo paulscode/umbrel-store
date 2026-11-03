@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-pickhash
 category: bitcoin
 name: Pickhash
-version: "0.1.4.5"
+version: "0.1.5.0"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
   Pickhash rents SHA-256 (AsicBoost) or BLAKE2b hashrate from MiningRigRentals
@@ -80,14 +80,22 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
-  Moves to Node.js 24.22.1, which fixes security flaws in TLS hostname checks and
-  Brotli decompression. The image carries current CA certificates.
+  Autopilot no longer pays far over the market to fill a target. With few rigs
+  listed, it used to fill the last gap with whatever was left, at many times the
+  going rate. It now skips any rig priced more than double the market rate (the
+  lower of the recent last-10 price and the median listed price). You can change
+  the margin with "Max price over market" in Settings. The estimate shows the
+  limit in use, and a new warning alert tells you when the limit is what keeps
+  autopilot below target.
 
 
-  Saving a pool endpoint now correctly detects whether it honours a difficulty
-  request in the Stratum password. It could miss the reply on any DATUM Gateway,
-  and always reported BLAKE2b gateways as unsupported, so rented rigs there were
-  never given a difficulty suited to their size. An endpoint saved before this
-  update keeps its old result until you save it again.
+  A new converter in the header translates between SHA256 sats, BLAKE2b sats and
+  the fiat currency of your choice. BTCB2 is priced from Neoxa, and BTC from
+  CoinGecko with mempool.space as a fallback. Rates refresh every minute while
+  the converter is open, and it says plainly when a source is unavailable.
+
+
+  The rate-ceiling alert no longer clears and re-fires when the marketplace
+  cannot be reached for a tick.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
