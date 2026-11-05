@@ -28,7 +28,7 @@ set -euo pipefail
 # App image version: the Bitcoin Knots SHA256 base (31.1) plus this image's own
 # revision. The node release inside is set by KNOTS_SHA256_VERSION in the fork's
 # Dockerfile.
-VERSION="31.1.0"
+VERSION="31.2.0"
 IMAGE="paulscode/umbrel-bitcoin-knots-sha256:${VERSION}"
 PLATFORMS="linux/amd64,linux/arm64"
 

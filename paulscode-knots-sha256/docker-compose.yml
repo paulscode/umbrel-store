@@ -27,7 +27,7 @@ services:
   # the companion is seeded with it off, because it pairs with Datum (SHA256)
   # Companion instead.
   app:
-    image: paulscode/umbrel-bitcoin-knots-sha256:31.1.0@sha256:591647229a050a6f6c0a026a44514c7391bedbdd951a73d61d4511d7dbba17d6
+    image: paulscode/umbrel-bitcoin-knots-sha256:31.2.0@sha256:a03d24bae7ec8cef3e80d9b448fee0d7f77691c9cda6daf23a503d83c59528e9
     user: "1000:1000"
     restart: on-failure
     # bitcoind flushes its chainstate on shutdown, and a stop that does not wait

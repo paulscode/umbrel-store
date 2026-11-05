@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (SHA256) Companion
-version: "31.1.0"
+version: "31.2.0"
 tagline: A pruned Bitcoin Knots node for the SHA256 chain, to run beside your main one
 description: >-
   A Bitcoin Knots node on the SHA256 chain: the same chain your Bitcoin or
@@ -67,14 +67,15 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Moves the node to Bitcoin Knots SHA256 31.1 (31.1.knots-sha256.20261018), built
-  on Bitcoin Core 31.1, from Bitcoin Knots 29.3. It now runs the same image as the
-  Knots (SHA256) full-node app: one build, the published release, verified
-  against the maintainer's key. Your settings, pruning choice and chain carry
-  over; a Bitcoin Knots version chosen in the old Version setting is replaced by
-  this build. While pruning is on, block filters are switched off when settings
-  are saved instead of stopping the node. Release notes:
-  https://github.com/paulscode/knots-sha256/releases/tag/v31.1.knots-sha256.20261018
+  Bitcoin Knots SHA256 31.2 (31.2.knots-sha256.20261031), built on Bitcoin Core
+  31.2. New spam filters, on by default: data hidden in pushes that are dropped
+  right away (bare envelopes), fake public keys that carry data, and data in
+  script branches that can never run. Counterparty transactions are now rejected
+  along with other token transactions under "Reject tokens transactions". The
+  data carrier cost now also lowers a transaction's priority in block templates
+  and raises it for eviction, not only at admission to the mempool. Your
+  settings and chain carry over. Release notes:
+  https://github.com/paulscode/knots-sha256/releases/tag/v31.2.knots-sha256.20261031
 
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
