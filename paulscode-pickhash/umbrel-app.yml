@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-pickhash
 category: bitcoin
 name: Pickhash
-version: "0.1.5.1"
+version: "0.1.6.0"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
   Pickhash rents SHA-256 (AsicBoost) or BLAKE2b hashrate from MiningRigRentals
@@ -80,36 +80,31 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
-  Settings now save. Changing a value on the Settings page and clicking Save
-  showed "Saved", but the old value was what got stored, so it came back as soon
-  as the page reloaded. This affected every setting on that page, including the
-  spend guardrails (max session budget, max daily spend, blended rate ceiling
-  and per-rig backstop), on both SHA256 and BLAKE2b. If you set guardrails there
-  before, check them after updating and save them again: until now Pickhash has
-  been using the defaults. A blended rate ceiling you change in Settings now
-  also stays when you start Autopilot, and clearing a number that cannot be
-  left empty, such as a budget, asks for a number instead of saving 0. The
-  endpoint, the API keys, the algorithm and the ceiling set from the Autopilot
-  preview all saved as before.
+  You can now change your payout address in the middle of a session without
+  stopping it. In Pickhash, open Settings, Stratum endpoint, keep the host and
+  port, enter the new address in the worker field and click "Test & save
+  endpoint". In LIVE mode every running rental moves to the new address within
+  about a minute, and an alert confirms it. Then set the same address in your
+  Datum Gateway and restart it when convenient, ideally between sessions. Keep
+  the old wallet: shares already credited to it go on being paid for a while.
+  Full guide:
+  https://github.com/paulscode/pickhash/blob/main/docs/changing-payout-address.md
 
 
-  IF YOU ARE UPDATING FROM 0.1.4.x, the notes from 0.1.5.0 also apply:
-  Autopilot no longer pays far over the market to fill a target. With few rigs
-  listed, it used to fill the last gap with whatever was left, at many times the
-  going rate. It now skips any rig priced more than double the market rate (the
-  lower of the recent last-10 price and the median listed price). You can change
-  the margin with "Max price over market" in Settings. The estimate shows the
-  limit in use, and a new warning alert tells you when the limit is what keeps
-  autopilot below target.
+  A payout address with a typo is now refused when you save it. Datum Gateway
+  does not check usernames, so a mistyped address used to pass the endpoint test
+  and get credited with everything the rentals mined.
 
 
-  A new converter in the header translates between SHA256 sats, BLAKE2b sats and
-  the fiat currency of your choice. BTCB2 is priced from Neoxa, and BTC from
-  CoinGecko with mempool.space as a fallback. Rates refresh every minute while
-  the converter is open, and it says plainly when a source is unavailable.
+  Saving a new stratum host or port moves running rentals to it. Before, they
+  stayed on the old tunnel until they ended.
 
 
-  The rate-ceiling alert no longer clears and re-fires when the marketplace
-  cannot be reached for a tick.
+  The pool saved in your MiningRigRentals account is kept in step with your
+  endpoint, including after an automatic tunnel repair or a DuckDNS change.
+
+
+  Safer updates and restarts during a session: Pickhash now waits for a rental
+  purchase or extension already in progress to be recorded before it stops.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

@@ -8,8 +8,10 @@ services:
       APP_PORT: 3030
 
   web:
-    image: paulscode/pickhash:0.1.5.1@sha256:c1f7202e2e5c0a626b3d674632ec9fd2ce730a6525ac32115ea355392d154bcb
+    image: paulscode/pickhash:0.1.6.0@sha256:67efc1471d1f62603806f9855a57cc742a46f8b0a2355d22c18f76210fc3d2a1
     restart: on-failure
+    # Give an in-flight rental purchase or extension time to be recorded before the stop.
+    stop_grace_period: 60s
     environment:
       PORT: "3030"
       DATA_DIR: /root/data
