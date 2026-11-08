@@ -29,7 +29,7 @@ services:
     # `<tag>@sha256:<digest>`; a tag alone can be moved, and Umbrel will happily
     # pull whatever it points at on a later install. The digest goes in once the
     # image is published, because it does not exist until then.
-    image: paulscode/datum-blake2b:1.1.0.0@sha256:2c65c2e3a9b11fbbe3f596e5886d64e72653d9b2d3797f862425b9502e724034
+    image: paulscode/datum-blake2b:1.1.1.0@sha256:a28c3cb298330f8b39fc448a467fadde40b6124345d70f0104d0325d88cf0720
     entrypoint: ["/usr/local/bin/datum_gateway"]
     command: ["-c", "/app/conf/datum_gateway_config.json"]
     user: 1000:1000
