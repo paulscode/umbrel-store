@@ -23,8 +23,6 @@
 
 set -euo pipefail
 
-VERSION="1.6.1.0"
-IMAGE="paulscode/frigate-companion:${VERSION}"
 PLATFORMS="linux/amd64,linux/arm64"
 
 STARTOS_DIR="${FRIGATE_COMPANION_STARTOS_DIR:-/mnt/Black/knots-forks/frigate-sha256-companion-startos}"
@@ -36,10 +34,20 @@ if [[ ! -f "${STARTOS_DIR}/Dockerfile" ]] || [[ ! -d "${STARTOS_DIR}/patches" ]]
   exit 1
 fi
 
+# The package's own version (1.6.1:0 in startos/versions/current.ts is image 1.6.1.0), so the image
+# cannot be built or pushed under a version the package is not at.
+PKG_VERSION=$(sed -n "s/^ *version: '\([0-9.]*\):\([0-9]*\)',$/\1.\2/p" "${STARTOS_DIR}/startos/versions/current.ts" | head -1)
+[[ -n "${PKG_VERSION}" ]] || { echo "Error: could not read the version from ${STARTOS_DIR}/startos/versions/current.ts"; exit 1; }
+VERSION="${PKG_VERSION}"
+IMAGE="paulscode/frigate-companion:${VERSION}"
+
+# A multi-arch builder, named for this build only: `docker buildx use` would change the default for
+# every later docker build on this machine.
 BUILDER=$(docker buildx ls | grep -E '^\S+.*docker-container.*' | head -1 | awk '{gsub(/\*$/,"",$1); print $1}' || true)
+BUILDER_ARGS=()
 if [[ -n "${BUILDER}" ]]; then
   echo "Using buildx builder: ${BUILDER}"
-  docker buildx use "${BUILDER}"
+  BUILDER_ARGS=(--builder "${BUILDER}")
 fi
 
 if [[ "${1:-}" == "--push" ]]; then
@@ -61,7 +69,7 @@ else
 fi
 
 echo "Image: ${IMAGE}  Platforms: ${PLATFORMS}"
-docker buildx build \
+docker buildx build "${BUILDER_ARGS[@]}" \
   --platform "${PLATFORMS}" \
   --tag "${IMAGE}" \
   --output "${OUTPUT}" \
