@@ -26,7 +26,6 @@ An [Umbrel](https://umbrel.com) community app store bringing together all of
 | [Knots (SHA256)](#knots-sha256) | A full node running Bitcoin Knots SHA256: Knots' policy on Bitcoin Core 31.1, as your Bitcoin node | none (self-contained) |
 | [Knots (SHA256) Companion](#knots-sha256-companion) | The same node, pruned, beside your existing one | none (self-contained) |
 | [Datum (SHA256) Companion](#datum-sha256-companion) | Solo or pooled mining against that node, with your own block templates | Knots (SHA256) Companion |
-| [Electrs Liquid](#electrs-liquid) | A Liquid (`liquidv1`) full node bundled with an Electrum indexer | none (self-contained) |
 | [Electrs Pruned](#electrs-pruned) | An Electrum server that indexes from a pruned node, beside the official Electrs | Bitcoin Node |
 | [Fulcrum Pruned](#fulcrum-pruned) | A fast Electrum server that indexes from a pruned node, on the SHA256 or BLAKE2b chain | Bitcoin Node |
 | [HashGG](#hashgg) | Sovereign hash routing — exposes your Datum stratum port to the public internet | Datum (→ Bitcoin Knots) |
@@ -44,8 +43,8 @@ for AI agents to initiate payments within configured limits. It uses your
 installed Electrum indexer (Electrs **or** Fulcrum) for on-chain lookups, and an
 optional Mempool explorer (the official **Mempool**)
 for fee estimates and links. It also includes a BOLT 12 onion-message gateway and
-an optional, experimental Anonymize feature (with an optional Liquid hop that can
-use **Electrs Liquid** below).
+an optional, experimental Anonymize feature (with an optional Liquid hop through
+a Liquid Electrum server).
 
 > **The dashboard password and API keys spend real money.** Anyone holding
 > either can spend from the connected LND node up to its limits. Treat them like
@@ -266,32 +265,6 @@ them can be installed on the same server.
 - Source: https://github.com/paulscode/knots-sha256
 - Source: https://github.com/paulscode/umbrel-bitcoin-knots-sha256
 - Source: https://github.com/paulscode/datum-sha256-startos
-
----
-
-### Electrs Liquid
-
-Runs a Liquid full node (`elementsd`) and an Electrum indexer (`electrs`, built
-`--features liquid`) together in one app. Other apps and wallets can use the
-Electrum endpoint to query Liquid balances and transaction history and to
-broadcast transactions, without relying on external Liquid Electrum servers.
-
-> **Heavyweight.** Stores the full Liquid chain plus its address index
-> (~115 GB of disk) and uses ~14 GiB of RAM during the initial sync. It is meant
-> to run alongside other Bitcoin/Lightning services, so ≥32 GB of total RAM is
-> recommended. The first sync can take many hours. Self-contained: it does
-> **not** require the Bitcoin app.
-
-**Connecting:**
-
-- **Other Umbrel apps** can add `paulscode-electrs-liquid` as a dependency and
-  read `APP_ELECTRS_LIQUID_ELECTRS_NODE_IP` / `_NODE_PORT` (internal Electrum
-  port `50001`).
-- **Wallets on your LAN** can connect an Electrum-compatible Liquid wallet to
-  your Umbrel's address on port **50101** (mapped to the indexer's internal
-  `50001`; `50101` avoids colliding with the Bitcoin Electrs app's `50001`).
-
-- Source: https://github.com/paulscode/electrs-liquid-startos
 
 ---
 
