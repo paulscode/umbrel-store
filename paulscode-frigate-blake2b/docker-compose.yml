@@ -202,6 +202,8 @@ services:
           if [ -e /data/rebuild.request ]; then
             echo "frigate: rebuilding the Silent Payments index"
             rm -rf -- "$${FHOME:?}/db"
+            # the last indexed blocks' hashes, which the new index must not be checked against
+            rm -f -- "$${FHOME:?}/recentblocks"
             rm -f /data/rebuild.request
           fi
           # Frigate stops at once without the node's cookie (when the node exports no user and password).
@@ -220,8 +222,16 @@ services:
               CHANGED=1; kill -TERM "$$FPID" 2>/dev/null; break
             fi
           done
-          wait "$$FPID" 2>/dev/null; FPID=""
-          # A crash (a FATAL, the node going away) waits before retrying; a settings change does not.
+          wait "$$FPID" 2>/dev/null; RC=$$?; FPID=""
+          if [ "$$CHANGED" = 0 ] && [ "$$RC" = 3 ]; then
+            # 3: a stop restarting cannot fix (a block the index needs was pruned, or the index
+            # belongs to another chain). Wait for the page's Rebuild (or any settings change), so the
+            # FATAL line stays on the page instead of a restart every 30 seconds.
+            echo "frigate: stopped until the index is rebuilt (the app's page, Rebuild the index)"
+            while [ "$$(sig)" = "$$S" ] && [ ! -e /data/rebuild.request ]; do sleep 5; done
+            continue
+          fi
+          # A crash (the node going away, say) waits before retrying; a settings change does not.
           [ "$$CHANGED" = 1 ] || sleep 30
         done
     ports:
