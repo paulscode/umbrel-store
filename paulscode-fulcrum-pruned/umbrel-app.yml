@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-fulcrum-pruned
 category: bitcoin
 name: Fulcrum Pruned
-version: "2.1.4.0"
+version: "2.1.4.1"
 tagline: A fast Electrum server for a pruned node
 description: >-
   Fulcrum, the fast Electrum server, made to work with a pruned Bitcoin node, on
@@ -48,6 +48,11 @@ description: >-
   and a new one is built.
 
 
+  It speaks Electrum protocol 1.4 to 1.6 and 1.8, the version for 164-byte
+  BLAKE2b headers that Electrs Pruned uses, so a wallet or service that works with
+  Electrs Pruned works here too.
+
+
   PRIVACY
 
 
@@ -87,11 +92,10 @@ backupIgnore:
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
-  First release of Fulcrum Pruned: Fulcrum 2.1.4 for a pruned Bitcoin node, on the
-  SHA256 or the BLAKE2b chain. Blocks your node has dropped are fetched from the
-  network by the proxy inside this app, both while Fulcrum builds its index and
-  when a wallet looks up an old transaction. No transaction index is needed. The
-  first index takes several days against a node that has been pruned for a
-  while, and needs about 190 GB of disk.
+  Fulcrum Pruned now also speaks Electrum protocol 1.8, the version Electrs Pruned
+  uses on the BLAKE2b chain, so wallets and services that work with Electrs Pruned
+  work here too. Everything that connected before still connects. A wallet that
+  sends more lookups than the server can take at once no longer leaves part of its
+  request allowance used up until it reconnects. The index is kept: no rebuild.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

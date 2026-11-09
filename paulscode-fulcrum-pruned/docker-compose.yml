@@ -246,9 +246,10 @@ services:
   # image as the StartOS package. Umbrel has no settings form, so the config is
   # written here, from the variables Umbrel injects for whichever node it connected.
   server:
-    # Built by build/fulcrum-pruned/build-umbrel-images.sh from paulscode/fulcrum-pruned v2.1.4.0
-    # (the StartOS release's Dockerfile and patches); amd64 and arm64 both report 2146398+pruned.
-    image: paulscode/fulcrum-pruned:2.1.4.0@sha256:9e08d682199f41c39454efd8e7abc87c4883f6684095dfa2b72ce6aa080ccedd
+    # Built by build/fulcrum-pruned/build-umbrel-images.sh from paulscode/fulcrum-pruned v2.1.4.1
+    # (the StartOS release's Dockerfile and patches, protocol 1.8); amd64 and arm64 both report
+    # 2146398+pruned with protocol 1.4 to 1.8.
+    image: paulscode/fulcrum-pruned:2.1.4.1@sha256:3ebd1240a4077a625e4ca19214ac7c4842350795a97560a931069c3d42eb6491
     restart: always
     stop_grace_period: 5m
     depends_on:

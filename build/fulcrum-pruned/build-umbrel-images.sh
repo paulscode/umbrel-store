@@ -21,7 +21,7 @@
 
 set -euo pipefail
 
-VERSION="2.1.4.0"
+VERSION="2.1.4.1"
 IMAGE="paulscode/fulcrum-pruned:${VERSION}"
 PLATFORMS="linux/amd64,linux/arm64"
 
@@ -50,6 +50,17 @@ if [[ -n "${BUILDER}" ]]; then
 fi
 
 if [[ "${1:-}" == "--push" ]]; then
+  # The binary reports the submodule's commit, which is the same for every package release built on
+  # it, so it cannot say which patch series it carries. A pushed image must therefore come from the
+  # released package exactly: a clean checkout at the tag v${VERSION}.
+  if [[ -n "$(git -C "${STARTOS_DIR}" status --porcelain --ignore-submodules=none)" ]]; then
+    echo "Error: ${STARTOS_DIR} has uncommitted changes; push only from a clean checkout of v${VERSION}."
+    exit 1
+  fi
+  if [[ "$(git -C "${STARTOS_DIR}" describe --tags --exact-match 2>/dev/null)" != "v${VERSION}" ]]; then
+    echo "Error: ${STARTOS_DIR} is not at the tag v${VERSION} (release the package first, then check it out)."
+    exit 1
+  fi
   OUTPUT="type=registry"
   echo "Building and PUSHING multi-arch image to Docker Hub"
 else

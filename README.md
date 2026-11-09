@@ -367,7 +367,8 @@ node. Nothing is changed on your Bitcoin node, and an archival node works too.
 > I2P only is not supported.
 
 **Which chain.** It follows the node Umbrel connects it to. Its `server.features`
-reply carries a `blake2b_fork` entry on the BLAKE2b chain. If the node is switched
+reply carries a `blake2b_fork` entry on the BLAKE2b chain. It speaks Electrum protocol 1.4 to 1.6
+and 1.8, the version Electrs Pruned uses for BLAKE2b headers. If the node is switched
 to one on another chain, the index is deleted and built again; an unreadable index
 is too.
 
