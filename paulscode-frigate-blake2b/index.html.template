@@ -40,7 +40,7 @@
   <form id="form">
     <label for="startHeight">Index start height</label>
     <input id="startHeight" type="number" min="0" max="10000000" step="1">
-    <p class="hint">Silent Payments in earlier blocks are not found. The default is Taproot activation (709632). On a pruned node a new index starts at the oldest block the node still holds; a larger prune target reaches further back. Changing this rebuilds the index.</p>
+    <p class="hint">Silent Payments in earlier blocks are not found. The default is Taproot activation (709632). On a pruned node a new index starts a few blocks above the oldest block the node still holds; a larger prune target reaches further back. Changing this rebuilds the index.</p>
 
     <label for="lookBack">Look back for payments</label>
     <select id="lookBack">

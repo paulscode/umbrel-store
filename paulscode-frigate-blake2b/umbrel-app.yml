@@ -3,7 +3,7 @@ id: paulscode-frigate-blake2b
 category: bitcoin
 name: Frigate (BLAKE2b) Companion
 version: "1.6.1.0"
-tagline: Silent Payments Electrum server for the BLAKE2b chain
+tagline: Silent Payments Electrum server for the BLAKE2b chain, on a pruned node
 description: >-
   Frigate, from the Sparrow Wallet team, is an Electrum server that scans the chain
   for Silent Payments (BIP352) on your wallet's behalf, using ephemeral client keys
@@ -37,7 +37,9 @@ description: >-
   WHICH CHAIN
 
 
-  Frigate follows the Bitcoin node Umbrel connects it to. It is named for the BLAKE2b
+  Frigate follows the Bitcoin node Umbrel connects it to, which is the node its
+  Electrum server (Electrs Pruned or Fulcrum Pruned) follows: to follow a given node,
+  point the Electrum server at it. It is named for the BLAKE2b
   chain, the pairing it is meant for; Frigate (SHA256) Companion is its twin, so a
   server can run one for each chain. On the BLAKE2b chain, wallets must support
   Electrum protocol 1.8 (the Sparrow BLAKE2b build does).
@@ -64,6 +66,13 @@ path: ""
 backupIgnore:
   - data/frigate/db
   - data/frigate/frigate.log
+  - data/frigate/frigate.1.log
+  - data/frigate/frigate.2.log
+  - data/frigate/frigate.3.log
+  - data/frigate/testnet3/db
+  - data/frigate/testnet4/db
+  - data/frigate/signet/db
+  - data/frigate/regtest/db
   - data/frigate/cache
   - data/frigate/recentblocks
   - data/rebuild.request

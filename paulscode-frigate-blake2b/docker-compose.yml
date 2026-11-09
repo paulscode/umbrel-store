@@ -21,9 +21,9 @@ services:
     environment:
       ELECTRUM_PORT: "50501"
       BITCOIN_NETWORK: ${APP_BITCOIN_NETWORK:-mainnet}
-      # The chain this app is named for: the page warns when the node Umbrel connected is on the other
       # Frigate's address, to check its Electrum port directly rather than trust a status file a killed
-      # container cannot update
+      # container cannot update. EXPECTED_CHAIN: the chain this app is named for; the page warns when
+      # the node Umbrel connected is on the other.
       FRIGATE_HOST: $APP_FRIGATE_BLAKE2B_SERVER_IP
       EXPECTED_CHAIN: blake2b
     entrypoint: ["/bin/sh", "-c"]
@@ -241,7 +241,7 @@ services:
         /Waiting for sync to complete/ { progress = "Waiting for the node to finish syncing"; write() }
         /Electrum server listening/ { listening = 1; progress = ""; error = ""; write() }
         # Errors that stop Frigate without FATAL (the node unreachable, wrong credentials): shown until it is listening
-        / ERROR / && !/FATAL: / && !/Backfill/ { s = $$0; sub(/.* ERROR /, "", s); error = s; write() }
+        / ERROR / && !/FATAL: / && !/Backfill/ && !/Backend chain check/ { s = $$0; sub(/.* ERROR /, "", s); error = s; write() }
         /Node chain: BLAKE2b/ { chain = "blake2b"; write() }
         /Node chain: 80 byte/ { chain = "sha256"; write() }
         /FATAL: / { s = $$0; sub(/.*FATAL: /, "", s); fatal = s; write() }
@@ -249,7 +249,7 @@ services:
         /Backfill: (looking back to block|resuming at block)/ { if (match($$0, /looking back to block [0-9]+/)) lbtarget = substr($$0, RSTART + 22, RLENGTH - 22); lbprog = ""; lbwait = ""; lbnote = ""; write() }
         /Backfill progress: / { s = $$0; sub(/.*Backfill progress: /, "", s); lbprog = s; lbwait = ""; write() }
         /Backfill waiting: / { s = $$0; sub(/.*Backfill waiting: /, "", s); lbwait = s; if (lbtarget == "") lbnote = s; write() }
-        /Backfill could not start|Backfill stopped by an error/ { s = $$0; sub(/.*Backfill /, "", s); lbnote = s }
+        /Backfill could not start|Backfill stopped by an error/ { s = $$0; sub(/.*Backfill /, "", s); lbnote = s; write() }
         /Backfill complete: / { start = $$NF; lbtarget = ""; lbprog = ""; lbwait = ""; lbnote = ""; write() }
         /Backfill stopping|Backfill stopped by an error/ { lbtarget = ""; lbprog = ""; lbwait = ""; write() }
         /Backend chain check FAILED: / { s = $$0; sub(/.*FAILED: /, "", s); backend = "different"; detail = s; write() }
@@ -263,9 +263,14 @@ services:
           # taken before render: a change saved while a rebuild deletes the index is then seen
           S=$$(sig); CHANGED=0
           render
-          # frigate.log is Frigate's own unrotated copy of what Docker already captures: cap it
-          LOG=/root/.frigate/frigate.log
-          [ -f "$$LOG" ] && [ "$$(wc -c < "$$LOG")" -gt 52428800 ] && : > "$$LOG"
+          # Without an Electrum server address (a Fulcrum Pruned too old to stand in for Electrs Pruned),
+          # Frigate cannot serve wallets: say so on the page, and wait for the app to be updated.
+          case "$$BACKEND" in
+            :*|*:)
+              echo "frigate: no Electrum server address from Umbrel (update Electrs Pruned or Fulcrum Pruned)"
+              printf '{"start":null,"progress":"","fatal":"","error":"Umbrel gave no Electrum server address. Update Electrs Pruned or Fulcrum Pruned, then restart this app.","chain":"","backend":"unknown","backendDetail":"","listening":false,"lookback":"","pollErrorSince":0,"pollErrorAt":0,"at":%d}\n' "$$(date +%s)" > /data/status/server.json
+              sleep 60; continue ;;
+          esac
           if [ -e /data/rebuild.request ]; then
             echo "frigate: rebuilding the Silent Payments index"
             rm -rf -- "$${FHOME:?}/db"
