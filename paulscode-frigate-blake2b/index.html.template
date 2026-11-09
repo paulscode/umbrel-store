@@ -39,7 +39,7 @@
   <h2>Settings</h2>
   <form id="form">
     <label for="startHeight">Index start height</label>
-    <input id="startHeight" type="number" min="0" step="1">
+    <input id="startHeight" type="number" min="0" max="10000000" step="1">
     <p class="hint">Silent Payments in earlier blocks are not found. The default is Taproot activation (709632). On a pruned node a new index starts at the oldest block the node still holds; a larger prune target reaches further back. Changing this rebuilds the index.</p>
 
     <label for="lookBack">Look back for payments</label>
@@ -48,7 +48,7 @@
       <option value="taproot">Back to Taproot activation (block 709632)</option>
       <option value="custom">Back to the block below</option>
     </select>
-    <input id="lookBackHeight" type="number" min="0" step="1" placeholder="Block">
+    <input id="lookBackHeight" type="number" min="0" max="10000000" step="1" placeholder="Block">
     <p class="hint">Also find Silent Payments in blocks below where the index starts, which a pruned node has already discarded. Frigate fetches each of those blocks from the node's peers and checks it against the node, and looks up the coins their transactions spend through the Electrum server, checking each against its transaction id. It is done once and covers every wallet, wallets connected meanwhile are told what it finds, and changing this does not rebuild the index. It costs download traffic and time, roughly per 1,000 blocks: <span id="cost"></span>. Look back no further than your wallets need, for example to a wallet's birthday. Rebuilding the index with this on looks back again.</p>
 
     <label for="backfillSpeed">Look back speed</label>
@@ -63,7 +63,7 @@
     <p class="hint">Hardware for historical scans. On Umbrel this is the CPU: the app has no access to a GPU.</p>
 
     <label for="batchSize">Batch size</label>
-    <input id="batchSize" type="number" min="1" step="1">
+    <input id="batchSize" type="number" min="1" max="10000000" step="1">
     <p class="hint">Transactions per GPU dispatch. If scanning stalls on an older GPU, try 10,000 to 50,000.</p>
 
     <label><input id="rebuild" type="checkbox"> Rebuild the index</label>
@@ -75,7 +75,7 @@
 </div>
 
 <script>
-var loaded = false, split = null;
+var loaded = false, split = null, lastSaved = null;
 function el(id) { return document.getElementById(id); }
 function show(s) {
   el('addr').textContent = location.hostname;
@@ -83,14 +83,16 @@ function show(s) {
   var st = s.status, state = el('state');
   if (!st) { state.textContent = 'Frigate is starting.'; state.className = 'wait'; }
   else if (st.fatal) { state.textContent = 'Stopped: ' + st.fatal; state.className = 'bad'; }
+  else if (st.listening && st.nodeUnreachable) { state.textContent = 'Frigate cannot reach the Bitcoin node, so wallets see the chain as it was when it last could.'; state.className = 'bad'; }
   else if (st.listening) { state.textContent = 'Ready. Wallets can connect.'; state.className = 'ok'; }
-  else if (st.error) { state.textContent = 'Frigate stopped: ' + st.error + ' It retries every 30 seconds.'; state.className = 'bad'; }
   else if (st.progress) { state.textContent = 'Indexing: ' + st.progress + '. Wallets can connect once it has caught up.'; state.className = 'wait'; }
+  else if (st.error) { state.textContent = 'Frigate stopped: ' + st.error + ' It retries every 30 seconds.'; state.className = 'bad'; }
   else { state.textContent = 'Frigate is starting.'; state.className = 'wait'; }
   el('start').textContent = st && st.start !== null ? 'Silent Payments are indexed from block ' + st.start + '.' : '';
   el('lookback').textContent = st && st.lookback ? st.lookback + '.' : '';
   var b = el('backend');
   if (st && st.backend === 'same') { b.textContent = 'The Electrum server follows the same chain as the node.'; b.className = 'hint ok'; }
+  else if (st && st.backend === 'unknown' && st.backendDetail) { b.textContent = 'Frigate could not reach the Electrum server at its last check (every 10 minutes); wallets cannot be served until it can. ' + st.backendDetail; b.className = 'hint wait'; }
   else if (st && st.backend === 'different') { b.textContent = 'The Electrum server follows a different chain from the node, so wallets are refused. Connect both to the same node. ' + st.backendDetail; b.className = 'hint bad'; }
   else { b.textContent = 'The Electrum server is checked once the index has caught up.'; b.className = 'hint'; }
   var names = { sha256: 'SHA256', blake2b: 'BLAKE2b' }, c = el('chain');
@@ -106,6 +108,7 @@ function show(s) {
     el('cacheSize').value = s.settings.cacheSize;
     el('computeBackend').value = s.settings.computeBackend;
     el('batchSize').value = s.settings.batchSize;
+    lastSaved = s.settings;
     split = s.chainSplit;
     // Added only where there is a chain split to offer: a hidden option still shows in some browsers
     if (split !== null) {
@@ -132,12 +135,15 @@ el('form').addEventListener('submit', function (e) {
     from = parseInt(el('lookBackHeight').value, 10);
     if (isNaN(from)) { el('saved').textContent = 'Not saved: enter the block to look back to, or choose another option.'; return; }
   }
+  var newStart = parseInt(el('startHeight').value, 10);
+  if ((el('rebuild').checked || (lastSaved && newStart !== lastSaved.startHeight))
+      && !confirm('This deletes the Silent Payments index and builds it again' + (lb !== 'off' ? ', looking back again too' : '') + '. Continue?')) return;
   var body = { startHeight: parseInt(el('startHeight').value, 10), cacheSize: el('cacheSize').value,
                computeBackend: el('computeBackend').value, batchSize: parseInt(el('batchSize').value, 10), rebuild: el('rebuild').checked,
                backfillFromHeight: from, backfillSpeed: el('backfillSpeed').value };
   fetch('api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     .then(function (r) { return r.json(); })
-    .then(function (j) { el('saved').textContent = j.ok ? 'Saved. Frigate restarts within a few seconds.' : 'Not saved: ' + j.error; if (j.ok) el('rebuild').checked = false; refresh(); });
+    .then(function (j) { el('saved').textContent = j.ok ? 'Saved. Frigate restarts within a few seconds.' : 'Not saved: ' + j.error; if (j.ok) { el('rebuild').checked = false; lastSaved = body; } refresh(); });
 });
 refresh(); setInterval(refresh, 10000);
 </script>

@@ -22,12 +22,15 @@ services:
       ELECTRUM_PORT: "50501"
       BITCOIN_NETWORK: ${APP_BITCOIN_NETWORK:-mainnet}
       # The chain this app is named for: the page warns when the node Umbrel connected is on the other
+      # Frigate's address, to check its Electrum port directly rather than trust a status file a killed
+      # container cannot update
+      FRIGATE_HOST: $APP_FRIGATE_BLAKE2B_SERVER_IP
       EXPECTED_CHAIN: blake2b
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
         cat > /tmp/web.py <<'PY'
-        import json, os, http.server, socketserver
+        import json, os, socket, threading, time, http.server, socketserver
         DATA = '/data'
         SETTINGS = DATA + '/settings.json'
         MAINNET = os.environ.get('BITCOIN_NETWORK') in (None, '', 'mainnet', 'main', 'bitcoin')
@@ -45,12 +48,26 @@ services:
             except Exception:
                 pass
             return s
+        # Frigate reads these as 32-bit integers: anything near that is a typo, and would make it ignore its whole config
+        MAX_HEIGHT = 10000000
+        LOCK = threading.Lock()
+        def listening():
+            try:
+                socket.create_connection((os.environ.get('FRIGATE_HOST') or 'server', 50001), timeout=2).close()
+                return True
+            except OSError:
+                return False
         def status():
             try:
                 with open(DATA + '/status/server.json') as f:
-                    return json.load(f)
+                    st = json.load(f)
             except Exception:
                 return None
+            st['listening'] = listening()
+            now = time.time()
+            # the node unreachable for over two minutes, and still: Frigate serves the tip it had meanwhile
+            st['nodeUnreachable'] = bool(st.get('pollErrorAt')) and now - st['pollErrorAt'] < 60 and st['pollErrorAt'] - st.get('pollErrorSince', now) > 120
+            return st
         class H(http.server.BaseHTTPRequestHandler):
             def send(self, code, body, kind='application/json'):
                 b = body if isinstance(body, bytes) else json.dumps(body).encode()
@@ -95,14 +112,20 @@ services:
                     }
                     if new['backfillFromHeight'] is not None:
                         new['backfillFromHeight'] = int(new['backfillFromHeight'])
+                    if not (0 <= new['startHeight'] <= MAX_HEIGHT) or not (1 <= new['batchSize'] <= MAX_HEIGHT) \
+                            or (new['backfillFromHeight'] is not None and new['backfillFromHeight'] > MAX_HEIGHT):
+                        raise ValueError('a number is out of range (at most ' + str(MAX_HEIGHT) + ')')
                     if new['startHeight'] < 0 or new['batchSize'] < 1 or new['cacheSize'] not in CACHE or new['computeBackend'] not in COMPUTE \
                             or new['backfillSpeed'] not in SPEEDS or (new['backfillFromHeight'] is not None and new['backfillFromHeight'] < 0):
                         raise ValueError('a setting is out of range')
                 except Exception as e:
                     return self.send(400, {'error': str(e)})
-                with open(SETTINGS + '.tmp', 'w') as f:
-                    json.dump(new, f)
-                os.replace(SETTINGS + '.tmp', SETTINGS)
+                # one save at a time, each through its own temp file, so two at once cannot leave a half-written file
+                with LOCK:
+                    tmp = SETTINGS + '.' + str(threading.get_ident()) + '.tmp'
+                    with open(tmp, 'w') as f:
+                        json.dump(new, f)
+                    os.replace(tmp, SETTINGS)
                 # Frigate never moves an existing index's start, so a new start height means a new index.
                 if bool(req.get('rebuild')) or new['startHeight'] != old['startHeight']:
                     open(DATA + '/rebuild.request', 'w').close()
@@ -206,13 +229,15 @@ services:
           f = "/data/status/server.json.tmp"
           lookback = lbnote == "" ? "" : "Looking back for payments: " lbnote
           if (lbtarget != "") lookback = "Looking back to block " lbtarget (lbwait != "" ? " is waiting: " lbwait : (lbprog != "" ? ": " lbprog : ""))
-          printf "{\"start\":%s,\"progress\":\"%s\",\"fatal\":\"%s\",\"error\":\"%s\",\"chain\":\"%s\",\"backend\":\"%s\",\"backendDetail\":\"%s\",\"listening\":%s,\"lookback\":\"%s\",\"at\":%d}\n", (start == "" ? "null" : start), esc(progress), esc(fatal), esc(error), chain, backend, esc(detail), (listening ? "true" : "false"), esc(lookback), now() > f
+          printf "{\"pollErrorSince\":%d,\"pollErrorAt\":%d,\"start\":%s,\"progress\":\"%s\",\"fatal\":\"%s\",\"error\":\"%s\",\"chain\":\"%s\",\"backend\":\"%s\",\"backendDetail\":\"%s\",\"listening\":%s,\"lookback\":\"%s\",\"at\":%d}\n", pesince, peat, (start == "" ? "null" : start), esc(progress), esc(fatal), esc(error), chain, backend, esc(detail), (listening ? "true" : "false"), esc(lookback), now() > f
           close(f); system("mv /data/status/server.json.tmp /data/status/server.json")
         }
-        BEGIN { backend = "unknown"; listening = 0; write() }
+        BEGIN { backend = "unknown"; listening = 0; pesince = 0; peat = 0; write() }
         { print; fflush() }
         /Silent Payments index starts at block / { start = $$NF; write() }
-        /Indexing progress: / { sub(/.*Indexing progress: /, ""); progress = $$0; write() }
+        /Indexing progress: / { sub(/.*Indexing progress: /, ""); progress = $$0; error = ""; write() }
+        /Error polling Bitcoin Core/ { t = now(); if (pesince == 0 || t - peat > 60) pesince = t; peat = t; write() }
+        /Backend chain check could not run: / { s = $$0; sub(/.*could not run: /, "", s); backend = "unknown"; detail = s; write() }
         /Waiting for sync to complete/ { progress = "Waiting for the node to finish syncing"; write() }
         /Electrum server listening/ { listening = 1; progress = ""; error = ""; write() }
         # Errors that stop Frigate without FATAL (the node unreachable, wrong credentials): shown until it is listening
@@ -229,7 +254,7 @@ services:
         /Backfill stopping|Backfill stopped by an error/ { lbtarget = ""; lbprog = ""; lbwait = ""; write() }
         /Backend chain check FAILED: / { s = $$0; sub(/.*FAILED: /, "", s); backend = "different"; detail = s; write() }
         # Frigate has exited: not listening, whatever the last line said
-        END { listening = 0; write() }
+        END { listening = 0; progress = ""; write() }
         AWK
         sig() { cksum /data/settings.json 2>/dev/null; }
         FPID=""
