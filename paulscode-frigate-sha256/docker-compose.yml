@@ -1,0 +1,233 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: $APP_FRIGATE_SHA256_WEB_IP
+      APP_PORT: 80
+
+  # The app's page (behind app_proxy, so behind the Umbrel login): how to connect a wallet, how far
+  # the index has got, and the settings Umbrel has no form for. It writes data/settings.json (and
+  # data/rebuild.request); the server container watches both and restarts Frigate when they change,
+  # so no container needs the Docker socket. The page is `index.html.template` at the app root,
+  # because on an update umbreld copies only `docker-compose.yml *.template exports.sh torrc hooks`;
+  # it contains no `$`, so envsubst passes it through unchanged.
+  web:
+    image: python:3.12-alpine@sha256:e064671ca452259bab50e8e2c7bd896e39e9a343bb06ca25234adf6fe18d0fc7
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/index.html:/app/index.html:ro
+      - ${APP_DATA_DIR}/data:/data
+    environment:
+      ELECTRUM_PORT: "50401"
+      BITCOIN_NETWORK: ${APP_BITCOIN_NETWORK:-mainnet}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cat > /tmp/web.py <<'PY'
+        import json, os, http.server, socketserver
+        DATA = '/data'
+        SETTINGS = DATA + '/settings.json'
+        MAINNET = os.environ.get('BITCOIN_NETWORK') in (None, '', 'mainnet', 'main', 'bitcoin')
+        DEFAULTS = {'startHeight': 709632 if MAINNET else 0, 'cacheSize': '10M', 'computeBackend': 'AUTO', 'batchSize': 300000}
+        CACHE = ('1M', '5M', '10M', '20M', '50M')
+        COMPUTE = ('AUTO', 'GPU', 'CPU')
+        def settings():
+            s = dict(DEFAULTS)
+            try:
+                with open(SETTINGS) as f:
+                    s.update({k: v for k, v in json.load(f).items() if k in DEFAULTS})
+            except Exception:
+                pass
+            return s
+        def status():
+            try:
+                with open(DATA + '/status/server.json') as f:
+                    return json.load(f)
+            except Exception:
+                return None
+        class H(http.server.BaseHTTPRequestHandler):
+            def send(self, code, body, kind='application/json'):
+                b = body if isinstance(body, bytes) else json.dumps(body).encode()
+                self.send_response(code)
+                self.send_header('Content-Type', kind)
+                self.send_header('Cache-Control', 'no-store')
+                self.send_header('Content-Length', str(len(b)))
+                self.end_headers()
+                self.wfile.write(b)
+            def do_GET(self):
+                if self.path in ('/', '/index.html'):
+                    with open('/app/index.html', 'rb') as f:
+                        return self.send(200, f.read(), 'text/html; charset=utf-8')
+                if self.path == '/api/state':
+                    return self.send(200, {'settings': settings(), 'status': status(),
+                                           'rebuildPending': os.path.exists(DATA + '/rebuild.request'),
+                                           'electrumPort': os.environ.get('ELECTRUM_PORT')})
+                self.send(404, {'error': 'not found'})
+            def do_POST(self):
+                if self.path != '/api/settings':
+                    return self.send(404, {'error': 'not found'})
+                try:
+                    n = int(self.headers.get('Content-Length') or 0)
+                    if n > 4096:
+                        raise ValueError('request too large')
+                    req = json.loads(self.rfile.read(n) or b'{}')
+                    old = settings()
+                    new = {
+                        'startHeight': int(req.get('startHeight', old['startHeight'])),
+                        'cacheSize': str(req.get('cacheSize', old['cacheSize'])),
+                        'computeBackend': str(req.get('computeBackend', old['computeBackend'])),
+                        'batchSize': int(req.get('batchSize', old['batchSize'])),
+                    }
+                    if new['startHeight'] < 0 or new['batchSize'] < 1 or new['cacheSize'] not in CACHE or new['computeBackend'] not in COMPUTE:
+                        raise ValueError('a setting is out of range')
+                except Exception as e:
+                    return self.send(400, {'error': str(e)})
+                with open(SETTINGS + '.tmp', 'w') as f:
+                    json.dump(new, f)
+                os.replace(SETTINGS + '.tmp', SETTINGS)
+                # Frigate never moves an existing index's start, so a new start height means a new index.
+                if bool(req.get('rebuild')) or new['startHeight'] != old['startHeight']:
+                    open(DATA + '/rebuild.request', 'w').close()
+                self.send(200, {'ok': True})
+            def log_message(self, *a):
+                pass
+        socketserver.ThreadingTCPServer.allow_reuse_address = True
+        socketserver.ThreadingTCPServer(('0.0.0.0', 80), H).serve_forever()
+        PY
+        exec python3 -u /tmp/web.py
+    networks:
+      default:
+        ipv4_address: $APP_FRIGATE_SHA256_WEB_IP
+
+  # Frigate, the same image as the StartOS package (built from its Dockerfile and patches). Umbrel
+  # has no settings form, so the config is written here, from the variables Umbrel injects for the
+  # node and the Electrum server it connected, and from data/settings.json. A small supervisor runs
+  # Frigate and restarts it when the page changes a setting; Frigate never re-reads its config.
+  server:
+    # Built by build/frigate-companion/build-umbrel-images.sh. NOT YET PUSHED: replace this tag and
+    # digest with the pushed image's before release.
+    image: paulscode/frigate-companion:1.6.1.0
+    restart: always
+    stop_grace_period: 1m
+    environment:
+      BITCOIN_RPC_USER: ${APP_BITCOIN_RPC_USER}
+      BITCOIN_RPC_PASS: ${APP_BITCOIN_RPC_PASS}
+      BITCOIN_NETWORK: ${APP_BITCOIN_NETWORK:-mainnet}
+      NODE_IP: ${APP_BITCOIN_NODE_IP}
+      NODE_RPC_PORT: ${APP_BITCOIN_RPC_PORT}
+      NODE_ZMQ_SEQUENCE_PORT: ${APP_BITCOIN_ZMQ_SEQUENCE_PORT:-}
+      BACKEND: ${APP_ELECTRS_PRUNED_SERVER_IP}:${APP_ELECTRS_PRUNED_SERVER_PORT}
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+      - ${APP_DATA_DIR}/data/frigate:/root/.frigate
+      - ${APP_BITCOIN_DATA_DIR}:/bitcoin:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -u
+        # The network Frigate runs on, the subdirectory of its home it keeps that network's config and
+        # index in, and where the node keeps its cookie (mainnet at the datadir root).
+        case "$${BITCOIN_NETWORK:-mainnet}" in
+          mainnet|main|bitcoin|"") NET=mainnet; SUB=""; CSUB="" ;;
+          testnet|testnet3) NET=testnet; SUB=/testnet; CSUB=/testnet3 ;;
+          testnet4|signet|regtest) NET="$${BITCOIN_NETWORK}"; SUB="/$${BITCOIN_NETWORK}"; CSUB="/$${BITCOIN_NETWORK}" ;;
+          *) echo "frigate: unknown network $${BITCOIN_NETWORK}" >&2; sleep infinity ;;
+        esac
+        FHOME="/root/.frigate$${SUB}"
+        mkdir -p /data/status "$$FHOME"
+        get() { sed -n 's/.*"'"$$1"'": *"\{0,1\}\([^",}]*\).*/\1/p' /data/settings.json 2>/dev/null | head -1; }
+        toml() { printf '%s' "$$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'; }
+        render() {
+          # Default: Taproot activation on mainnet (Frigate's own default), the genesis block elsewhere.
+          DEFAULT_START=0; [ "$$NET" = mainnet ] && DEFAULT_START=709632
+          START=$$(get startHeight); case "$$START" in ''|*[!0-9]*) START=$$DEFAULT_START ;; esac
+          CACHE=$$(get cacheSize); case "$$CACHE" in 1M|5M|10M|20M|50M) ;; *) CACHE=10M ;; esac
+          COMPUTE=$$(get computeBackend); case "$$COMPUTE" in AUTO|GPU|CPU) ;; *) COMPUTE=AUTO ;; esac
+          BATCH=$$(get batchSize); case "$$BATCH" in ''|*[!0-9]*|0) BATCH=300000 ;; esac
+          if [ -n "$${BITCOIN_RPC_USER:-}" ]; then
+            AUTH="authType = \"USERPASS\"
+        auth = \"$$(toml "$$BITCOIN_RPC_USER:$$BITCOIN_RPC_PASS")\""
+          else
+            AUTH='authType = "COOKIE"'
+          fi
+          ZMQ=""
+          [ -n "$${NODE_ZMQ_SEQUENCE_PORT:-}" ] && ZMQ="zmqSequenceEndpoint = \"tcp://$${NODE_IP}:$${NODE_ZMQ_SEQUENCE_PORT}\""
+          umask 077
+          cat > "$$FHOME/config.toml" <<TOML
+        [core]
+        connect = true
+        server = "http://$${NODE_IP}:$${NODE_RPC_PORT}"
+        $$AUTH
+        dataDir = "/bitcoin"
+        $$ZMQ
+
+        [index]
+        startHeight = $$START
+        cacheSize = "$$CACHE"
+
+        [scan]
+        computeBackend = "$$COMPUTE"
+        batchSize = $$BATCH
+
+        [server]
+        tcp = "tcp://0.0.0.0:50001"
+        backendElectrumServer = "tcp://$${BACKEND}"
+        TOML
+        }
+        # What Frigate's log says, for the app's page, as data/status/server.json.
+        cat > /tmp/status.awk <<'AWK'
+        function esc(s) { gsub(/[\\"]/, "", s); return substr(s, 1, 300) }
+        function now(   t, c) { c = "date +%s"; c | getline t; close(c); return t + 0 }
+        function write() {
+          f = "/data/status/server.json.tmp"
+          printf "{\"start\":%s,\"progress\":\"%s\",\"fatal\":\"%s\",\"backend\":\"%s\",\"backendDetail\":\"%s\",\"listening\":%s,\"at\":%d}\n", (start == "" ? "null" : start), esc(progress), esc(fatal), backend, esc(detail), (listening ? "true" : "false"), now() > f
+          close(f); system("mv /data/status/server.json.tmp /data/status/server.json")
+        }
+        BEGIN { backend = "unknown"; listening = 0; write() }
+        { print; fflush() }
+        /Silent Payments index starts at block / { start = $$NF; write() }
+        /Indexing progress: / { sub(/.*Indexing progress: /, ""); progress = $$0; write() }
+        /Waiting for sync to complete/ { progress = "Waiting for the node to finish syncing"; write() }
+        /Electrum server listening/ { listening = 1; progress = ""; write() }
+        /FATAL: / { s = $$0; sub(/.*FATAL: /, "", s); fatal = s; write() }
+        /Backend chain check: the Electrum backend follows/ { backend = "same"; detail = ""; write() }
+        /Backend chain check FAILED: / { s = $$0; sub(/.*FAILED: /, "", s); backend = "different"; detail = s; write() }
+        AWK
+        sig() { cksum /data/settings.json 2>/dev/null; }
+        FPID=""
+        trap '[ -n "$$FPID" ] && kill -TERM "$$FPID" 2>/dev/null; wait; exit 0' TERM INT
+        while true; do
+          render
+          if [ -e /data/rebuild.request ]; then
+            echo "frigate: rebuilding the Silent Payments index"
+            rm -rf -- "$${FHOME:?}/db"
+            rm -f /data/rebuild.request
+          fi
+          # Frigate stops at once without the node's cookie (when the node exports no user and password).
+          if [ -z "$${BITCOIN_RPC_USER:-}" ]; then
+            for i in $$(seq 1 300); do [ -r "/bitcoin$${CSUB}/.cookie" ] && break; sleep 1; done
+          fi
+          # -W interactive: the image's awk is mawk, which otherwise reads a pipe in large blocks and
+          # sees Frigate's lines only once a block fills.
+          /opt/frigate/bin/frigate -n "$$NET" > >(awk -W interactive -f /tmp/status.awk) 2>&1 &
+          FPID=$$!
+          S=$$(sig); CHANGED=0
+          while kill -0 "$$FPID" 2>/dev/null; do
+            sleep 5
+            if [ "$$(sig)" != "$$S" ] || [ -e /data/rebuild.request ]; then
+              echo "frigate: settings changed; restarting Frigate"
+              CHANGED=1; kill -TERM "$$FPID" 2>/dev/null; break
+            fi
+          done
+          wait "$$FPID" 2>/dev/null; FPID=""
+          # A crash (a FATAL, the node going away) waits before retrying; a settings change does not.
+          [ "$$CHANGED" = 1 ] || sleep 30
+        done
+    ports:
+      # 50401: clear of the official Electrs (50001) and Fulcrum (50002) apps, of Electrs Pruned
+      # (50201), Fulcrum Pruned (50301) and the BLAKE2b Frigate companion (50501).
+      - "50401:50001"
+    networks:
+      default:
+        ipv4_address: $APP_FRIGATE_SHA256_SERVER_IP

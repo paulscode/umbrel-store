@@ -1,5 +1,9 @@
 manifestVersion: 1.1
 id: paulscode-fulcrum-pruned
+# Can stand in for Electrs Pruned, so an app that depends on it (the Frigate companions) can use
+# either pruned indexer from Umbrel's own picker. exports.sh fills Electrs Pruned's names.
+implements:
+  - paulscode-electrs-pruned
 category: bitcoin
 name: Fulcrum Pruned
 version: "2.1.4.1"

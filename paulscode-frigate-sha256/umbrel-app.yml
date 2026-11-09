@@ -1,0 +1,69 @@
+manifestVersion: 1.1
+id: paulscode-frigate-sha256
+category: bitcoin
+name: Frigate (SHA256) Companion
+version: "1.6.1.0"
+tagline: Silent Payments Electrum server for the SHA256 chain, on a pruned node
+description: >-
+  Frigate, from the Sparrow Wallet team, is an Electrum server that scans the chain
+  for Silent Payments (BIP352) on your wallet's behalf, using ephemeral client keys
+  so the server never learns which payments are yours. This companion runs on a
+  pruned Bitcoin node and needs no transaction index. It is not the Frigate camera
+  recorder (NVR) in Umbrel's own store.
+
+
+  HOW IT WORKS
+
+
+  Frigate reads blocks and the mempool from your Bitcoin node and keeps an index of
+  Silent Payments tweaks. Ordinary wallet requests, address lookups included, go to
+  an Electrum server: Electrs Pruned (or Fulcrum Pruned, which can stand in for it),
+  following the same node. Frigate checks that the two agree on the chain, and
+  refuses wallets while they do not.
+
+
+  HOW FAR BACK
+
+
+  On a pruned node the index starts at the oldest block the node still holds: a
+  pruned node has discarded what Frigate needs for older blocks. A larger prune
+  target reaches further back. On an archival node it starts at Taproot activation
+  (block 709632). Set a different start, or rebuild the index, on the app's page.
+
+
+  WHICH CHAIN
+
+
+  Frigate follows the Bitcoin node Umbrel connects it to. It is named for the SHA256
+  chain, the pairing it is meant for; Frigate (BLAKE2b) Companion is its twin, so a
+  server can run one for each chain. On the BLAKE2b chain, wallets must support
+  Electrum protocol 1.8 (the Sparrow BLAKE2b build does).
+
+
+  CONNECTING
+
+
+  Point a Silent Payments wallet at your Umbrel's address on port 50401 (TCP).
+developer: Paul Lamb
+website: https://github.com/sparrowwallet/frigate
+dependencies:
+  - bitcoin
+  - paulscode-electrs-pruned
+repo: https://github.com/paulscode/frigate-sha256-companion-startos
+support: https://paulscode.com/c/bitcoin/8
+port: 3038
+# Community stores must supply full URLs for icon and gallery: Umbrel's resolver only
+# auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-frigate-sha256/icon.png
+gallery: []
+path: ""
+# The Silent Payments index is rebuilt from the node, so backups leave it out.
+backupIgnore:
+  - data/frigate/db
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: >-
+  First release: Frigate 1.6.1 for a pruned node, on the SHA256 or the BLAKE2b
+  chain, with Electrs Pruned (or Fulcrum Pruned) as its Electrum server.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store

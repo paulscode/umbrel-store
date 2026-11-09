@@ -18,3 +18,14 @@ export APP_FULCRUM_PRUNED_SERVER_PORT="50001"
 # The block-fetching proxy's RPC port: a bitcoind-compatible endpoint that also
 # answers for blocks the node has dropped.
 export APP_FULCRUM_PRUNED_PROXY_PORT="8332"
+
+# Offered as an implementation of paulscode-electrs-pruned (umbrel-app.yml), so an app depending on
+# Electrs Pruned can select this server instead. It serves the same Electrum protocol versions,
+# 1.8 on the BLAKE2b chain included, and has a block-fetching proxy at the same kind of address.
+# `:=`, not plain assignment: when the user selected Electrs Pruned itself, its exports are the
+# ones that count, and these fill only what is still unset.
+for var in SERVER_IP SERVER_PORT PROXY_IP PROXY_PORT WEB_IP; do
+    electrs_var="APP_ELECTRS_PRUNED_${var}"
+    fulcrum_var="APP_FULCRUM_PRUNED_${var}"
+    export "$electrs_var"="${!electrs_var:=${!fulcrum_var}}"
+done
