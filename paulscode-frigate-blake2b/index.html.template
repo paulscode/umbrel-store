@@ -30,6 +30,7 @@
   <h2>Status</h2>
   <p id="state">Loading...</p>
   <p id="start" class="hint"></p>
+  <p id="lookback" class="hint"></p>
   <p id="backend" class="hint"></p>
 </div>
 
@@ -39,6 +40,20 @@
     <label for="startHeight">Index start height</label>
     <input id="startHeight" type="number" min="0" step="1">
     <p class="hint">Silent Payments in earlier blocks are not found. The default is Taproot activation (709632). On a pruned node a new index starts at the oldest block the node still holds; a larger prune target reaches further back. Changing this rebuilds the index.</p>
+
+    <label for="lookBack">Look back for payments</label>
+    <select id="lookBack">
+      <option value="off">Off (default)</option>
+      <option value="split" id="splitOption" hidden>Back to the chain split</option>
+      <option value="taproot">Back to Taproot activation (block 709632)</option>
+      <option value="custom">Back to the block below</option>
+    </select>
+    <input id="lookBackHeight" type="number" min="0" step="1" placeholder="Block">
+    <p class="hint">Also find Silent Payments in blocks below where the index starts, which a pruned node has already discarded. Frigate fetches each of those blocks from the node's peers, and the coins their transactions spend through the Electrum server, and checks both against the node. It is done once for every wallet, wallets connected meanwhile are told what it finds, and changing this does not rebuild the index. It costs download traffic and time, roughly per 1,000 blocks: <span id="cost"></span>. Choose the oldest block your wallets need, for example a wallet's birthday.</p>
+
+    <label for="backfillSpeed">Look back speed</label>
+    <select id="backfillSpeed"><option value="background">Background (default)</option><option value="full">Full speed</option></select>
+    <p class="hint">Background keeps a light load on the Electrum server, the network and this Umbrel. Full speed is several times faster. The download traffic is the same either way.</p>
 
     <label for="cacheSize">ScriptPubKey cache</label>
     <select id="cacheSize"><option>1M</option><option>5M</option><option value="10M">10M (default, about 4 GB of RAM)</option><option>20M</option><option>50M</option></select>
@@ -60,7 +75,7 @@
 </div>
 
 <script>
-var loaded = false;
+var loaded = false, split = null;
 function el(id) { return document.getElementById(id); }
 function show(s) {
   el('addr').textContent = location.hostname;
@@ -72,6 +87,7 @@ function show(s) {
   else if (st.progress) { state.textContent = 'Indexing: ' + st.progress + '. Wallets can connect once it has caught up.'; state.className = 'wait'; }
   else { state.textContent = 'Frigate is starting.'; state.className = 'wait'; }
   el('start').textContent = st && st.start !== null ? 'Silent Payments are indexed from block ' + st.start + '.' : '';
+  el('lookback').textContent = st && st.lookback ? st.lookback + '.' : '';
   var b = el('backend');
   if (st && st.backend === 'same') { b.textContent = 'The Electrum server follows the same chain as the node.'; b.className = 'hint ok'; }
   else if (st && st.backend === 'different') { b.textContent = 'The Electrum server follows a different chain from the node, so wallets are refused. Connect both to the same node. ' + st.backendDetail; b.className = 'hint bad'; }
@@ -82,14 +98,31 @@ function show(s) {
     el('cacheSize').value = s.settings.cacheSize;
     el('computeBackend').value = s.settings.computeBackend;
     el('batchSize').value = s.settings.batchSize;
+    split = s.chainSplit;
+    if (split !== null) { el('splitOption').hidden = false; el('splitOption').textContent = 'Back to the chain split (block ' + split + ')'; }
+    el('cost').textContent = split !== null
+      ? 'about 30 to 80 GB of downloads, and 4 to 10 hours at full speed or 15 to 40 hours in the background'
+      : 'about 40 to 95 GB of downloads, and 5 to 12 hours at full speed or 1 to 2 days in the background';
+    var h = s.settings.backfillFromHeight;
+    el('lookBack').value = h === null ? 'off' : (split !== null && h === split) ? 'split' : h === 709632 ? 'taproot' : 'custom';
+    el('lookBackHeight').value = el('lookBack').value === 'custom' ? h : '';
+    el('backfillSpeed').value = s.settings.backfillSpeed;
     loaded = true;
   }
 }
 function refresh() { fetch('api/state').then(function (r) { return r.json(); }).then(show).catch(function () {}); }
 el('form').addEventListener('submit', function (e) {
   e.preventDefault();
+  var lb = el('lookBack').value, from = null;
+  if (lb === 'split') from = split;
+  else if (lb === 'taproot') from = 709632;
+  else if (lb === 'custom') {
+    from = parseInt(el('lookBackHeight').value, 10);
+    if (isNaN(from)) { el('saved').textContent = 'Not saved: enter the block to look back to, or choose another option.'; return; }
+  }
   var body = { startHeight: parseInt(el('startHeight').value, 10), cacheSize: el('cacheSize').value,
-               computeBackend: el('computeBackend').value, batchSize: parseInt(el('batchSize').value, 10), rebuild: el('rebuild').checked };
+               computeBackend: el('computeBackend').value, batchSize: parseInt(el('batchSize').value, 10), rebuild: el('rebuild').checked,
+               backfillFromHeight: from, backfillSpeed: el('backfillSpeed').value };
   fetch('api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     .then(function (r) { return r.json(); })
     .then(function (j) { el('saved').textContent = j.ok ? 'Saved. Frigate restarts within a few seconds.' : 'Not saved: ' + j.error; el('rebuild').checked = false; refresh(); });

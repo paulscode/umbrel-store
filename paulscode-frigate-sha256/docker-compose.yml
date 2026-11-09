@@ -21,6 +21,8 @@ services:
     environment:
       ELECTRUM_PORT: "50401"
       BITCOIN_NETWORK: ${APP_BITCOIN_NETWORK:-mainnet}
+      # Offered on the page as "Look back to the chain split"; empty for none
+      CHAIN_SPLIT: ""
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -29,9 +31,11 @@ services:
         DATA = '/data'
         SETTINGS = DATA + '/settings.json'
         MAINNET = os.environ.get('BITCOIN_NETWORK') in (None, '', 'mainnet', 'main', 'bitcoin')
-        DEFAULTS = {'startHeight': 709632 if MAINNET else 0, 'cacheSize': '10M', 'computeBackend': 'AUTO', 'batchSize': 300000}
+        DEFAULTS = {'startHeight': 709632 if MAINNET else 0, 'cacheSize': '10M', 'computeBackend': 'AUTO', 'batchSize': 300000,
+                    'backfillFromHeight': None, 'backfillSpeed': 'background'}
         CACHE = ('1M', '5M', '10M', '20M', '50M')
         COMPUTE = ('AUTO', 'GPU', 'CPU')
+        SPEEDS = ('background', 'full')
         def settings():
             s = dict(DEFAULTS)
             try:
@@ -62,7 +66,8 @@ services:
                 if self.path == '/api/state':
                     return self.send(200, {'settings': settings(), 'status': status(),
                                            'rebuildPending': os.path.exists(DATA + '/rebuild.request'),
-                                           'electrumPort': os.environ.get('ELECTRUM_PORT')})
+                                           'electrumPort': os.environ.get('ELECTRUM_PORT'),
+                                           'chainSplit': int(os.environ['CHAIN_SPLIT']) if os.environ.get('CHAIN_SPLIT') else None})
                 self.send(404, {'error': 'not found'})
             def do_POST(self):
                 if self.path != '/api/settings':
@@ -78,8 +83,14 @@ services:
                         'cacheSize': str(req.get('cacheSize', old['cacheSize'])),
                         'computeBackend': str(req.get('computeBackend', old['computeBackend'])),
                         'batchSize': int(req.get('batchSize', old['batchSize'])),
+                        # Look back for payments: null is off. Changing it does not rebuild the index.
+                        'backfillFromHeight': req['backfillFromHeight'] if 'backfillFromHeight' in req else old['backfillFromHeight'],
+                        'backfillSpeed': str(req.get('backfillSpeed', old['backfillSpeed'])),
                     }
-                    if new['startHeight'] < 0 or new['batchSize'] < 1 or new['cacheSize'] not in CACHE or new['computeBackend'] not in COMPUTE:
+                    if new['backfillFromHeight'] is not None:
+                        new['backfillFromHeight'] = int(new['backfillFromHeight'])
+                    if new['startHeight'] < 0 or new['batchSize'] < 1 or new['cacheSize'] not in CACHE or new['computeBackend'] not in COMPUTE \
+                            or new['backfillSpeed'] not in SPEEDS or (new['backfillFromHeight'] is not None and new['backfillFromHeight'] < 0):
                         raise ValueError('a setting is out of range')
                 except Exception as e:
                     return self.send(400, {'error': str(e)})
@@ -145,6 +156,9 @@ services:
           CACHE=$$(get cacheSize); case "$$CACHE" in 1M|5M|10M|20M|50M) ;; *) CACHE=10M ;; esac
           COMPUTE=$$(get computeBackend); case "$$COMPUTE" in AUTO|GPU|CPU) ;; *) COMPUTE=AUTO ;; esac
           BATCH=$$(get batchSize); case "$$BATCH" in ''|*[!0-9]*|0) BATCH=300000 ;; esac
+          # Look back for payments: a block, or null (off), which leaves the key out
+          BACKFILL=$$(get backfillFromHeight); case "$$BACKFILL" in ''|*[!0-9]*) BACKFILL="" ;; *) BACKFILL="backfillFromHeight = $$BACKFILL" ;; esac
+          SPEED=$$(get backfillSpeed); case "$$SPEED" in full) ;; *) SPEED=background ;; esac
           if [ -n "$${BITCOIN_RPC_USER:-}" ]; then
             AUTH="authType = \"USERPASS\"
         auth = \"$$(toml "$$BITCOIN_RPC_USER:$$BITCOIN_RPC_PASS")\""
@@ -165,6 +179,8 @@ services:
         [index]
         startHeight = $$START
         cacheSize = "$$CACHE"
+        $$BACKFILL
+        backfillSpeed = "$$SPEED"
 
         [scan]
         computeBackend = "$$COMPUTE"
@@ -181,7 +197,9 @@ services:
         function now(   t, c) { c = "date +%s"; c | getline t; close(c); return t + 0 }
         function write() {
           f = "/data/status/server.json.tmp"
-          printf "{\"start\":%s,\"progress\":\"%s\",\"fatal\":\"%s\",\"backend\":\"%s\",\"backendDetail\":\"%s\",\"listening\":%s,\"at\":%d}\n", (start == "" ? "null" : start), esc(progress), esc(fatal), backend, esc(detail), (listening ? "true" : "false"), now() > f
+          lookback = ""
+          if (lbtarget != "") lookback = "Looking back to block " lbtarget (lbwait != "" ? " is waiting: " lbwait : (lbprog != "" ? ": " lbprog : ""))
+          printf "{\"start\":%s,\"progress\":\"%s\",\"fatal\":\"%s\",\"backend\":\"%s\",\"backendDetail\":\"%s\",\"listening\":%s,\"lookback\":\"%s\",\"at\":%d}\n", (start == "" ? "null" : start), esc(progress), esc(fatal), backend, esc(detail), (listening ? "true" : "false"), esc(lookback), now() > f
           close(f); system("mv /data/status/server.json.tmp /data/status/server.json")
         }
         BEGIN { backend = "unknown"; listening = 0; write() }
@@ -192,6 +210,11 @@ services:
         /Electrum server listening/ { listening = 1; progress = ""; write() }
         /FATAL: / { s = $$0; sub(/.*FATAL: /, "", s); fatal = s; write() }
         /Backend chain check: the Electrum backend follows/ { backend = "same"; detail = ""; write() }
+        /Backfill: (looking back to block|resuming at block)/ { if (match($$0, /looking back to block [0-9]+/)) lbtarget = substr($$0, RSTART + 22, RLENGTH - 22); lbprog = ""; lbwait = ""; write() }
+        /Backfill progress: / { s = $$0; sub(/.*Backfill progress: /, "", s); lbprog = s; lbwait = ""; write() }
+        /Backfill waiting: / { s = $$0; sub(/.*Backfill waiting: /, "", s); lbwait = s; write() }
+        /Backfill complete: / { start = $$NF; lbtarget = ""; lbprog = ""; lbwait = ""; write() }
+        /Backfill stopping|Backfill stopped by an error/ { lbtarget = ""; lbprog = ""; lbwait = ""; write() }
         /Backend chain check FAILED: / { s = $$0; sub(/.*FAILED: /, "", s); backend = "different"; detail = s; write() }
         AWK
         sig() { cksum /data/settings.json 2>/dev/null; }
