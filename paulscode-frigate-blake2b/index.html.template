@@ -44,12 +44,11 @@
     <label for="lookBack">Look back for payments</label>
     <select id="lookBack">
       <option value="off">Off (default)</option>
-      <option value="split" id="splitOption" hidden>Back to the chain split</option>
       <option value="taproot">Back to Taproot activation (block 709632)</option>
       <option value="custom">Back to the block below</option>
     </select>
     <input id="lookBackHeight" type="number" min="0" step="1" placeholder="Block">
-    <p class="hint">Also find Silent Payments in blocks below where the index starts, which a pruned node has already discarded. Frigate fetches each of those blocks from the node's peers, and the coins their transactions spend through the Electrum server, and checks both against the node. It is done once for every wallet, wallets connected meanwhile are told what it finds, and changing this does not rebuild the index. It costs download traffic and time, roughly per 1,000 blocks: <span id="cost"></span>. Choose the oldest block your wallets need, for example a wallet's birthday.</p>
+    <p class="hint">Also find Silent Payments in blocks below where the index starts, which a pruned node has already discarded. Frigate fetches each of those blocks from the node's peers, and the coins their transactions spend through the Electrum server, and checks both against the node. It is done once and covers every wallet, wallets connected meanwhile are told what it finds, and changing this does not rebuild the index. It costs download traffic and time, roughly per 1,000 blocks: <span id="cost"></span>. Choose the oldest block your wallets need, for example a wallet's birthday.</p>
 
     <label for="backfillSpeed">Look back speed</label>
     <select id="backfillSpeed"><option value="background">Background (default)</option><option value="full">Full speed</option></select>
@@ -99,10 +98,15 @@ function show(s) {
     el('computeBackend').value = s.settings.computeBackend;
     el('batchSize').value = s.settings.batchSize;
     split = s.chainSplit;
-    if (split !== null) { el('splitOption').hidden = false; el('splitOption').textContent = 'Back to the chain split (block ' + split + ')'; }
+    // Added only where there is a chain split to offer: a hidden option still shows in some browsers
+    if (split !== null) {
+      var o = document.createElement('option');
+      o.value = 'split'; o.textContent = 'Back to the chain split (block ' + split + ')';
+      el('lookBack').insertBefore(o, el('lookBack').options[1]);
+    }
     el('cost').textContent = split !== null
-      ? 'about 30 to 80 GB of downloads, and 4 to 10 hours at full speed or 15 to 40 hours in the background'
-      : 'about 40 to 95 GB of downloads, and 5 to 12 hours at full speed or 1 to 2 days in the background';
+      ? 'about 15 to 80 GB of downloads, and 2 to 10 hours at full speed or 8 to 40 hours in the background'
+      : 'about 40 to 160 GB of downloads, and 5 to 20 hours at full speed or 1 to 4 days in the background';
     var h = s.settings.backfillFromHeight;
     el('lookBack').value = h === null ? 'off' : (split !== null && h === split) ? 'split' : h === 709632 ? 'taproot' : 'custom';
     el('lookBackHeight').value = el('lookBack').value === 'custom' ? h : '';
