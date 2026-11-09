@@ -145,9 +145,8 @@ services:
   # node and the Electrum server it connected, and from data/settings.json. A small supervisor runs
   # Frigate and restarts it when the page changes a setting; Frigate never re-reads its config.
   server:
-    # Built by build/frigate-companion/build-umbrel-images.sh. NOT YET PUSHED: replace this tag and
-    # digest with the pushed image's before release.
-    image: paulscode/frigate-companion:1.6.1.0
+    # Built by build/frigate-companion/build-umbrel-images.sh from the SHA256 package at v1.6.1.0.
+    image: paulscode/frigate-companion:1.6.1.0@sha256:899ebe1c1944db53009da5af724902164d3248248dd715059b6c5267786c153b
     restart: always
     stop_grace_period: 1m
     environment:
