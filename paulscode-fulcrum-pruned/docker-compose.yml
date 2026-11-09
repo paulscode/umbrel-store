@@ -1,0 +1,487 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: $APP_FULCRUM_PRUNED_WEB_IP
+      APP_PORT: 80
+
+  # Small static page shown by the app's "Open" button: how to connect a wallet, and
+  # how far the index has got. The page is `index.html.template` at the app root,
+  # because on an update umbreld copies only `docker-compose.yml *.template exports.sh
+  # torrc hooks` (Electrs Pruned's compose explains the history). The page contains
+  # no `$`, so envsubst passes it through unchanged.
+  web:
+    image: nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/index.html:/usr/share/nginx/html/index.html:ro
+      # Read-only, only for the cookie: the percentage is measured against the
+      # node's own height, which means asking the node.
+      - ${APP_BITCOIN_DATA_DIR}:/bitcoin:ro
+      # The height Fulcrum has indexed, written by the server container. Read from a
+      # file rather than from Fulcrum's stats endpoint, which stays on the server's
+      # loopback: it also serves /debug?subs, every scripthash wallets subscribe to,
+      # and Umbrel's network is shared by every installed app.
+      - ${APP_DATA_DIR}/data/status:/status:ro
+    environment:
+      NODE_RPC: http://${APP_BITCOIN_NODE_IP}:${APP_BITCOIN_RPC_PORT}/
+      NODE_USER: ${APP_BITCOIN_RPC_USER}
+      NODE_PASS: ${APP_BITCOIN_RPC_PASS}
+      BITCOIN_NETWORK: ${APP_BITCOIN_NETWORK:-mainnet}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        # The node's own network's cookie first: a stale cookie another network left behind must
+        # not win over the live one. Mainnet keeps it at the datadir root.
+        case "$${BITCOIN_NETWORK:-mainnet}" in
+          mainnet|main|bitcoin|"") FIRST="" ;;
+          testnet|testnet3) FIRST=testnet3 ;;
+          *) FIRST="$${BITCOIN_NETWORK}" ;;
+        esac
+        STATUS=/usr/share/nginx/html/status.json
+        printf '{"node":null,"server":null,"at":0}' > "$$STATUS"
+        (
+          # Not -e in here: one failed command (a full disk, a cookie that vanished
+          # between the test and the read) must cost one update, not the poller.
+          set +e
+          while true; do
+            AUTH=""
+            if [ -n "$${NODE_USER:-}" ]; then
+              AUTH=$$(printf '%s:%s' "$$NODE_USER" "$$NODE_PASS" | base64 | tr -d '\n')
+            else
+              for sub in "$$FIRST" regtest testnet4 testnet3 signet ""; do
+                if [ -n "$$sub" ]; then C="/bitcoin/$$sub/.cookie"; else C="/bitcoin/.cookie"; fi
+                if [ -r "$$C" ]; then AUTH=$$(tr -d '\r\n' < "$$C" | base64 | tr -d '\n'); break; fi
+              done
+            fi
+            NODE=null
+            if [ -n "$$AUTH" ]; then
+              R=$$(wget -q -O - -T 10 \
+                    --header "Authorization: Basic $$AUTH" \
+                    --header "Content-Type: text/plain" \
+                    --post-data '{"jsonrpc":"1.0","id":"s","method":"getblockchaininfo","params":[]}' \
+                    "$$NODE_RPC" 2>/dev/null) || R=""
+              case "$$R" in '{'*) NODE="$$R" ;; esac
+            fi
+            # What the server reports about itself (server.json, written by its chain guard's
+            # watcher): last indexed height and when, when it last moved, why it last stopped.
+            SERVER=null
+            if [ -r /status/server.json ]; then
+              S=$$(head -c 4096 /status/server.json)
+              case "$$S" in '{'*'}') SERVER="$$S" ;; esac
+            fi
+            printf '{"node":%s,"server":%s,"at":%s}\n' "$$NODE" "$$SERVER" "$$(date +%s)" > "$$STATUS.tmp"
+            mv "$$STATUS.tmp" "$$STATUS"
+            sleep 10
+          done
+        ) &
+        exec nginx -g 'daemon off;'
+    networks:
+      default:
+        ipv4_address: $APP_FULCRUM_PRUNED_WEB_IP
+
+  # btc-rpc-proxy between Fulcrum and the Bitcoin node: it fetches the blocks a
+  # pruned node has dropped from peers and checks them against the node. On StartOS
+  # the node package runs it; Umbrel has no equivalent, so the app brings its own.
+  #
+  # The same image and the same configuration as Electrs Pruned's proxy, whose
+  # compose file records why each line is there: the cookie wait (the proxy loads
+  # its passthrough users once, at startup), rpcauth found through includeconf,
+  # accepting both the node's rpcauth and its cookie, default_fetch_blocks,
+  # max_peer_concurrency and the block cache. v0.8.2-blake2b.2 parses 164-byte
+  # headers and advertises NODE_BLAKE2B, which Knots 29.4.3 requires before it
+  # serves any block past the BLAKE2b split.
+  proxy:
+    image: paulscode/btc-rpc-proxy:v0.8.2-blake2b.2@sha256:1ca61fbc93ae6218af026712b63cfd257c9a3b838adb14e57b571be8fc0fc3f2
+    restart: on-failure
+    environment:
+      BITCOIND_HOST: ${APP_BITCOIN_NODE_IP}
+      BITCOIND_PORT: ${APP_BITCOIN_RPC_PORT}
+      BITCOIND_USER: ${APP_BITCOIN_RPC_USER}
+      BITCOIND_PASS: ${APP_BITCOIN_RPC_PASS}
+      BITCOIN_NETWORK: ${APP_BITCOIN_NETWORK:-mainnet}
+    volumes:
+      - ${APP_BITCOIN_DATA_DIR}:/bitcoin:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -eu
+        # The node's own network's cookie first: a stale cookie another network left behind must
+        # not win over the live one. Mainnet keeps it at the datadir root.
+        case "$${BITCOIN_NETWORK:-mainnet}" in
+          mainnet|main|bitcoin|"") FIRST="" ;;
+          testnet|testnet3) FIRST=testnet3 ;;
+          *) FIRST="$${BITCOIN_NETWORK}" ;;
+        esac
+        umask 077
+        esc() { printf '%s' "$$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'; }
+        H=$$(esc "$${BITCOIND_HOST}")
+        U=$$(esc "$${BITCOIND_USER}")
+        P=$$(esc "$${BITCOIND_PASS}")
+        COOKIE=""
+        waited=0
+        while [ "$$waited" -lt 300 ]; do
+          for sub in "$$FIRST" regtest testnet4 testnet3 signet ""; do
+            if [ -n "$$sub" ]; then C="/bitcoin/$$sub/.cookie"; else C="/bitcoin/.cookie"; fi
+            if [ -r "$$C" ]; then COOKIE="$$C"; break; fi
+          done
+          [ -n "$$COOKIE" ] && break
+          [ "$$waited" -eq 0 ] && echo "proxy: no .cookie under /bitcoin yet; waiting for the node" >&2
+          sleep 1
+          waited=$$((waited + 1))
+        done
+        if [ -z "$$COOKIE" ]; then
+          echo "proxy: no readable .cookie under /bitcoin after $${waited}s; is the chosen node running?" >&2
+          exit 1
+        fi
+        : > /tmp/rpcauth.conf
+        if [ -r /bitcoin/bitcoin.conf ]; then
+          grep -h '^[[:space:]]*rpcauth=' /bitcoin/bitcoin.conf >> /tmp/rpcauth.conf 2>/dev/null || true
+          sed -n 's/^[[:space:]]*includeconf=//p' /bitcoin/bitcoin.conf 2>/dev/null | while IFS= read -r inc; do
+            [ -n "$$inc" ] || continue
+            case "$$inc" in /*) F="$$inc" ;; *) F="/bitcoin/$$inc" ;; esac
+            [ -r "$$F" ] && grep -h '^[[:space:]]*rpcauth=' "$$F" >> /tmp/rpcauth.conf 2>/dev/null || true
+          done
+        fi
+        # Reach peers the way the node does. Its settings may sit in a file pulled in with
+        # includeconf, so read that one level too. `proxy=` means the node sends everything
+        # through Tor, so the proxy must as well (tor_only), or it would fetch pruned blocks
+        # from clearnet peers straight from this machine's address; `onion=` alone means
+        # only .onion peers go through Tor, unless the node is onion-only. tor_proxy must be
+        # a literal ip:port (the proxy refuses to start otherwise), which is what the
+        # Bitcoin node apps write.
+        # The node's whole configuration, includes and all, normalised the way bitcoind
+        # reads it: no CR, no spaces around `=`. Also what the watcher below compares.
+        nodeconf() {
+          [ -r /bitcoin/bitcoin.conf ] || return 0
+          cat /bitcoin/bitcoin.conf
+          sed -n 's/^[[:space:]]*includeconf[[:space:]]*=[[:space:]]*//p' /bitcoin/bitcoin.conf | tr -d '\r' | while IFS= read -r inc; do
+            [ -n "$$inc" ] || continue
+            case "$$inc" in /*) F="$$inc" ;; *) F="/bitcoin/$$inc" ;; esac
+            [ -r "$$F" ] && cat "$$F" || true
+          done
+        }
+        nodeconf | tr -d '\r' | sed 's/^[[:space:]]*\([A-Za-z0-9_.-]*\)[[:space:]]*=[[:space:]]*/\1=/' > /tmp/node.conf
+        # bitcoind takes the first value of a single-valued option from its config file.
+        ALLTOR=$$(sed -n 's/^proxy=//p' /tmp/node.conf | head -1 | tr -d '[:space:]')
+        ONION=$$(sed -n 's/^onion=//p' /tmp/node.conf | head -1 | tr -d '[:space:]')
+        NETS=$$(sed -n 's/^onlynet=//p' /tmp/node.conf | tr -d '[:space:]' | sort -u | tr '\n' ' ')
+        TOR=""
+        TORONLY=false
+        if [ -n "$$ALLTOR" ]; then
+          TOR="$$ALLTOR"; TORONLY=true
+        elif [ -n "$$ONION" ]; then
+          TOR="$$ONION"
+          [ "$$NETS" = "onion " ] && TORONLY=true
+        fi
+        case "$$TOR" in
+          "") ;;
+          [0-9]*.[0-9]*.[0-9]*.[0-9]*:[0-9]*) ;;
+          *)
+            # Fail closed when the node keeps its own traffic off clearnet: fetching
+            # without Tor would reveal this machine's address to the peers it asks.
+            if [ "$$TORONLY" = true ]; then
+              echo "proxy: the node routes everything through Tor at $$TOR, which is not an ip:port this proxy can use; refusing to fetch blocks over clearnet" >&2
+              exit 1
+            fi
+            echo "proxy: the node's Tor proxy $$TOR is not an ip:port; .onion peers cannot be used" >&2
+            TOR="" ;;
+        esac
+        if [ "$$NETS" = "i2p " ]; then
+          echo "proxy: the node uses I2P only; this proxy cannot reach I2P peers, so blocks the node has pruned cannot be fetched" >&2
+        fi
+        TORCONF=""
+        if [ -n "$$TOR" ]; then
+          echo "proxy: reaching peers through Tor at $$TOR (tor_only = $$TORONLY)"
+          TORCONF=$$(printf 'tor_proxy = "%s"\ntor_only = %s' "$$TOR" "$$TORONLY")
+        fi
+
+        if [ -n "$${BITCOIND_USER}" ]; then
+          AUTH=$$(printf 'bitcoind_user = "%s"\nbitcoind_password = "%s"' "$$U" "$$P")
+        else
+          echo "proxy: authenticating to the node with $$COOKIE"
+          AUTH=$$(printf 'cookie_file = "%s"' "$$COOKIE")
+        fi
+        if [ -s /tmp/rpcauth.conf ]; then
+          echo "proxy: accepting the node's rpcauth credentials"
+          AUTH=$$(printf '%s\npassthrough_rpcauth = "/tmp/rpcauth.conf"' "$$AUTH")
+        fi
+        echo "proxy: accepting the node's cookie at $$COOKIE"
+        AUTH=$$(printf '%s\npassthrough_rpccookie = "%s"' "$$AUTH" "$$COOKIE")
+        cat > /tmp/btc_rpc_proxy.toml <<EOF
+        bitcoind_address = "$$H"
+        bitcoind_port = $${BITCOIND_PORT}
+        $$AUTH
+        bind_address = "0.0.0.0"
+        bind_port = 8332
+        $$TORCONF
+        default_fetch_blocks = true
+        max_peer_concurrency = 3
+        block_cache_size_mib = 64
+        EOF
+        # Follow the node's settings. Changing them (turning on Tor for everything, say)
+        # restarts only the node, not this app, and the proxy read them once above. So
+        # watch them and exit when they change; `restart: on-failure` then rebuilds the
+        # config. Exits with the proxy, too.
+        SIG=$$(nodeconf | cksum)
+        /usr/bin/btc_rpc_proxy --conf /tmp/btc_rpc_proxy.toml &
+        PROXY=$$!
+        trap 'kill -TERM "$$PROXY" 2>/dev/null; wait "$$PROXY"; exit 0' TERM INT
+        while kill -0 "$$PROXY" 2>/dev/null; do
+          sleep 30 & wait $$!
+          if [ "$$(nodeconf | cksum)" != "$$SIG" ]; then
+            echo "proxy: the node's settings changed; restarting to follow them"
+            kill -TERM "$$PROXY" 2>/dev/null; wait "$$PROXY" 2>/dev/null || true
+            exit 1
+          fi
+        done
+        wait "$$PROXY"; exit 1
+    networks:
+      default:
+        ipv4_address: $APP_FULCRUM_PRUNED_PROXY_IP
+
+  # Fulcrum, patched to index and serve a pruned node through the proxy above. Same
+  # image as the StartOS package. Umbrel has no settings form, so the config is
+  # written here, from the variables Umbrel injects for whichever node it connected.
+  server:
+    # Built by build/fulcrum-pruned/build-umbrel-images.sh from paulscode/fulcrum-pruned v2.1.4.0
+    # (the StartOS release's Dockerfile and patches); amd64 and arm64 both report 2146398+pruned.
+    image: paulscode/fulcrum-pruned:2.1.4.0@sha256:9e08d682199f41c39454efd8e7abc87c4883f6684095dfa2b72ce6aa080ccedd
+    restart: always
+    stop_grace_period: 5m
+    depends_on:
+      - proxy
+    environment:
+      BITCOIN_RPC_USER: ${APP_BITCOIN_RPC_USER}
+      BITCOIN_RPC_PASS: ${APP_BITCOIN_RPC_PASS}
+      BITCOIN_NETWORK: ${APP_BITCOIN_NETWORK:-mainnet}
+      NODE_RPC: ${APP_BITCOIN_NODE_IP}:${APP_BITCOIN_RPC_PORT}
+      PROXY_RPC: ${APP_FULCRUM_PRUNED_PROXY_IP}:8332
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+      - ${APP_BITCOIN_DATA_DIR}:/backend:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -eu
+        # The node's own network's cookie first: a stale cookie another network left behind must
+        # not win over the live one. Mainnet keeps it at the datadir root.
+        case "$${BITCOIN_NETWORK:-mainnet}" in
+          mainnet|main|bitcoin|"") FIRST="" ;;
+          testnet|testnet3) FIRST=testnet3 ;;
+          *) FIRST="$${BITCOIN_NETWORK}" ;;
+        esac
+        umask 077
+        mkdir -p /data/db
+        # The node's cookie, waited for when the node exports no user and password.
+        # Mainnet keeps it at the datadir root; another chain nests it, and where it
+        # is found says which chain this is.
+        COOKIE=""
+        CHAIN=main
+        if [ -z "$${BITCOIN_RPC_USER:-}" ]; then
+          waited=0
+          while [ "$$waited" -lt 300 ] && [ -z "$$COOKIE" ]; do
+            for sub in "$$FIRST" regtest testnet4 testnet3 signet ""; do
+              if [ -n "$$sub" ]; then C="/backend/$$sub/.cookie"; else C="/backend/.cookie"; fi
+              if [ -r "$$C" ]; then COOKIE="$$C"; [ -n "$$sub" ] && CHAIN="$$sub"; break; fi
+            done
+            [ -n "$$COOKIE" ] && break
+            [ "$$waited" -eq 0 ] && echo "fulcrum-pruned: waiting for the node's cookie" >&2
+            sleep 1; waited=$$((waited + 1))
+          done
+          [ -n "$$COOKIE" ] || { echo "fulcrum-pruned: no cookie after 300s; is the node running?" >&2; exit 1; }
+        fi
+
+        # Chain guard. Fulcrum cannot follow a node onto another chain under an existing
+        # index: a different network fails its genesis check, and the SHA256 and BLAKE2b
+        # chains differ from block 961640, ~15,000 blocks deep, far past its undo depth.
+        # Either is a fatal exit on every start. Umbrel can connect this app to a node on
+        # any chain, so /data/db.chain.json records what the index was built on, and an
+        # index from elsewhere is deleted and rebuilt (no action here could reclaim a
+        # set-aside one).
+        #
+        # What is recorded comes from the index, not from whichever node happens to be
+        # connected: the genesis hash, and the hash at 961640 only once the index has
+        # passed that block, each only while the node agrees with the index's tip. An
+        # index still below the split is valid on both chains and is never judged.
+        # `check` waits (up to five minutes) for the node and acts only on what is
+        # recorded; `watch` runs beside Fulcrum, records, and publishes the indexed
+        # height for the status page.
+        cat > /tmp/chainguard.py <<'PY'
+        import base64, json, os, shutil, sys, time, urllib.request
+        SPLIT = 961640
+        RECORD = '/data/db.chain.json'
+        node = os.environ['NODE_RPC']
+        user = os.environ.get('BITCOIN_RPC_USER') or ''
+        def cred():
+            if user:
+                return user + ':' + os.environ.get('BITCOIN_RPC_PASS', '')
+            return open(os.environ['COOKIE']).read().strip()
+        def call(method, params):
+            body = json.dumps({'jsonrpc': '1.0', 'id': 'g', 'method': method, 'params': params}).encode()
+            auth = base64.b64encode(cred().encode()).decode()
+            req = urllib.request.Request('http://' + node + '/', body, {'Authorization': 'Basic ' + auth})
+            with urllib.request.urlopen(req, timeout=15) as r:
+                return json.loads(r.read())['result']
+        def load():
+            try:
+                with open(RECORD) as f:
+                    return json.load(f)
+            except Exception:
+                return {}
+        def save(rec):
+            with open(RECORD + '.tmp', 'w') as f:
+                json.dump(rec, f)
+            os.replace(RECORD + '.tmp', RECORD)
+        STATUS = '/data/status/server.json'
+        def status_update(**kw):
+            try:
+                with open(STATUS) as f:
+                    st = json.load(f)
+            except Exception:
+                st = {}
+            st.update(kw)
+            with open(STATUS + '.tmp', 'w') as f:
+                json.dump(st, f)
+            os.replace(STATUS + '.tmp', STATUS)
+        def index_tip():
+            # Fulcrum's own view: the height it has indexed and that block's hash.
+            with urllib.request.urlopen('http://127.0.0.1:8080/stats', timeout=10) as r:
+                ctl = json.loads(r.read())['Controller']
+            return int(ctl['Header count']) - 1, ctl.get('Chain tip')
+        if sys.argv[1] == 'check':
+            rec = load()
+            if not rec:
+                sys.exit(0)
+            # Bounded by the clock, not by attempts: a node that times out each call would
+            # otherwise stretch this far past five minutes.
+            deadline = time.monotonic() + 300
+            while True:
+                try:
+                    genesis = call('getblockhash', [0])
+                    height = call('getblockcount', [])
+                    at_split = call('getblockhash', [SPLIT]) if height >= SPLIT else None
+                    break
+                except Exception:
+                    if time.monotonic() > deadline:
+                        print('fulcrum-pruned: node not answering; chain check skipped this start', flush=True)
+                        sys.exit(0)
+                    time.sleep(5)
+            wrong = bool(rec.get('genesis')) and rec['genesis'] != genesis
+            if not wrong and rec.get('hashAtSplit') and at_split:
+                wrong = rec['hashAtSplit'] != at_split
+            if wrong:
+                print('fulcrum-pruned: the index was built on another chain than the node now connected; deleting it and building a new one', flush=True)
+                shutil.rmtree('/data/db', ignore_errors=True)
+                os.makedirs('/data/db', exist_ok=True)
+                os.remove(RECORD)
+        elif sys.argv[1] == 'watch':
+            # Beside Fulcrum: publish the indexed height for the status page, and record
+            # what the index is on. A field is recorded only when the connected node
+            # agrees with the index (its block at the index's tip height is the index's tip),
+            # and never overwritten: Fulcrum's stats answer before it has compared its index
+            # with the node, so on its own a high indexed height proves nothing about which
+            # chain the node is on.
+            # The status page reads /data/status/server.json: the last height Fulcrum reported and
+            # when (kept through a slow or failed stats answer), when that height last moved, and
+            # (from `exit`) why Fulcrum last stopped.
+            os.makedirs('/data/status', exist_ok=True)
+            last = None
+            while True:
+                try:
+                    height, tip = index_tip()
+                    now = int(time.time())
+                    if height != last:
+                        status_update(indexed=max(height, 0), ok_at=now, progress_at=now)
+                        last = height
+                    else:
+                        status_update(ok_at=now)
+                    rec = load()
+                    if height >= 0 and tip and ('genesis' not in rec or ('hashAtSplit' not in rec and height >= SPLIT)):
+                        if call('getblockhash', [height]) == tip:
+                            if 'genesis' not in rec:
+                                rec['genesis'] = call('getblockhash', [0])
+                            if 'hashAtSplit' not in rec and height >= SPLIT:
+                                rec['hashAtSplit'] = call('getblockhash', [SPLIT])
+                            save(rec)
+                except Exception:
+                    pass
+                time.sleep(10)
+        elif sys.argv[1] == 'exit':
+            # After Fulcrum exits: keep its reason for the status page and, if it reported its index
+            # unreadable or corrupted, delete it so the next start rebuilds it. There is no Reindex
+            # action on Umbrel, and without this a corrupted index (a power cut mid-write) would
+            # crash-loop forever.
+            try:
+                with open('/tmp/fulcrum.tail', errors='replace') as f:
+                    lines = f.read().splitlines()
+            except Exception:
+                lines = []
+            fatal = next((l.split('FATAL: ', 1)[1].strip()[:240] for l in reversed(lines) if 'FATAL: ' in l), None)
+            broken = ('Please delete the datadir', 'Corruption:', 'Magic bytes mismatch', 'header format stopped partway')
+            if any(b in l for l in lines for b in broken):
+                print('fulcrum-pruned: the index is unreadable; deleting it so the next start rebuilds it', flush=True)
+                shutil.rmtree('/data/db', ignore_errors=True)
+                os.makedirs('/data/db', exist_ok=True)
+                if os.path.exists(RECORD):
+                    os.remove(RECORD)
+                fatal = 'The index was unreadable (' + (fatal or 'damaged database') + '). It has been deleted and is being built again.'
+            if fatal and sys.argv[2] not in ('0', '143'):
+                status_update(fatal=fatal, fatal_at=int(time.time()))
+        PY
+        export COOKIE
+        python3 /tmp/chainguard.py check || true
+        python3 /tmp/chainguard.py watch &
+
+        # Credentials go to Fulcrum through its RPCUSER/RPCPASSWORD environment variables,
+        # which it reads verbatim, rather than into fulcrum.conf, whose parser cuts a value at
+        # '#' and has no quoting.
+        if [ -n "$${BITCOIN_RPC_USER:-}" ]; then
+          export RPCUSER="$${BITCOIN_RPC_USER}" RPCPASSWORD="$${BITCOIN_RPC_PASS}"
+        fi
+        # About 32 block requests in flight while the index builds: Fulcrum keeps cores x
+        # (clients + 1), and fetching pruned blocks from peers through the proxy parallels well
+        # up to about there (measured on a StartOS server; the same reasoning as the StartOS
+        # package's fulcrum.conf.ts). Fulcrum's own 3 from 8 cores up, never more than 8.
+        CORES=$$(nproc 2>/dev/null || echo 4)
+        CLIENTS=$$(( (32 + CORES - 1) / CORES - 1 ))
+        [ "$$CLIENTS" -lt 3 ] && CLIENTS=3
+        [ "$$CLIENTS" -gt 8 ] && CLIENTS=8
+        {
+          echo "datadir = /data/db"
+          echo "bitcoind = $${PROXY_RPC}"
+          if [ -z "$${BITCOIN_RPC_USER:-}" ]; then
+            echo "rpccookie = $$COOKIE"
+          fi
+          echo "bitcoind_clients = $$CLIENTS"
+          echo "tcp = 0.0.0.0:50001"
+          echo "peering = false"
+          echo "announce = false"
+          # A pruned block comes from peers through the proxy, which can take longer
+          # than Fulcrum's default 30 s.
+          echo "bitcoind_timeout = 120"
+          # Loopback only: the chain guard's watcher reads it and publishes the indexed
+          # height to the status page as a file. It also serves /debug?subs (every
+          # scripthash wallets subscribe to), which no other app may reach.
+          echo "stats = 127.0.0.1:8080"
+        } > /data/fulcrum.conf
+        # Not exec'd: the last lines of its output are kept, so the guard can tell why it stopped.
+        # Docker's stop signal reaches this shell, which passes it on and waits for Fulcrum.
+        Fulcrum --ts-format none /data/fulcrum.conf > >(tee >(tail -n 200 > /tmp/fulcrum.tail)) 2>&1 &
+        FULCRUM=$$!
+        trap 'kill -TERM "$$FULCRUM" 2>/dev/null' TERM INT
+        RC=0
+        wait "$$FULCRUM" || RC=$$?
+        while kill -0 "$$FULCRUM" 2>/dev/null; do RC=0; wait "$$FULCRUM" || RC=$$?; done
+        sleep 2 # the tail writes its lines once Fulcrum's output closes
+        python3 /tmp/chainguard.py exit "$$RC" || true
+        exit "$$RC"
+    ports:
+      # 50301: clear of the official Electrs (50001) and Fulcrum (50002) apps and of
+      # Electrs Pruned (50201), so all of them can be installed at once.
+      - "50301:50001"
+    networks:
+      default:
+        ipv4_address: $APP_FULCRUM_PRUNED_SERVER_IP

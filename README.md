@@ -28,6 +28,7 @@ An [Umbrel](https://umbrel.com) community app store bringing together all of
 | [Datum (SHA256) Companion](#datum-sha256-companion) | Solo or pooled mining against that node, with your own block templates | Knots (SHA256) Companion |
 | [Electrs Liquid](#electrs-liquid) | A Liquid (`liquidv1`) full node bundled with an Electrum indexer | none (self-contained) |
 | [Electrs Pruned](#electrs-pruned) | An Electrum server that indexes from a pruned node, beside the official Electrs | Bitcoin Node |
+| [Fulcrum Pruned](#fulcrum-pruned) | A fast Electrum server that indexes from a pruned node, on the SHA256 or BLAKE2b chain | Bitcoin Node |
 | [HashGG](#hashgg) | Sovereign hash routing — exposes your Datum stratum port to the public internet | Datum (→ Bitcoin Knots) |
 | [HashGG Companion](#hashgg-companion) | The same hash routing, pointed at the Companion Datum Gateway | Datum (BLAKE2b) Companion |
 | [Mempool Pruned](#mempool-pruned) | Mempool block explorer that works against a pruned Bitcoin node | Bitcoin Node + Electrs Pruned |
@@ -342,6 +343,50 @@ want.
 
 - Source: https://github.com/paulscode/electrs-pruned-startos
 - Upstream: https://github.com/paulscode/electrs-pruned
+
+---
+
+### Fulcrum Pruned
+
+Fulcrum, the fast Electrum server, for a node that is not keeping the whole chain,
+on either chain: SHA256 or BLAKE2b. The official Fulcrum app requires an archival
+node with transaction indexing. This one indexes from a pruned node and fetches
+the blocks your node has dropped from the peer-to-peer network, checking each one
+against your node before using it. It installs beside the official Fulcrum and
+Electrs apps and beside Electrs Pruned, so a server with two pruned nodes can run
+an Electrum server for each.
+
+The app runs Fulcrum, patched to ask for old blocks and transactions in the form
+the block-fetching proxy can answer, and `btc-rpc-proxy`, which fetches them over
+peer-to-peer (through Tor when your node uses Tor) and checks them against your
+node. Nothing is changed on your Bitcoin node, and an archival node works too.
+
+> **The index is about 190 GB on mainnet**, roughly three times an Electrs index,
+> and wallets can connect once it is built. Against a node that has been pruned for
+> a while the first index takes several days, longer over Tor. A node set to use
+> I2P only is not supported.
+
+**Which chain.** It follows the node Umbrel connects it to. Its `server.features`
+reply carries a `blake2b_fork` entry on the BLAKE2b chain. If the node is switched
+to one on another chain, the index is deleted and built again; an unreadable index
+is too.
+
+**Privacy.** A peer serving a dropped block learns you wanted that block, never
+your addresses. Looking up an old transaction or restoring a wallet with old
+history fetches that transaction's block on demand. If your node runs over Tor,
+these fetches do too. An archival node with the official Fulcrum never fetches at
+all, and is the more private option.
+
+**Connecting:**
+
+- **Wallets on your LAN** can point an Electrum-compatible wallet at your
+  server's address on port **50301** (TCP).
+- **Other Umbrel apps** can depend on this app and read
+  `APP_FULCRUM_PRUNED_SERVER_IP` / `APP_FULCRUM_PRUNED_SERVER_PORT` (internal
+  Electrum port `50001`).
+
+- Source: https://github.com/paulscode/fulcrum-pruned
+- Upstream: https://github.com/cculianu/Fulcrum (through https://github.com/privkeyio/Fulcrum)
 
 ---
 

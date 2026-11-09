@@ -1,0 +1,97 @@
+manifestVersion: 1.1
+id: paulscode-fulcrum-pruned
+category: bitcoin
+name: Fulcrum Pruned
+version: "2.1.4.0"
+tagline: A fast Electrum server for a pruned node
+description: >-
+  Fulcrum, the fast Electrum server, made to work with a pruned Bitcoin node, on
+  either chain: SHA256 or BLAKE2b. It runs alongside the official Fulcrum and
+  Electrs apps and alongside Electrs Pruned, so a server with two pruned nodes can
+  run an Electrum server for each.
+
+
+  The official Fulcrum app requires an archival node with transaction indexing,
+  which means keeping the whole chain. This one does not: it indexes from a
+  pruned node and fetches the blocks your node has dropped from the peer-to-peer
+  network, checking each one against your node before using it.
+
+
+  HOW IT WORKS
+
+
+  The app runs Fulcrum, a block-fetching proxy, and a small status page. Fulcrum
+  is patched to ask for old
+  blocks and old transactions in the form the block-fetching proxy can answer.
+  Alongside it runs btc-rpc-proxy, which fetches the blocks your node has dropped
+  over peer-to-peer and checks them against your node. No transaction index is
+  needed, and nothing is changed on your Bitcoin node. An archival node works too.
+
+
+  WHAT TO EXPECT
+
+
+  The address index is about 190 GB on mainnet, roughly three times an Electrs
+  index, and wallets can connect once it is built. Against a node that has been
+  pruned for a while, the first index fetches every dropped block from the
+  network: expect several days, and longer if your node runs over Tor only.
+  Installing it alongside a node that is still syncing is much faster.
+
+
+  WHICH CHAIN
+
+
+  Fulcrum Pruned follows the Bitcoin node Umbrel connects it to. Its
+  server.features reply carries a blake2b_fork entry on the BLAKE2b chain, so a
+  wallet can tell which side it is talking to. If the node is switched to one on
+  the other chain (or another network), the index it was building on is deleted
+  and a new one is built.
+
+
+  PRIVACY
+
+
+  A peer that serves you a dropped block learns you wanted that block, never your
+  addresses. During the first index that only says you are syncing. Afterwards,
+  looking up an old transaction or restoring a wallet with old history fetches that
+  transaction's block, which tells a watching peer something in it interests you.
+  If your Bitcoin node runs over Tor, these fetches do too. A node set to use I2P
+  only is not supported: this app cannot reach I2P peers. An archival node with the
+  official Fulcrum never fetches at all, and is the more private option.
+
+
+  CONNECTING
+
+
+  - Wallets on your LAN: point an Electrum-compatible wallet at your Umbrel's
+    address on port 50301 (TCP).
+
+  - Other Umbrel apps: depend on this app and read APP_FULCRUM_PRUNED_SERVER_IP
+    and APP_FULCRUM_PRUNED_SERVER_PORT (internal Electrum port 50001).
+developer: Paul Lamb
+website: https://github.com/cculianu/Fulcrum
+dependencies:
+  - bitcoin
+repo: https://github.com/paulscode/fulcrum-pruned
+support: https://paulscode.com/c/bitcoin/8
+port: 3037
+# Community stores must supply full URLs for icon and gallery: Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-fulcrum-pruned/icon.png
+gallery:
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-fulcrum-pruned/gallery/1.png
+path: ""
+# The address index (~190 GB) is rebuilt from the node, so backups leave it out.
+backupIgnore:
+  - data/db
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: >-
+  First release of Fulcrum Pruned: Fulcrum 2.1.4 for a pruned Bitcoin node, on the
+  SHA256 or the BLAKE2b chain. Blocks your node has dropped are fetched from the
+  network by the proxy inside this app, both while Fulcrum builds its index and
+  when a wallet looks up an old transaction. No transaction index is needed. The
+  first index takes several days against a node that has been pruned for a
+  while, and needs about 190 GB of disk.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store
