@@ -21,8 +21,8 @@ services:
     environment:
       ELECTRUM_PORT: "50501"
       BITCOIN_NETWORK: ${APP_BITCOIN_NETWORK:-mainnet}
-      # Offered on the page as "Look back to the chain split"; empty for none
-      CHAIN_SPLIT: "961640"
+      # The chain this app is named for: the page warns when the node Umbrel connected is on the other
+      EXPECTED_CHAIN: blake2b
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -34,7 +34,8 @@ services:
         DEFAULTS = {'startHeight': 709632 if MAINNET else 0, 'cacheSize': '10M', 'computeBackend': 'AUTO', 'batchSize': 300000,
                     'backfillFromHeight': None, 'backfillSpeed': 'background'}
         CACHE = ('1M', '5M', '10M', '20M', '50M')
-        COMPUTE = ('AUTO', 'GPU', 'CPU')
+        # No GPU: the container has no /dev/dri, so "GPU only" could never run here
+        COMPUTE = ('AUTO', 'CPU')
         SPEEDS = ('background', 'full')
         def settings():
             s = dict(DEFAULTS)
@@ -67,11 +68,16 @@ services:
                     return self.send(200, {'settings': settings(), 'status': status(),
                                            'rebuildPending': os.path.exists(DATA + '/rebuild.request'),
                                            'electrumPort': os.environ.get('ELECTRUM_PORT'),
-                                           'chainSplit': int(os.environ['CHAIN_SPLIT']) if os.environ.get('CHAIN_SPLIT') else None})
+                                           # either app can follow either chain, so both offer the split (mainnet only)
+                                           'chainSplit': 961640 if MAINNET else None,
+                                           'expectedChain': os.environ.get('EXPECTED_CHAIN')})
                 self.send(404, {'error': 'not found'})
             def do_POST(self):
                 if self.path != '/api/settings':
                     return self.send(404, {'error': 'not found'})
+                # A cross-site form can post text/plain without a preflight, but not application/json
+                if (self.headers.get('Content-Type') or '').split(';')[0].strip() != 'application/json':
+                    return self.send(415, {'error': 'expected application/json'})
                 try:
                     n = int(self.headers.get('Content-Length') or 0)
                     if n > 4096:
@@ -190,16 +196,17 @@ services:
         tcp = "tcp://0.0.0.0:50001"
         backendElectrumServer = "tcp://$${BACKEND}"
         TOML
+          umask 022
         }
         # What Frigate's log says, for the app's page, as data/status/server.json.
         cat > /tmp/status.awk <<'AWK'
-        function esc(s) { gsub(/[\\"]/, "", s); return substr(s, 1, 300) }
+        function esc(s) { gsub(/[\\"]/, "", s); gsub(/[[:cntrl:]]/, " ", s); return substr(s, 1, 300) }
         function now(   t, c) { c = "date +%s"; c | getline t; close(c); return t + 0 }
         function write() {
           f = "/data/status/server.json.tmp"
-          lookback = ""
+          lookback = lbnote == "" ? "" : "Looking back for payments: " lbnote
           if (lbtarget != "") lookback = "Looking back to block " lbtarget (lbwait != "" ? " is waiting: " lbwait : (lbprog != "" ? ": " lbprog : ""))
-          printf "{\"start\":%s,\"progress\":\"%s\",\"fatal\":\"%s\",\"backend\":\"%s\",\"backendDetail\":\"%s\",\"listening\":%s,\"lookback\":\"%s\",\"at\":%d}\n", (start == "" ? "null" : start), esc(progress), esc(fatal), backend, esc(detail), (listening ? "true" : "false"), esc(lookback), now() > f
+          printf "{\"start\":%s,\"progress\":\"%s\",\"fatal\":\"%s\",\"error\":\"%s\",\"chain\":\"%s\",\"backend\":\"%s\",\"backendDetail\":\"%s\",\"listening\":%s,\"lookback\":\"%s\",\"at\":%d}\n", (start == "" ? "null" : start), esc(progress), esc(fatal), esc(error), chain, backend, esc(detail), (listening ? "true" : "false"), esc(lookback), now() > f
           close(f); system("mv /data/status/server.json.tmp /data/status/server.json")
         }
         BEGIN { backend = "unknown"; listening = 0; write() }
@@ -207,21 +214,33 @@ services:
         /Silent Payments index starts at block / { start = $$NF; write() }
         /Indexing progress: / { sub(/.*Indexing progress: /, ""); progress = $$0; write() }
         /Waiting for sync to complete/ { progress = "Waiting for the node to finish syncing"; write() }
-        /Electrum server listening/ { listening = 1; progress = ""; write() }
+        /Electrum server listening/ { listening = 1; progress = ""; error = ""; write() }
+        # Errors that stop Frigate without FATAL (the node unreachable, wrong credentials): shown until it is listening
+        / ERROR / && !/FATAL: / && !/Backfill/ { s = $$0; sub(/.* ERROR /, "", s); error = s; write() }
+        /Node chain: BLAKE2b/ { chain = "blake2b"; write() }
+        /Node chain: 80 byte/ { chain = "sha256"; write() }
         /FATAL: / { s = $$0; sub(/.*FATAL: /, "", s); fatal = s; write() }
         /Backend chain check: the Electrum backend follows/ { backend = "same"; detail = ""; write() }
-        /Backfill: (looking back to block|resuming at block)/ { if (match($$0, /looking back to block [0-9]+/)) lbtarget = substr($$0, RSTART + 22, RLENGTH - 22); lbprog = ""; lbwait = ""; write() }
+        /Backfill: (looking back to block|resuming at block)/ { if (match($$0, /looking back to block [0-9]+/)) lbtarget = substr($$0, RSTART + 22, RLENGTH - 22); lbprog = ""; lbwait = ""; lbnote = ""; write() }
         /Backfill progress: / { s = $$0; sub(/.*Backfill progress: /, "", s); lbprog = s; lbwait = ""; write() }
-        /Backfill waiting: / { s = $$0; sub(/.*Backfill waiting: /, "", s); lbwait = s; write() }
-        /Backfill complete: / { start = $$NF; lbtarget = ""; lbprog = ""; lbwait = ""; write() }
+        /Backfill waiting: / { s = $$0; sub(/.*Backfill waiting: /, "", s); lbwait = s; if (lbtarget == "") lbnote = s; write() }
+        /Backfill could not start|Backfill stopped by an error/ { s = $$0; sub(/.*Backfill /, "", s); lbnote = s }
+        /Backfill complete: / { start = $$NF; lbtarget = ""; lbprog = ""; lbwait = ""; lbnote = ""; write() }
         /Backfill stopping|Backfill stopped by an error/ { lbtarget = ""; lbprog = ""; lbwait = ""; write() }
         /Backend chain check FAILED: / { s = $$0; sub(/.*FAILED: /, "", s); backend = "different"; detail = s; write() }
+        # Frigate has exited: not listening, whatever the last line said
+        END { listening = 0; write() }
         AWK
         sig() { cksum /data/settings.json 2>/dev/null; }
         FPID=""
         trap '[ -n "$$FPID" ] && kill -TERM "$$FPID" 2>/dev/null; wait; exit 0' TERM INT
         while true; do
+          # taken before render: a change saved while a rebuild deletes the index is then seen
+          S=$$(sig); CHANGED=0
           render
+          # frigate.log is Frigate's own unrotated copy of what Docker already captures: cap it
+          LOG=/root/.frigate/frigate.log
+          [ -f "$$LOG" ] && [ "$$(wc -c < "$$LOG")" -gt 52428800 ] && : > "$$LOG"
           if [ -e /data/rebuild.request ]; then
             echo "frigate: rebuilding the Silent Payments index"
             rm -rf -- "$${FHOME:?}/db"
@@ -237,7 +256,6 @@ services:
           # sees Frigate's lines only once a block fills.
           /opt/frigate/bin/frigate -n "$$NET" > >(awk -W interactive -f /tmp/status.awk) 2>&1 &
           FPID=$$!
-          S=$$(sig); CHANGED=0
           while kill -0 "$$FPID" 2>/dev/null; do
             sleep 5
             if [ "$$(sig)" != "$$S" ] || [ -e /data/rebuild.request ]; then

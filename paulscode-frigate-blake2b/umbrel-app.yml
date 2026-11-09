@@ -25,10 +25,13 @@ description: >-
   HOW FAR BACK
 
 
-  On a pruned node the index starts at the oldest block the node still holds: a
-  pruned node has discarded what Frigate needs for older blocks. A larger prune
-  target reaches further back. On an archival node it starts at Taproot activation
-  (block 709632). Set a different start, or rebuild the index, on the app's page.
+  On a pruned node a new index starts a few blocks above the oldest block the node
+  still holds: a pruned node has discarded what Frigate needs for older blocks. A
+  larger prune target reaches further back. On an archival node it starts at Taproot
+  activation (block 709632). The app's page sets a different start, rebuilds the
+  index, or turns on Look Back for Payments: Frigate then fetches the discarded
+  blocks from peers to find older payments, at a cost in download traffic and time
+  that the page states.
 
 
   WHICH CHAIN
@@ -60,10 +63,16 @@ path: ""
 # The Silent Payments index is rebuilt from the node, so backups leave it out.
 backupIgnore:
   - data/frigate/db
+  - data/frigate/frigate.log
+  - data/frigate/cache
+  - data/frigate/recentblocks
+  - data/rebuild.request
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
   First release: Frigate 1.6.1 for a pruned node, on the SHA256 or the BLAKE2b
-  chain, with Electrs Pruned (or Fulcrum Pruned) as its Electrum server.
+  chain, with Electrs Pruned (or Fulcrum Pruned) as its Electrum server. Look Back
+  for Payments, on the app's page and off by default, finds Silent Payments in
+  blocks the pruned node has already discarded.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
