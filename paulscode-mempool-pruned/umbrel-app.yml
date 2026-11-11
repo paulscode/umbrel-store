@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-mempool-pruned
 category: bitcoin
 name: Mempool Pruned
-version: "3.3.2.1"
+version: "3.3.2.2"
 tagline: A block explorer that works with a pruned Bitcoin node
 description: >-
   Run your own mempool.space against a pruned node. The official Mempool app
@@ -52,13 +52,19 @@ description: >-
   LIGHTNING
 
 
-  With Lightning Fork installed, the Lightning pages show the Lightning network
-  on the BLAKE2b chain as Lightning Fork sees it: nodes, channels, capacity and
-  how they change over time. There is nothing to set up. The pages stay off
-  while this explorer's Bitcoin node is on the SHA256 chain, where those
-  channels do not exist, and until Lightning Fork has a wallet. This app looks
-  for Lightning Fork when it starts, so restart it after installing Lightning
-  Fork and creating its wallet.
+  With a Lightning node installed, the Lightning pages show the Lightning
+  network as that node sees it: nodes, channels, capacity and how they change
+  over time. There is nothing to set up. Which node is read follows from the
+  chain this explorer's Bitcoin node is on, because a Lightning node's channels
+  exist on one chain only: Lightning Fork on the BLAKE2b chain, and the
+  official Lightning Node app (LND) on the SHA256 chain. Core Lightning is not
+  read.
+
+
+  The pages stay off when the Lightning node for this explorer's chain is not
+  installed, and until it has a wallet. This app looks for it when it starts,
+  so restart this app after installing the Lightning node and creating its
+  wallet. The Lightning node should use the same Bitcoin node as this explorer.
 
 
   Installs alongside the official Mempool. Each keeps its own database,
@@ -80,6 +86,20 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  The Lightning pages now work on the SHA256 chain too. With the official
+  Lightning Node app (LND) installed and this explorer's Bitcoin node on the
+  SHA256 chain, they show the Lightning network as that node sees it, with
+  nothing to set up. On the BLAKE2b chain they read Lightning Fork, as before.
+  If you install the Lightning Node app after this one, restart this app once
+  its wallet exists.
+
+
+  Nothing else changes, and no reindex is needed.
+
+
+  IF YOU ARE UPDATING FROM 3.3.1.9 OR EARLIER, the notes from 3.3.2.1 also apply:
+
+
   Mempool 3.3.2. The backend now runs on Node.js 26.12.1, which fixes the
   Node.js security issues published on 21 October 2026, among them a remote
   code execution flaw in its Brotli decoder and two ways to get past TLS

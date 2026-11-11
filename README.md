@@ -445,6 +445,11 @@ an old block page is slower than a recent one, and the page says so while it
 works. Recent history is unaffected. The explorer keeps its own database, which
 is separate from the chain and still needs room.
 
+The Lightning pages turn on by themselves when the Lightning node for the
+explorer's chain is installed and has a wallet: [Lightning Fork](#lightning-fork)
+on the BLAKE2b chain, the official Lightning Node app (LND) on the SHA256 chain.
+Restart Mempool Pruned after installing one. Core Lightning is not read.
+
 Installs alongside the official Mempool. Each keeps its own database, address
 and port.
 
