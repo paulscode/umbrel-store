@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-lightning-fork
 category: bitcoin
 name: Lightning Fork
-version: "0.21.6-beta-blake2b.23.0"
+version: "0.21.8-beta-blake2b.24.0"
 tagline: A Lightning Network node for the Bitcoin BLAKE2b chain
 description: >-
   Lightning Fork is LND with the changes needed to follow the Bitcoin BLAKE2b
@@ -83,6 +83,41 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
+  - Lightning Fork on LND 0.21.8. Among its fixes: on a node without a
+  transaction index, such as one using a pruned Bitcoin node, a channel
+  could stay "opening" after its funding transaction confirmed, because
+  LND's record of how far it had looked moved past the block that
+  confirmed it. After this update such a channel finds its confirmation
+  and opens. A peer whose channel is still waiting for its funding to
+  confirm gets the reconnection message it expects, so it no longer
+  disconnects and takes your other channels with it offline; a deadlock
+  between a failing channel and a cooperative close is fixed; and sweeps,
+  forwarded payments across reconnections and AMP payments recover better.
+
+  - Resize channels: after a resize, the payments and fee updates your
+  peer sends again when you reconnect are accepted under the reserves from
+  before the resize until its next commitment, instead of closing the
+  connection on every reconnection.
+
+  - Apps that reconnect your peers every few minutes, such as LNDg, no
+  longer pile up hundreds of connection attempts to a peer that is
+  offline.
+
+  - The bridge's SHA256 node runs LND 0.21.8.
+
+  - Channel backups use rclone 1.75.2, checked against its published
+  checksum, instead of 1.68.2, and say that LND writes channel.backup each
+  time it starts, once it has caught up with the chain.
+
+  - Dashboard 1.3.2-blake2b.24: a channel whose peer has no name yet shows
+  the peer's key instead of a loading bar, and peer names are shown
+  without control characters.
+
+
+  From 0.21.6-beta-blake2b.23.0, if you are updating from an earlier
+  version:
+
+
   - The bridge: a swap whose hold invoice the node deleted (with the
   gc-canceled-invoices options on) now ends instead of retrying forever,
   once the bridge has checked it is reading the node that issued the
@@ -206,7 +241,7 @@ releaseNotes: >-
   app can't go back to an older version of Lightning Fork after that.
 
 
-  Lightning Fork 0.21.6-beta-blake2b.23, dashboard 1.3.2-blake2b.22.
+  Lightning Fork 0.21.8-beta-blake2b.24, dashboard 1.3.2-blake2b.24.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
