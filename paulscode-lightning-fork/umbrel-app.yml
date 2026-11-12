@@ -103,6 +103,10 @@ releaseNotes: >-
   longer pile up hundreds of connection attempts to a peer that is
   offline.
 
+  - Raising the fee of a cooperative close just after a reconnection now
+  waits until the channel is ready for it, instead of failing (from
+  2rdzy).
+
   - The bridge's SHA256 node runs LND 0.21.8.
 
   - Channel backups use rclone 1.75.2, checked against its published
