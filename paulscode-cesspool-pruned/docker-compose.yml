@@ -16,12 +16,7 @@ services:
   # carries for a plain `docker run`: two of them would only log a warning.
 
   web:
-    # DIGEST TO PIN AFTER PUSH. The image is not published yet, so this names
-    # the tag alone. Once v0.1.0-pruned.1 is on ghcr.io, add @sha256:<the
-    # index digest> to both image lines, in a commit of its own as the rest of
-    # this store does:
-    #   docker buildx imagetools inspect ghcr.io/paulscode/cesspool-pruned:v0.1.0-pruned.1 --format '{{.Manifest.Digest}}'
-    image: ghcr.io/paulscode/cesspool-pruned:v0.1.0-pruned.1
+    image: ghcr.io/paulscode/cesspool-pruned:v0.1.0-pruned.1@sha256:b46ecff244ef0b565e5e641ef3d3f672aaad7436057db8a96c0bd447b43c15e2
     user: "1000:1000"
     init: true
     restart: on-failure
@@ -47,7 +42,7 @@ services:
 
   updater:
     # The same image as `web`, and the same digest once it is pinned.
-    image: ghcr.io/paulscode/cesspool-pruned:v0.1.0-pruned.1
+    image: ghcr.io/paulscode/cesspool-pruned:v0.1.0-pruned.1@sha256:b46ecff244ef0b565e5e641ef3d3f672aaad7436057db8a96c0bd447b43c15e2
     user: "1000:1000"
     init: true
     restart: on-failure
