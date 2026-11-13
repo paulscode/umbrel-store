@@ -1,0 +1,137 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: $APP_CESSPOOL_PRUNED_IP
+      APP_PORT: $APP_CESSPOOL_PRUNED_PORT
+
+  # One image, two processes. `updater` grades blocks and renders the site as
+  # static files into the data directory; `web` is nginx serving those files.
+  # There is no database and no API server between them.
+  #
+  # Both run as 1000:1000, so everything in the data directory belongs to the
+  # umbrel user. `init: true` puts Docker's own init at PID 1, and each
+  # entrypoint names its script directly, which leaves out the init the image
+  # carries for a plain `docker run`: two of them would only log a warning.
+
+  web:
+    # DIGEST TO PIN AFTER PUSH. The image is not published yet, so this names
+    # the tag alone. Once v0.1.0-pruned.1 is on ghcr.io, add @sha256:<the
+    # index digest> to both image lines, in a commit of its own as the rest of
+    # this store does:
+    #   docker buildx imagetools inspect ghcr.io/paulscode/cesspool-pruned:v0.1.0-pruned.1 --format '{{.Manifest.Digest}}'
+    image: ghcr.io/paulscode/cesspool-pruned:v0.1.0-pruned.1
+    user: "1000:1000"
+    init: true
+    restart: on-failure
+    stop_grace_period: 1m
+    # nginx on 8080. Until the updater has rendered a first build it serves a
+    # page that says what the updater is waiting for, read from /status.json.
+    entrypoint: ["/app/docker/web.sh"]
+    environment:
+      # Umbrel has no settings form, so the app carries its own: on the About
+      # page, under "What this install covers", a form for rebuilding discarded
+      # blocks and for the disk limit. A small server in this container takes
+      # it and writes data/settings.json, which the updater reads. The app
+      # proxy's Umbrel login is what keeps anyone else from using it.
+      CESSPOOL_SETTINGS_PAGE: "1"
+    volumes:
+      # Writable for data/settings.json alone; everything else here is the
+      # updater's. nginx's pid and temporary files go under /tmp, and it keeps
+      # no access log.
+      - ${APP_DATA_DIR}/data:/data
+    networks:
+      default:
+        ipv4_address: $APP_CESSPOOL_PRUNED_IP
+
+  updater:
+    # The same image as `web`, and the same digest once it is pinned.
+    image: ghcr.io/paulscode/cesspool-pruned:v0.1.0-pruned.1
+    user: "1000:1000"
+    init: true
+    restart: on-failure
+    stop_grace_period: 1m
+    # Waits for the node, asks it which chain it is on (the hash of block
+    # 961640 tells the two apart; nothing in exports.sh can), then keeps
+    # grading that chain. Each chain has its own state under /data, so pointing
+    # the indexer at a node on the other chain never mixes two chains' blocks,
+    # and pointing it back picks up where it left off.
+    entrypoint: ["/app/docker/updater.sh"]
+    environment:
+      # The node's RPC, reached through the Electrs Pruned app's btc-rpc-proxy
+      # (or Fulcrum Pruned's, when that is the one selected: it fills the same
+      # names). For a block the node still has, the proxy passes `getblock` on
+      # unchanged, with the coins the block spends. For a block the node has
+      # pruned, it fetches the block from the peer-to-peer network, which is
+      # what lets this app rebuild history below the node's prune height.
+      #
+      # On StartOS the Bitcoin package runs the proxy itself when pruning is on.
+      # Umbrel's node apps do not, hence the indexer's address here.
+      #
+      # The credentials are still the node's: the proxy runs with
+      # passthrough_rpcauth against the node's bitcoin.conf, so it accepts
+      # exactly what the node accepts and no second secret exists.
+      CESSPOOL_RPC_URL: http://$APP_ELECTRS_PRUNED_PROXY_IP:$APP_ELECTRS_PRUNED_PROXY_PORT
+      # Empty when the selected node exports no RPC user, as older installs of
+      # the BLAKE2b companion do. The updater then authenticates with the
+      # cookie the node writes: CESSPOOL_RPC_COOKIE names the node's data
+      # directory, mounted below, and the updater finds the cookie in it
+      # (mainnet's at the root, then the directories other networks use). It
+      # reads the cookie again after a 401, so a node restart that writes a
+      # new one recovers on its own.
+      CESSPOOL_RPC_USER: $APP_BITCOIN_RPC_USER
+      CESSPOOL_RPC_PASS: $APP_BITCOIN_RPC_PASS
+      CESSPOOL_RPC_COOKIE: /bitcoin
+
+      # The Electrum server, for the transactions an old block spends from.
+      # Only used below the node's prune height, and only while
+      # CESSPOOL_BACKFILL is on.
+      CESSPOOL_ELECTRUM_HOST: $APP_ELECTRS_PRUNED_SERVER_IP
+      CESSPOOL_ELECTRUM_PORT: $APP_ELECTRS_PRUNED_SERVER_PORT
+
+      # The two settings a user changes on the About page's form (see `web`).
+      # These are only the defaults until the form has been saved once; after
+      # that data/settings.json wins.
+      #
+      # CESSPOOL_BACKFILL: rebuild blocks the node has pruned, through the
+      # proxy and the Electrum server above. Off: on the SHA256 chain one block
+      # costs half an hour or more of lookups and old-block downloads, which
+      # nobody should get without asking for it.
+      CESSPOOL_BACKFILL: "0"
+      # CESSPOOL_MAX_GB: how much disk one chain's blocks, records and pages
+      # may take. History fills in until it is reached, and from then on the
+      # oldest blocks are dropped as new ones arrive. A block costs about
+      # 0.6 MB on the BLAKE2b chain and about 8 MB on the SHA256 chain.
+      CESSPOOL_MAX_GB: "50"
+      CESSPOOL_SETTINGS_PAGE: "1"
+
+      # The Lightning pages. `auto`: the updater picks at start, after it knows
+      # the chain. On the BLAKE2b chain, Lightning Fork, if its read-only
+      # macaroon can be read. On the SHA256 chain, the official Lightning Node
+      # (LND), if its macaroon can be read; failing that, Core Lightning, if
+      # its socket lets this app connect. Otherwise the pages are off for that
+      # run, and the next start looks again. Each app picks its own Bitcoin
+      # node, so the updater also compares the Lightning node's best block with
+      # this app's node before it uses anything from it.
+      CESSPOOL_LN_BACKEND: auto
+      CESSPOOL_LN_FORK_DIR: /ln/fork
+      CESSPOOL_LN_FORK_REST_URL: $APP_CESSPOOL_PRUNED_LN_FORK_REST_URL
+      CESSPOOL_LN_LND_DIR: /ln/lnd
+      CESSPOOL_LN_LND_REST_URL: $APP_CESSPOOL_PRUNED_LN_LND_REST_URL
+      CESSPOOL_LN_CLN_DIR: /ln/cln
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+      # Read-only, and only for the cookie: every block comes through the
+      # proxy.
+      - ${APP_BITCOIN_DATA_DIR}:/bitcoin:ro
+      # Each Lightning app's data directory, read-only, when it is installed:
+      # LND's for its TLS certificate and read-only macaroon, Core Lightning's
+      # for its socket. An empty directory of this app's own when it is not
+      # (see exports.sh).
+      - ${APP_CESSPOOL_PRUNED_LN_FORK_DIR}:/ln/fork:ro
+      - ${APP_CESSPOOL_PRUNED_LN_LND_DIR}:/ln/lnd:ro
+      - ${APP_CESSPOOL_PRUNED_LN_CLN_DIR}:/ln/cln:ro
+    networks:
+      default:
+        ipv4_address: $APP_CESSPOOL_PRUNED_UPDATER_IP

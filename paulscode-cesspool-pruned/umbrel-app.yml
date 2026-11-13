@@ -1,0 +1,144 @@
+manifestVersion: 1.1
+id: paulscode-cesspool-pruned
+category: bitcoin
+name: Cesspool Pruned
+version: "0.1.0.0"
+tagline: Grades every block for spam, and works with a pruned node
+description: >-
+  Your own cesspool.lol: every block your node sees, and every transaction in
+  it, graded for spam, with the pool that mined it and the filter that would
+  have kept it out. This build works with a pruned Bitcoin node, and on either
+  chain, SHA256 or BLAKE2b.
+
+
+  HOW IT WORKS
+
+
+  Each transaction, with the coins it spends, is run through the policy code
+  of Plumb 10, once with stock Knots 29.5's defaults and once with Plumb's, so
+  the site and a node running that code cannot disagree about a transaction.
+  On the SHA256 chain Bitcoin Core 31's defaults are compared too. The result
+  is a set of static pages: a grade for every block, a page for every
+  transaction, a ranking of pools by how much of their block space went to
+  spam, and a checker for your own node's filter settings. The site never
+  displays what the spam carries.
+
+
+  The app reads blocks from your own node and makes no request to any other
+  machine. The mining pool list and the fonts ship with it.
+
+
+  REQUIREMENTS
+
+
+  Install Electrs Pruned (or Fulcrum Pruned, which can stand in for it) first.
+  This app reaches your node through that app's block-fetching proxy. Your
+  Bitcoin node may be pruned or archival; nothing here asks you to change it.
+
+
+  Umbrel asks which Bitcoin node to use when you install this. Pick the same
+  one you picked for the Electrum server. The app asks the node which chain it
+  is on and keeps each chain's blocks apart, so switching nodes later mixes
+  nothing and deletes nothing.
+
+
+  WHAT TO EXPECT
+
+
+  It waits for the node to finish syncing, then grades the newest dozen
+  blocks, so the site appears within a few minutes. After that it fills in
+  history backwards, newest first, while keeping up with new blocks. Until the
+  first blocks are graded the tile shows a page that says what it is waiting
+  for.
+
+
+  On a pruned node it grades back to the oldest block the node still has.
+  Below that it can rebuild blocks through the Electrum server, but slowly:
+  every transaction a block spends from sits in some older block, which has
+  to be fetched from the peer-to-peer network in turn. On the SHA256 chain one
+  block can take an hour or more, and it costs download traffic, so this is
+  off unless you turn it on. The About page says which blocks this install has
+  graded and why not the rest, and has the switch for it, under Settings.
+
+
+  HOW MUCH DISK
+
+
+  A block with its records and pages takes about 0.6 MB on the BLAKE2b chain
+  and about 8 MB on the SHA256 chain, where blocks are full: over a gigabyte
+  a day. So the app keeps to a ceiling of 50 GB for each chain, which you can
+  change on the About page, under Settings. On the BLAKE2b
+  chain that holds everything since the fork at block 961640, with room for
+  more than a year to come. On the SHA256 chain it holds about six weeks: once
+  the ceiling is reached, the oldest blocks are dropped as new ones arrive,
+  and the pages say "since block N" instead of "since the fork". Umbrel's
+  backups leave the graded blocks out: on an archival node they can be graded
+  again, and on a pruned node only as far back as the node and the Electrum
+  server reach.
+
+
+  LIGHTNING
+
+
+  With a Lightning node installed, a Lightning page shows the public Lightning
+  network as that node sees it, and ties channels to the graded blocks and
+  transactions that opened and closed them. Only public network data is read:
+  no balances and no private channels. There is nothing to set up. Which node
+  is read follows from the chain, because a Lightning node's channels exist on
+  one chain only: Lightning Fork on the BLAKE2b chain, and the official
+  Lightning Node app (LND) on the SHA256 chain. Core Lightning is tried when
+  LND is not installed, but the official Core Lightning app keeps its control
+  socket to itself, so it is normally not read.
+
+
+  The page stays off when the Lightning node for this chain is not installed,
+  until it has a wallet, and while it follows a different chain from this
+  app's Bitcoin node. This app looks for it when it starts, so restart this
+  app after installing a Lightning app and creating its wallet.
+
+
+  A self-hosted build of cesspool.lol, which grades the BLAKE2b chain in
+  public.
+developer: Paul Lamb
+website: https://cesspool.lol
+dependencies:
+  - bitcoin
+  - paulscode-electrs-pruned
+repo: https://github.com/paulscode/cesspool-pruned
+support: https://paulscode.com/c/bitcoin/8
+port: 3040
+# Community stores must supply full URLs for icon and gallery: Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-cesspool-pruned/icon.png
+gallery:
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-cesspool-pruned/gallery/1.png
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-cesspool-pruned/gallery/2.png
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-cesspool-pruned/gallery/3.png
+path: ""
+# The graded blocks and the rendered site are large, and the app builds them
+# again from the node, so backups leave them out. One directory for each
+# chain, and the site rendered from both.
+backupIgnore:
+  - data/blake2b
+  - data/sha256
+  - data/www
+  - data/status.json
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: >-
+  First release: cesspool.lol's block grading for your own node, pruned or
+  archival, on the SHA256 or the BLAKE2b chain, with Electrs Pruned (or
+  Fulcrum Pruned) as the way to the node.
+
+
+  It grades back to the oldest block your node still has, and keeps to 50 GB
+  of disk for each chain. Rebuilding blocks a pruned node has already
+  discarded is off unless you turn it on: it is slow and uses download
+  traffic. Both settings are on the About page, under Settings.
+
+
+  The Lightning page reads Lightning Fork on the BLAKE2b chain and the
+  official Lightning Node app on the SHA256 chain. Restart this app after
+  installing one and creating its wallet.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store

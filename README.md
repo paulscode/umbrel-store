@@ -31,6 +31,7 @@ An [Umbrel](https://umbrel.com) community app store bringing together all of
 | [HashGG](#hashgg) | Sovereign hash routing — exposes your Datum stratum port to the public internet | Datum (→ Bitcoin Knots) |
 | [HashGG Companion](#hashgg-companion) | The same hash routing, pointed at the Companion Datum Gateway | Datum (BLAKE2b) Companion |
 | [Mempool Pruned](#mempool-pruned) | Mempool block explorer that works against a pruned Bitcoin node | Bitcoin Node + Electrs Pruned |
+| [Cesspool Pruned](#cesspool-pruned) | Every block graded for spam, with the pool that mined it, against a pruned Bitcoin node on either chain | Bitcoin Node + Electrs Pruned |
 | [Pickhash](#pickhash) | Autonomously rents Bitcoin hashrate from MiningRigRentals and points it at your own pool | none (optional: HashGG) |
 
 ---
@@ -455,6 +456,72 @@ and port.
 
 - Source: https://github.com/paulscode/mempool-pruned-startos
 - Upstream: https://github.com/paulscode/mempool-pruned
+
+---
+
+### Cesspool Pruned
+
+Your own [cesspool.lol](https://cesspool.lol): every block your node sees, and
+every transaction in it, graded for spam, with the pool that mined it and the
+filter that would have kept it out. This build works with a pruned node, and on
+either chain, SHA256 or BLAKE2b.
+
+Each transaction, with the coins it spends, is run through the policy code of
+Plumb 10, once with stock Knots 29.5's defaults and once with Plumb's; on the
+SHA256 chain Bitcoin Core 31's defaults are compared too. The result is a set of
+static pages, served from your Umbrel. The app reads blocks from your own node
+and makes no request to any other machine: the mining pool list and the fonts
+ship with it.
+
+**Requirements:** install [Electrs Pruned](#electrs-pruned) (or
+[Fulcrum Pruned](#fulcrum-pruned), which can stand in for it) first. This app
+reaches your node through that app's block-fetching proxy. Your Bitcoin node
+may be pruned or archival.
+
+> **Point both apps at the same node.** Umbrel asks which Bitcoin node to use
+> when you install this. Pick the one you picked for the Electrum server. The
+> app asks the node which chain it is on and keeps each chain's blocks apart,
+> so switching nodes later mixes nothing and deletes nothing.
+
+It waits for the node to finish syncing, grades the newest dozen blocks so the
+site appears within minutes, then fills in history backwards while keeping up
+with new blocks. On a pruned node it grades back to the oldest block the node
+still has. Below that it can rebuild a block through the Electrum server, but
+slowly: every transaction the block spends from sits in some older block, which
+has to be fetched from the peer-to-peer network in turn. The site's About page
+says which blocks this install has graded, and why not the rest.
+
+A block with its records and pages takes about 0.6 MB on the BLAKE2b chain and
+about 8 MB on the SHA256 chain, where blocks are full. The app keeps to 50 GB
+for each chain: on BLAKE2b that holds everything since the fork at block 961640,
+and on SHA256 about six weeks, after which the oldest blocks are dropped as new
+ones arrive. Umbrel's backups leave the graded blocks out.
+
+The Lightning page turns on by itself when the Lightning node for this app's
+chain is installed and has a wallet: [Lightning Fork](#lightning-fork) on the
+BLAKE2b chain, the official Lightning Node app (LND) on the SHA256 chain. Only
+the public channel graph is read. Restart Cesspool Pruned after installing one.
+Core Lightning is tried when LND is not installed, but the official app keeps
+its control socket to itself, so it is normally not read.
+
+#### Settings
+
+Two settings are on the app's own About page, under **Settings** (in the
+section "What this install covers"):
+
+| Setting | Default | Effect |
+|---------|---------|--------|
+| Rebuild blocks your node has discarded | Off | Rebuilds blocks a pruned node no longer has, through the Electrum server. Slow, and uses download traffic: on the SHA256 chain an hour or more a block |
+| Disk space this chain may use | 50 GB | How much one chain's blocks, records and pages may take before the oldest blocks are dropped; also "No limit" |
+
+They take effect within a minute and survive app updates
+(`~/umbrel/app-data/paulscode-cesspool-pruned/data/settings.json`).
+
+Where the updater stands, for troubleshooting: `http://10.21.21.246:8080/status.json`
+from the Umbrel itself, or `/status.json` on the app's own address.
+
+- Source: https://github.com/paulscode/cesspool-pruned
+- Upstream: https://github.com/jasonsopko/cesspool
 
 ---
 
