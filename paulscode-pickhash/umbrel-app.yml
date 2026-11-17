@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-pickhash
 category: bitcoin
 name: Pickhash
-version: "0.1.6.0"
+version: "0.1.7.0"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
   Pickhash rents SHA-256 (AsicBoost) or BLAKE2b hashrate from MiningRigRentals
@@ -80,31 +80,26 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
-  You can now change your payout address in the middle of a session without
-  stopping it. In Pickhash, open Settings, Stratum endpoint, keep the host and
-  port, enter the new address in the worker field and click "Test & save
-  endpoint". In LIVE mode every running rental moves to the new address within
-  about a minute, and an alert confirms it. Then set the same address in your
-  Datum Gateway and restart it when convenient, ideally between sessions. Keep
-  the old wallet: shares already credited to it go on being paid for a while.
-  Full guide:
-  https://github.com/paulscode/pickhash/blob/main/docs/changing-payout-address.md
+  Pickhash now checks whether your Datum Gateway can give each rented rig its own
+  difficulty, and warns you when it cannot. A pool such as CONVOY sizes its
+  minimum share difficulty to your gateway's total hashrate, and a stock Datum
+  Gateway pushes every miner up to it. Behind a busy gateway each rented rig is
+  then asked for a difficulty sized for your whole fleet: it finds a share only
+  every few minutes, MiningRigRentals shows the rig's owner a "High Worker
+  Difficulty" warning and reads its delivery as choppy (the under-delivery
+  notices), and the rig reconnects every couple of minutes.
 
 
-  A payout address with a typo is now refused when you save it. Datum Gateway
-  does not check usernames, so a mistyped address used to pass the endpoint test
-  and get credited with everything the rentals mined.
+  The new Datum (SHA256) and Datum (BLAKE2b) apps in this store, and the updated
+  Datum Companions, fix this: each rig keeps a difficulty that suits it while the
+  work stays committed at the pool's minimum, so pool credit is unchanged. Tested
+  live on CONVOY. The endpoint test in Setup and Settings now reports what your
+  gateway supports, and a standing alert names the app to install until it is
+  updated. It clears by itself once the gateway is updated.
 
 
-  Saving a new stratum host or port moves running rentals to it. Before, they
-  stayed on the old tunnel until they ended.
-
-
-  The pool saved in your MiningRigRentals account is kept in step with your
-  endpoint, including after an automatic tunnel repair or a DuckDNS change.
-
-
-  Safer updates and restarts during a session: Pickhash now waits for a rental
-  purchase or extension already in progress to be recorded before it stops.
+  Also fixed: a stratum endpoint that answered the endpoint test or the periodic
+  health check with something other than a JSON object (for example the word
+  null) could crash Pickhash; such replies are now ignored.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store

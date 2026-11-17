@@ -11,17 +11,21 @@ services:
     # Digest-pinned, like the rest of this store. A bare tag is mutable: pushing
     # over it changes what an existing install resolves to with no version here
     # moving, which is the one thing a store entry exists to prevent.
-    image: paulscode/hashgg:0.7.2.6@sha256:de5f2e4a8cb736f4595f6c309d23855b7760ab62addb7c0404b931ce44157028
+    image: paulscode/hashgg:0.7.2.7@sha256:e6680f71857c0863347f06e63a33fb1927eaa9abd8d5af4c1afbf7461007dafc
     restart: on-failure
     environment:
-      # Datum has no exports.sh, so there's no APP_DATUM_STRATUM_PORT —
-      # hardcode the port Datum listens on (23334 per its own compose).
-      # APP_DATUM_NODE_IP should be auto-injected by Umbrel because of the
-      # `dependencies: [datum]` in umbrel-app.yml. If it isn't populated on
-      # install, the fallback hostname `datum_datum_1` is deterministic from
-      # Umbrel's container naming and will work on the internal network.
-      DATUM_HOST: ${APP_DATUM_NODE_IP:-datum_datum_1}
+      # Which Datum Gateway the tunnel serves. Two SHA256 gateway apps can do it, and
+      # an Umbrel dependency cannot say "this one or that one", so they are listed
+      # here by container name: PaulsCode's Datum (SHA256), then the official Datum
+      # app. The gateway in use is kept (remembered across restarts; on an update with
+      # nothing remembered, the official app below, as before). HashGG moves to the
+      # other only when it is gone (stopped or uninstalled) or silent for ten minutes.
+      # The tunnel keeps listening on 23334 whichever is behind it, so the public
+      # endpoint does not change.
+      DATUM_CANDIDATES: "paulscode-datum-gateway-sha256_gateway_1:23340 datum_datum_1:23334"
+      DATUM_HOST: datum_datum_1
       DATUM_STRATUM_PORT: "23334"
+      LISTEN_PORT: "23334"
 
       # Declared rather than inferred: without it HashGG guesses the platform,
       # and the guess decides which instructions the Bitcoin reachability

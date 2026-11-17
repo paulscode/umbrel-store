@@ -2,11 +2,11 @@ manifestVersion: 1.1
 id: paulscode-hashgg-companion
 category: bitcoin
 name: HashGG Companion
-version: "0.7.2.6"
-tagline: Sovereign hash routing for your Companion Datum Gateway
+version: "0.7.2.7"
+tagline: Sovereign hash routing for your BLAKE2b Datum Gateway
 description: >-
-  HashGG Companion exposes the stratum port of Datum (BLAKE2b) Companion to the
-  public internet, so any miner, anywhere, can connect to your node and mine
+  HashGG Companion exposes the stratum port of your BLAKE2b Datum Gateway (the
+  Datum (BLAKE2b) app, or the Datum (BLAKE2b) Companion) to the public internet, so any miner, anywhere, can connect to your node and mine
   blocks you built.
 
 
@@ -53,7 +53,7 @@ description: >-
 developer: Paul Lamb
 website: https://github.com/paulscode/hashgg
 dependencies:
-  - paulscode-datum-blake2b
+  - paulscode-knots-blake2b
 repo: https://github.com/paulscode/hashgg
 support: https://github.com/paulscode/hashgg/issues
 # Not 3000, which the ordinary HashGG holds. The two are designed to be installed
@@ -68,6 +68,17 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  HashGG Companion now works with PaulsCode's new Datum (BLAKE2b) app as well as
+  the Datum (BLAKE2b) Companion. Both now give rented and small miners a
+  difficulty that suits them even when the pool's minimum is far higher, as
+  CONVOY's is behind a busy gateway. HashGG Companion keeps the gateway it already
+  serves for as long as it answers; to move to Datum (BLAKE2b), set it up, then
+  stop or uninstall the Datum (BLAKE2b) Companion, and HashGG Companion moves
+  within a few minutes, keeping your public endpoint. The Datum (BLAKE2b)
+  Companion is no longer a required dependency (Knots BLAKE2b is).
+
+
+  PREVIOUS RELEASE:
   Security update. HashGG now runs on Node 24, replacing Node 18, which is end
   of life. The playit agent is updated to its current stable release, 1.0.10,
   and the image is rebuilt on a current Debian base with current CA

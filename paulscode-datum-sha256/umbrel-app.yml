@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-sha256
 category: bitcoin
 name: Datum (SHA256) Companion
-version: "1.0.3"
+version: "1.0.4"
 tagline: Mine with your own block templates, on a node that never enforces BIP-110
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -100,6 +100,28 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
+  Rented rigs keep their own difficulty. A pool such as CONVOY sizes its minimum
+  share difficulty to your gateway's total hashrate, and the gateway used to push
+  every miner up to it, so behind a busy gateway each rented rig was asked for a
+  difficulty sized for the whole fleet: few shares, choppy delivery readings, a
+  "High Worker Difficulty" warning for the rig's owner on MiningRigRentals, and a
+  reconnect every couple of minutes. With "Serve miners below the pool's minimum
+  difficulty" (on by default, on the dashboard's Config page) each miner gets a
+  difficulty that suits it, while work stays committed at the pool's minimum and
+  only shares meeting it are sent to the pool, so pool credit is unchanged.
+  Miners can also request a difficulty in the Stratum password (d=N), now on by
+  default too; Pickhash uses it to give each rented rig the difficulty
+  MiningRigRentals expects. If you had turned either setting off, it stays off.
+
+
+  Vardiff now measures at the difficulty it actually serves, which stops large
+  overshoots after a step up. A connection that opens with a TLS handshake is
+  closed at once, so the MiningRigRentals pool test no longer reports a working
+  endpoint as failing. The gateway answers datum.capabilities, so Pickhash can
+  tell what it supports.
+
+
+  PREVIOUS RELEASE:
   Fixes a fault that could start rejecting your shares after several hours of mining.
 
 

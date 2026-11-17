@@ -1,0 +1,47 @@
+version: "3.7"
+
+services:
+  # Opening this app opens the DATUM Gateway dashboard, which is what the official
+  # Datum app does. It used to open a page this project wrote, carrying a
+  # compatibility-report form, with the dashboard published raw on host port 7152
+  # behind nothing at all. Both are gone: the dashboard is the app now, and it is
+  # behind Umbrel's proxy like every other app's web interface.
+  app_proxy:
+    environment:
+      APP_HOST: $APP_DATUM_GATEWAY_BLAKE2B_IP
+      APP_PORT: 7152
+
+  # The DATUM Gateway itself: turns the node's block templates into Stratum work
+  # a Sia-style BLAKE2b ASIC can mine. Same image as the StartOS package.
+  #
+  # `entrypoint` and `command` override the image's own entrypoint deliberately,
+  # and this is the one place the two platforms differ on purpose.
+  #
+  # That entrypoint regenerates datum_gateway_config.json from the environment on
+  # every start, which is right on StartOS where the settings live in actions and
+  # the config file is an output. Here the dashboard's own Config page is the only
+  # settings form there is, so the config file has to be the thing that persists.
+  # Running the gateway directly against a file the pre-start hook patches is
+  # exactly what the official Umbrel Datum app does, and it is what lets
+  # api.modify_conf be true.
+  gateway:
+    # Pinned by digest, like every image in this store: a tag alone can be moved,
+    # and Umbrel would pull whatever it points at on a later install.
+    image: paulscode/datum-blake2b:1.1.2.0@sha256:ed325753ca9642dfb8f40a70f69459de3e48c60d4f3379d4b6958347f68ad8e5
+    entrypoint: ["/usr/local/bin/datum_gateway"]
+    command: ["-c", "/app/conf/datum_gateway_config.json"]
+    user: 1000:1000
+    restart: on-failure
+    stop_grace_period: 30s
+    volumes:
+      # The config the dashboard reads and writes. Seeded from this app's `data`
+      # directory and patched on every start by hooks/pre-start with the node's
+      # RPC details and this app's Umbrel password.
+      - ${APP_DATA_DIR}/data/settings/:/app/conf/
+    ports:
+      # Stratum, for the miner on your LAN. 23342 rather than the official Datum
+      # app's 23334, so both can be installed on one server.
+      - "23342:23342"
+    networks:
+      default:
+        ipv4_address: $APP_DATUM_GATEWAY_BLAKE2B_IP

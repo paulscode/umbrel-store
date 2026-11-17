@@ -15,7 +15,7 @@ services:
     # Pinned by digest, like every other app in this store. A bare tag is mutable:
     # pushing over it would change what an install resolves to without any version
     # here moving, which is the one thing a store entry exists to prevent.
-    image: paulscode/hashgg:0.7.2.6@sha256:de5f2e4a8cb736f4595f6c309d23855b7760ab62addb7c0404b931ce44157028
+    image: paulscode/hashgg:0.7.2.7@sha256:e6680f71857c0863347f06e63a33fb1927eaa9abd8d5af4c1afbf7461007dafc
     restart: on-failure
     environment:
       # Selects the companion build. Without it this would behave as the ordinary
@@ -23,11 +23,17 @@ services:
       # node as its reachability target.
       HASHGG_VARIANT: companion
 
-      # The BLAKE2b gateway, not the ordinary one. 23336 rather than 23334 is
-      # deliberate on that app's side so both gateways can run at once, and it is
-      # exported, so unlike the ordinary HashGG this does not have to hardcode it.
-      DATUM_HOST: ${APP_DATUM_BLAKE2B_GATEWAY_IP:-paulscode-datum-blake2b_gateway_1}
-      DATUM_STRATUM_PORT: ${APP_DATUM_BLAKE2B_STRATUM_PORT:-23336}
+      # A BLAKE2b gateway, not the ordinary one. Two can serve this tunnel, listed by
+      # container name: PaulsCode's Datum (BLAKE2b) app, then the Datum (BLAKE2b)
+      # Companion. The gateway in use is kept (remembered across restarts; on an
+      # update with nothing remembered, the Companion below, as before). HashGG moves
+      # to the other only when it is gone (stopped or uninstalled) or silent for ten
+      # minutes. The tunnel keeps listening on 23336 whichever is behind it, so the
+      # public endpoint does not change.
+      DATUM_CANDIDATES: "paulscode-datum-gateway-blake2b_gateway_1:23342 paulscode-datum-blake2b_gateway_1:23336"
+      DATUM_HOST: paulscode-datum-blake2b_gateway_1
+      DATUM_STRATUM_PORT: "23336"
+      LISTEN_PORT: "23336"
 
       # Declared rather than inferred: without it HashGG guesses the platform,
       # and the guess decides which instructions the Bitcoin reachability

@@ -31,7 +31,7 @@ services:
   # a file the pre-start hook patches is what the official Umbrel Datum app does,
   # and it is what lets api.modify_conf be true.
   gateway:
-    image: paulscode/datum-sha256:1.0.0@sha256:59d9d08072aacd22831c6d932c8782cc8c220b05454bde39fb97940a79df0f2c
+    image: paulscode/datum-sha256:1.0.4@sha256:4a8fb00f660c67018bbc7a740e8014e9233f44c560279381ae5605892e06fe71
     entrypoint: ["/usr/local/bin/datum_gateway"]
     command: ["-c", "/app/conf/datum_gateway_config.json"]
     user: 1000:1000

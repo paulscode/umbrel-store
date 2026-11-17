@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-hashgg
 category: bitcoin
 name: HashGG
-version: "0.7.2.6"
+version: "0.7.2.7"
 tagline: Sovereign hash routing for your Bitcoin miners
 description: >-
   HashGG exposes your Datum Gateway stratum port to the public internet —
@@ -34,9 +34,11 @@ description: >-
   ### Prerequisites:
 
 
-  Install and configure the Datum app first (which itself requires Bitcoin Knots).
-  HashGG connects to Datum's stratum port automatically — no configuration needed
-  on install.
+  Install and configure a SHA256 Datum Gateway first: PaulsCode's Datum (SHA256)
+  app, or the official Datum app (both use Bitcoin Knots). HashGG connects to its
+  stratum port automatically — no configuration needed on install. It keeps the
+  gateway it starts on (the official app, if both are installed); to move to
+  Datum (SHA256), stop or uninstall the official app.
 
 
   ### After installing HashGG:
@@ -70,7 +72,7 @@ description: >-
 developer: Paul Lamb
 website: https://github.com/paulscode/hashgg
 dependencies:
-  - datum
+  - bitcoin-knots
 repo: https://github.com/paulscode/hashgg
 support: https://github.com/paulscode/hashgg/issues
 port: 3036
@@ -84,6 +86,18 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  HashGG now works with PaulsCode's new Datum (SHA256) app as well as the official
+  Datum app. Datum (SHA256) gives rented and small miners a difficulty that suits
+  them even when the pool's minimum is far higher, which stops "High Worker
+  Difficulty" warnings and constant reconnects for rented rigs. HashGG keeps the
+  gateway it already serves for as long as it answers, so installing Datum
+  (SHA256) does not move anything by itself: once it is set up, stop or uninstall
+  the official Datum app and HashGG moves to it within a few minutes, keeping
+  your public endpoint. The official Datum app is no longer a required dependency
+  (Bitcoin Knots is).
+
+
+  PREVIOUS RELEASE:
   Security update. HashGG now runs on Node 24, replacing Node 18, which is end
   of life. The playit agent is updated to its current stable release, 1.0.10,
   and the image is rebuilt on a current Debian base with current CA

@@ -37,7 +37,7 @@
 
 set -euo pipefail
 
-VERSION="1.0.0"
+VERSION="1.0.4"
 IMAGE="paulscode/datum-sha256:${VERSION}"
 PLATFORMS="linux/amd64,linux/arm64"
 

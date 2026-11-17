@@ -1,0 +1,95 @@
+manifestVersion: 1.1
+id: paulscode-datum-gateway-blake2b
+category: bitcoin
+name: Datum (BLAKE2b)
+version: "1.1.2.0"
+tagline: Datum Gateway for BLAKE2b that gives rented and small miners their own difficulty
+description: >-
+  PaulsCode's build of the DATUM Gateway for the BLAKE2b chain. It builds block
+  templates from your own Bitcoin Knots (BLAKE2b) node and serves work to your
+  BLAKE2b miners, mining pooled (for example on CONVOY) or solo.
+
+
+  What it adds: a pool such as CONVOY tells the gateway a minimum share
+  difficulty and sizes it to your gateway's total hashrate, and a stock gateway
+  raises every miner to it. Behind a busy gateway each small or rented rig is
+  then asked for a difficulty sized for your whole fleet: it finds a share only
+  every few minutes, a rental marketplace reads its delivery as choppy and warns
+  the rig's owner, and it reconnects every couple of minutes. With "Serve miners
+  below the pool's minimum difficulty" (on by default) each miner gets a
+  difficulty that suits it, while work stays committed at the pool's minimum and
+  only shares meeting it are sent to the pool, so pool credit is unchanged.
+  Tested live on CONVOY. Miners can also ask for a difficulty in the Stratum
+  password (d=N), which Pickhash uses for rented rigs.
+
+
+  🛠️ SET-UP INSTRUCTIONS
+
+
+  This app needs the Knots (BLAKE2b) Companion node. It serves miners on port
+  23342. To reach it from the internet, use HashGG Companion (the main HashGG
+  app serves your SHA256 gateway). HashGG Companion keeps using the gateway it
+  already serves for as long as it answers; if you are moving from the Datum
+  (BLAKE2b) Companion, stop or uninstall that once this app is set up, and
+  HashGG Companion moves here within a few minutes, keeping the same public
+  endpoint.
+
+
+  ### Mining solo or to a pool
+
+
+  Out of the box this mines solo: a block you find pays its whole subsidy to
+  your address. To mine to a pool such as CONVOY, open the Config page and
+  change Collaborative reward sharing from "never" to "prefer" or "require";
+  the pool's Host, Port and Pubkey boxes stay greyed out until you do. Then fill
+  them in from the pool's own website.
+
+
+  A block's subsidy cannot be spent for 6480 blocks, about 45 days, on this
+  chain. This is a network rule, not a setting. Use a wallet that knows the rule.
+
+
+  Open the app to reach the gateway's dashboard. Its Config page holds every
+  setting, including your payout address and pool. The admin username is
+  `admin` and the password is shown under the app's "Show default credentials".
+
+
+  Point your miners at `stratum+tcp://<this device's address>:23342`, with your
+  payout address as the username.
+developer: Paul Lamb
+website: https://github.com/paulscode/datum_gateway
+dependencies:
+  - paulscode-knots-blake2b
+repo: https://github.com/paulscode/datum_gateway
+support: https://paulscode.com/c/bitcoin/8
+port: 7158
+# Community stores must supply full URLs for icon and gallery — Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-datum-gateway-blake2b/icon.png
+gallery:
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-datum-gateway-blake2b/gallery/1.png
+path: ""
+defaultUsername: "admin"
+deterministicPassword: true
+releaseNotes: >-
+  First release: PaulsCode's DATUM Gateway for BLAKE2b as a primary gateway,
+  with per-miner difficulty below the pool's minimum and difficulty requests in
+  the Stratum password, both on by default.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store
+widgets:
+  - id: "stats"
+    type: "three-stats"
+    refresh: "30s"
+    endpoint: "gateway:7152/umbrel-api"
+    link: ""
+    example:
+      type: "three-stats"
+      link: ""
+      items:
+        - title: "Connections"
+          text: "2"
+          subtext: "Worker"
+        - title: "Hashrate"
+          text: "1.8"
+          subtext: "TH/s"

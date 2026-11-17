@@ -28,8 +28,10 @@ An [Umbrel](https://umbrel.com) community app store bringing together all of
 | [Datum (SHA256) Companion](#datum-sha256-companion) | Solo or pooled mining against that node, with your own block templates | Knots (SHA256) Companion |
 | [Electrs Pruned](#electrs-pruned) | An Electrum server that indexes from a pruned node, beside the official Electrs | Bitcoin Node |
 | [Fulcrum Pruned](#fulcrum-pruned) | A fast Electrum server that indexes from a pruned node, on the SHA256 or BLAKE2b chain | Bitcoin Node |
-| [HashGG](#hashgg) | Sovereign hash routing — exposes your Datum stratum port to the public internet | Datum (→ Bitcoin Knots) |
-| [HashGG Companion](#hashgg-companion) | The same hash routing, pointed at the Companion Datum Gateway | Datum (BLAKE2b) Companion |
+| [Datum (SHA256)](#datum-sha256) | PaulsCode's Datum Gateway, for use in place of the official Datum app: rented and small miners get their own difficulty | Bitcoin Knots |
+| [Datum (BLAKE2b)](#datum-blake2b) | The same gateway for the BLAKE2b chain, as your primary BLAKE2b gateway | Knots (BLAKE2b) Companion |
+| [HashGG](#hashgg) | Sovereign hash routing — exposes your Datum stratum port to the public internet | Bitcoin Knots + Datum (SHA256) or the official Datum |
+| [HashGG Companion](#hashgg-companion) | The same hash routing, pointed at your BLAKE2b gateway | Knots (BLAKE2b) Companion + Datum (BLAKE2b) or its Companion |
 | [Mempool Pruned](#mempool-pruned) | Mempool block explorer that works against a pruned Bitcoin node | Bitcoin Node + Electrs Pruned |
 | [Cesspool Pruned](#cesspool-pruned) | Every block graded for spam, with the pool that mined it, against a pruned Bitcoin node on either chain | Bitcoin Node + Electrs Pruned |
 | [Pickhash](#pickhash) | Autonomously rents Bitcoin hashrate from MiningRigRentals and points it at your own pool | none (optional: HashGG) |
@@ -365,6 +367,42 @@ all, and is the more private option.
 
 ---
 
+### Datum (SHA256)
+
+PaulsCode's build of the [DATUM Gateway](https://github.com/paulscode/datum_gateway)
+for SHA256, for use in place of the official Datum app. It builds block templates
+from the **Bitcoin Knots** app and serves work to your miners, pooled or solo.
+
+What it adds: some pools size their minimum share difficulty to your gateway's
+total hashrate, and the official gateway raises every miner to it, so behind a busy
+gateway each small or rented rig is asked for a difficulty sized for your whole
+fleet. With **Serve miners below the pool's minimum difficulty** (on by default)
+each miner gets a difficulty that suits it, while work stays committed at the
+pool's minimum, so pool credit is unchanged. Miners can also request a difficulty
+in the Stratum password (`d=N`), which Pickhash uses for rented rigs.
+
+It mines pooled by default, like the official app (OCEAN unless you set another
+pool). It serves miners on `23340`, so it can run beside the official Datum app
+(`23334`) while you move miners over; then stop or uninstall the official app and
+[HashGG](#hashgg) moves to this one, keeping your public endpoint.
+
+- Source: https://github.com/paulscode/datum_gateway (branch `ocean-sha256-3`)
+
+---
+
+### Datum (BLAKE2b)
+
+The same gateway for the BLAKE2b chain, as your primary BLAKE2b gateway, built
+from the **Knots (BLAKE2b) Companion** node and tested live on CONVOY. It serves
+miners on `23342` and mines solo until you set a pool on its Config page;
+[HashGG Companion](#hashgg-companion) serves it once the gateway it already uses
+is stopped or uninstalled. If you run both chains, the [Datum (BLAKE2b)
+Companion](#datum-blake2b-companion) is the alternative for the BLAKE2b side.
+
+- Source: https://github.com/paulscode/datum_gateway (branch `blake2b-full-payout-7`)
+
+---
+
 ### HashGG
 
 Sovereign hash routing for your Bitcoin miners. Exposes your
@@ -374,9 +412,14 @@ control — so any miner, anywhere, can connect to your node and mine blocks *yo
 built. No router configuration, no dynamic DNS, no VPN; works behind NAT, double
 NAT, or CGNAT.
 
-Requires the official [**Datum**](https://apps.umbrel.com/app/datum) Umbrel app
-(which in turn requires the **Bitcoin Knots** app). Install Datum first, then
-install HashGG and pick a tunnel mode in its web UI.
+Requires a SHA256 Datum Gateway: [**Datum (SHA256)**](#datum-sha256) from this
+store, or the official [**Datum**](https://apps.umbrel.com/app/datum) Umbrel app
+(both use the **Bitcoin Knots** app). Install one first, then install HashGG and
+pick a tunnel mode in its web UI. HashGG keeps the gateway it serves for as long
+as it answers, and moves to the other only when that one stops answering (stop or
+uninstall it to move; HashGG moves within a few minutes), keeping the same public
+endpoint. Until then it stays on the gateway it already uses (the official app, after
+an update).
 
 - Source: https://github.com/paulscode/hashgg
 - Issues: https://github.com/paulscode/hashgg/issues
@@ -409,8 +452,10 @@ the easiest setup, or a **VPS SSH tunnel**, with no third party on the data path
 > one from a node that is still catching up. Until then this app says it is
 > waiting. On a fresh node that is hours, and it needs no action.
 
-**Requires** Datum (BLAKE2b) Companion, which in turn requires Knots (BLAKE2b)
-Companion.
+**Requires** a BLAKE2b Datum Gateway: [**Datum (BLAKE2b)**](#datum-blake2b) or
+Datum (BLAKE2b) Companion, both of which use Knots (BLAKE2b) Companion. HashGG
+Companion keeps the gateway it serves while it answers and moves to the other only
+when that one stops answering.
 
 - Source: https://github.com/paulscode/hashgg
 - Issues: https://github.com/paulscode/hashgg/issues

@@ -1,0 +1,85 @@
+manifestVersion: 1.1
+id: paulscode-datum-gateway-sha256
+category: bitcoin
+name: Datum (SHA256)
+version: "1.0.4"
+tagline: Datum Gateway that gives rented and small miners their own difficulty
+description: >-
+  PaulsCode's build of the DATUM Gateway for SHA256, for use in place of the
+  official Datum app. It builds block templates from your own Bitcoin Knots node
+  and serves work to your miners, mining pooled or solo, like the official app.
+
+
+  What it adds: a pool such as OCEAN or CONVOY tells the gateway a minimum share
+  difficulty, and the official gateway raises every miner to it. Some pools size
+  that minimum to your gateway's total hashrate, so behind a busy gateway each
+  small or rented rig is asked for a difficulty sized for your whole fleet: it
+  finds a share only every few minutes, and a rental marketplace reads its
+  delivery as choppy and warns the rig's owner. With "Serve miners below the
+  pool's minimum difficulty" (on by default) each miner gets a difficulty that
+  suits it, while work stays committed at the pool's minimum and only shares
+  meeting it are sent to the pool, so pool credit is unchanged. Miners can also
+  ask for a difficulty in the Stratum password (d=N), which Pickhash uses for
+  rented rigs.
+
+
+  🛠️ SET-UP INSTRUCTIONS
+
+
+  This app needs the Bitcoin Knots app, the same node the official Datum uses,
+  and like the official app it mines pooled (on OCEAN, unless you set another
+  pool on the Config page). It can be installed beside the official Datum app:
+  it serves miners on port 23340 rather than 23334, so you can move miners over
+  and then remove the official app.
+
+
+  HashGG keeps using the gateway it already serves for as long as it answers,
+  so installing this app never moves your public endpoint by itself. Once this
+  app is set up, stop or uninstall the official Datum app, and HashGG moves to
+  this one within a few minutes, keeping the same public endpoint.
+
+
+  Open the app to reach the gateway's dashboard. Its Config page holds every
+  setting, including your payout address and pool. The admin username is
+  `admin` and the password is shown under the app's "Show default credentials".
+
+
+  Point your miners at `stratum+tcp://<this device's address>:23340`, with your
+  payout address as the username.
+developer: Paul Lamb
+website: https://github.com/paulscode/datum_gateway
+dependencies:
+  - bitcoin-knots
+repo: https://github.com/paulscode/datum_gateway
+support: https://paulscode.com/c/bitcoin/8
+port: 7157
+# Community stores must supply full URLs for icon and gallery — Umbrel's resolver
+# only auto-prefixes URLs for the official umbrel-app-store.
+icon: https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-datum-gateway-sha256/icon.png
+gallery:
+  - https://raw.githubusercontent.com/paulscode/umbrel-store/master/paulscode-datum-gateway-sha256/gallery/1.png
+path: ""
+defaultUsername: "admin"
+deterministicPassword: true
+releaseNotes: >-
+  First release: PaulsCode's DATUM Gateway for SHA256, for use in place of the
+  official Datum app, with per-miner difficulty below the pool's minimum and
+  difficulty requests in the Stratum password, both on by default.
+submitter: Paul Lamb
+submission: https://github.com/paulscode/umbrel-store
+widgets:
+  - id: "stats"
+    type: "three-stats"
+    refresh: "30s"
+    endpoint: "gateway:7152/umbrel-api"
+    link: ""
+    example:
+      type: "three-stats"
+      link: ""
+      items:
+        - title: "Connections"
+          text: "2"
+          subtext: "Worker"
+        - title: "Hashrate"
+          text: "1.8"
+          subtext: "TH/s"

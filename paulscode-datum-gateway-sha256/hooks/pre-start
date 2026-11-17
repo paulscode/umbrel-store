@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+
+# Patch datum_gateway_config.json with the things only the host knows: the node's
+# RPC details, and this app's Umbrel password for the dashboard's admin pages.
+#
+# Same shape as the official Umbrel Datum app's hook, and the same reason for
+# existing. The gateway runs directly against this file rather than through the
+# image's entrypoint, so that the dashboard's Config page can write to it and have
+# the change survive a restart. Anything the host has to supply therefore has to
+# be merged in here, before the container starts.
+#
+# Everything else in the file is the user's. This only ever sets the four keys
+# below, so a setting changed in the dashboard is not undone on the next start.
+
+set -euo pipefail
+
+APP_DATA_DIR="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/..")"
+DATUM_CONFIG_FILE="${APP_DATA_DIR}/data/settings/datum_gateway_config.json"
+DESIRED_OWNER="1000:1000"
+
+# WRITTEN HERE IF ABSENT, RATHER THAN ASSUMED PRESENT.
+#
+# The defaults below are shipped as data/settings/datum_gateway_config.json, and
+# an install copies them. An UPDATE does not: umbreld copies only
+# `docker-compose.yml *.template exports.sh torrc hooks`, so an install that
+# updated into the version which first needed this file never received it.
+# Docker then created the bind-mount source as an empty root-owned directory and
+# the gateway crash-looped on "unable to open /app/conf/datum_gateway_config.json".
+#
+# Exiting non-zero here did not prevent that, it only hid the reason. So the file
+# is created from these defaults when missing, which repairs such an install on
+# its next start and costs nothing when the file is already there. The patching
+# below then fills in the host-supplied values as usual.
+if [ ! -f "${DATUM_CONFIG_FILE}" ]; then
+  echo "DATUM configuration file missing; writing defaults."
+  mkdir -p "$(dirname "${DATUM_CONFIG_FILE}")"
+  cat > "${DATUM_CONFIG_FILE}" <<'DATUMCONF'
+{
+  "bitcoind": {
+    "rpcuser": "auto-configure-on-install",
+    "rpcpassword": "auto-configure-on-install",
+    "rpcurl": "auto-configure-on-install",
+    "work_update_seconds": 5,
+    "notify_fallback": true
+  },
+  "api": {
+    "listen_port": 7152,
+    "modify_conf": true,
+    "admin_password": "umbrel"
+  },
+  "mining": {
+    "pool_address": "",
+    "coinbase_tag_primary": "DATUM on Umbrel",
+    "coinbase_tag_secondary": "DATUM on Umbrel",
+    "pow_algorithm": "auto"
+  },
+  "stratum": {
+    "listen_port": 23340,
+    "vardiff_min": 1024,
+    "vardiff_below_pool_min": true,
+    "password_difficulty": true
+  },
+  "logger": {
+    "log_level_console": 2
+  },
+  "datum": {
+    "pool_pass_workers": true,
+    "pool_pass_full_users": true,
+    "pooled_mining_only": true
+  }
+}
+DATUMCONF
+fi
+
+# A config the gateway cannot parse would crash-loop it, and every jq step below would
+# fail quietly. Say so plainly instead. (A missing file was recreated above.)
+if ! jq empty "$DATUM_CONFIG_FILE" > /dev/null 2>&1; then
+  echo "datum_gateway_config.json is not valid JSON. Fix the file, or remove it to restore the defaults. Exiting."
+  exit 1
+fi
+
+# The node app exports these. Empty means it is not installed or its exports
+# failed, and there is nothing useful to do with a gateway that cannot reach a
+# node, so say which one is missing rather than writing an empty credential and
+# leaving the gateway to fail with a 401 nobody can trace.
+for var in APP_BITCOIN_KNOTS_RPC_USER APP_BITCOIN_KNOTS_RPC_PASS \
+           APP_BITCOIN_KNOTS_NODE_IP APP_BITCOIN_KNOTS_INTERNAL_RPC_PORT; do
+  if [ -z "${!var:-}" ]; then
+    echo "Missing ${var} from the Bitcoin Knots app. Exiting."
+    exit 1
+  fi
+done
+
+echo "Pointing DATUM at the SHA256 node."
+
+jq --arg user "$APP_BITCOIN_KNOTS_RPC_USER" \
+   --arg pass "$APP_BITCOIN_KNOTS_RPC_PASS" \
+   --arg url "${APP_BITCOIN_KNOTS_NODE_IP}:${APP_BITCOIN_KNOTS_INTERNAL_RPC_PORT}" \
+   '.bitcoind.rpcuser = $user |
+    .bitcoind.rpcpassword = $pass |
+    .bitcoind.rpcurl = $url' \
+   "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+
+# The dashboard's admin pages are gated on this, and without it the page that
+# lists your connected miners returns 401 with no way to authenticate. Set to this
+# app's Umbrel password, which the user can read from the app icon's context menu
+# under "Show default credentials". The username is `admin`, which DATUM hardcodes.
+#
+# Only replaced while it is still the seeded placeholder, so a password the user
+# has since changed in the dashboard is left alone.
+if jq -e '.api.admin_password == "umbrel"' "$DATUM_CONFIG_FILE" > /dev/null; then
+  jq --arg password "$APP_PASSWORD" '.api.admin_password = $password' \
+     "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+fi
+
+# Let the dashboard write this file. Without it the Config page appears to work
+# and every save is discarded.
+if ! jq -e '.api.modify_conf' "$DATUM_CONFIG_FILE" > /dev/null; then
+  jq '.api.modify_conf = true' \
+     "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+fi
+
+# ON BY DEFAULT, ONCE.
+#
+# vardiff_below_pool_min gives each miner a difficulty that suits it even when the
+# pool's minimum is far higher (work stays committed at the minimum, so pool credit
+# is unchanged), and password_difficulty lets a miner or rental marketplace ask for
+# one with d=N. Both are what rented rigs need. Set only where the key is absent, so
+# an install that predates them gets them on, and a user who turns either off on the
+# dashboard's Config page is not overridden on the next start.
+for key in vardiff_below_pool_min password_difficulty; do
+  if ! jq -e --arg k "$key" '(.stratum // {}) | has($k)' "$DATUM_CONFIG_FILE" > /dev/null; then
+    jq --arg k "$key" '.stratum = ((.stratum // {}) | .[$k] = true)' \
+       "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+  fi
+done
+
+# THE STRATUM PORT, ON EVERY START.
+#
+# This app publishes 23340 and nothing else, and HashGG looks for the gateway there. The
+# Config page, or a config copied in from another Datum app, can set a different port,
+# which would leave miners and the tunnel connecting to nothing. So it is set here, as
+# the StartOS packages enforce it.
+jq '.stratum = ((.stratum // {}) | .listen_port = 23340)' \
+   "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+
+# A payout address that is not one. Earlier versions of this app asked the node
+# for an address on first start; this one leaves it empty and the dashboard asks,
+# which is what the official app does. Clear the upstream placeholder if a config
+# from that app is ever dropped in here.
+if jq -e '.mining.pool_address | select(. == "enter your bitcoin address")' "$DATUM_CONFIG_FILE" > /dev/null; then
+  jq '.mining.pool_address = ""' \
+     "$DATUM_CONFIG_FILE" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "$DATUM_CONFIG_FILE"
+fi
+
+# The gateway runs as 1000:1000 and has to be able to rewrite this file, which is
+# the whole point of modify_conf.
+# THE DIRECTORY TOO, NOT JUST THE FILE.
+#
+# modify_conf is on, and the gateway saves by writing a temp file beside this one
+# and renaming it, which needs write permission on the DIRECTORY. Chowning only
+# the file leaves the dashboard's Config page reporting "Error writing new config
+# file (changes will be lost at restart)" and silently discarding every save.
+#
+# The directory is usually root-owned precisely when this matters: Docker creates
+# a missing bind-mount source as root, which is what happens on an install that
+# updated into needing this file and never received it.
+chown "${DESIRED_OWNER}" "$(dirname "${DATUM_CONFIG_FILE}")"
+chown "${DESIRED_OWNER}" "$DATUM_CONFIG_FILE"
+
+echo "DATUM configuration updated successfully."

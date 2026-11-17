@@ -1,0 +1,34 @@
+{
+  "bitcoind": {
+    "rpcuser": "auto-configure-on-install",
+    "rpcpassword": "auto-configure-on-install",
+    "rpcurl": "auto-configure-on-install",
+    "work_update_seconds": 5,
+    "notify_fallback": true
+  },
+  "api": {
+    "listen_port": 7152,
+    "modify_conf": true,
+    "admin_password": "umbrel"
+  },
+  "mining": {
+    "pool_address": "",
+    "coinbase_tag_primary": "DATUM on Umbrel",
+    "coinbase_tag_secondary": "DATUM on Umbrel",
+    "pow_algorithm": "auto"
+  },
+  "stratum": {
+    "listen_port": 23340,
+    "vardiff_min": 1024,
+    "vardiff_below_pool_min": true,
+    "password_difficulty": true
+  },
+  "logger": {
+    "log_level_console": 2
+  },
+  "datum": {
+    "pool_pass_workers": true,
+    "pool_pass_full_users": true,
+    "pooled_mining_only": true
+  }
+}

@@ -25,11 +25,9 @@ services:
   # exactly what the official Umbrel Datum app does, and it is what lets
   # api.modify_conf be true.
   gateway:
-    # PIN THIS BY DIGEST BEFORE RELEASING. Every other image in this store is
-    # `<tag>@sha256:<digest>`; a tag alone can be moved, and Umbrel will happily
-    # pull whatever it points at on a later install. The digest goes in once the
-    # image is published, because it does not exist until then.
-    image: paulscode/datum-blake2b:1.1.1.0@sha256:a28c3cb298330f8b39fc448a467fadde40b6124345d70f0104d0325d88cf0720
+    # Pinned by digest, like every image in this store: a tag alone can be moved,
+    # and Umbrel would pull whatever it points at on a later install.
+    image: paulscode/datum-blake2b:1.1.2.0@sha256:ed325753ca9642dfb8f40a70f69459de3e48c60d4f3379d4b6958347f68ad8e5
     entrypoint: ["/usr/local/bin/datum_gateway"]
     command: ["-c", "/app/conf/datum_gateway_config.json"]
     user: 1000:1000

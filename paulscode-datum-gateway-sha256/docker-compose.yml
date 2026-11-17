@@ -1,0 +1,50 @@
+version: "3.7"
+
+services:
+  # Opening this app opens the DATUM Gateway dashboard, which is what the
+  # official Datum app does.
+  app_proxy:
+    environment:
+      APP_HOST: $APP_DATUM_GATEWAY_SHA256_IP
+      APP_PORT: 7152
+
+  # The DATUM Gateway, built from master, which tracks OCEAN upstream. Upstream
+  # DATUM speaks both algorithms, and `pow_algorithm` is left at `auto`, which
+  # takes the algorithm from the node's template; against this node that always
+  # resolves to SHA256d.
+  #
+  # This used to pull `paulscode/datum-blake2b`, and that was never as odd as it
+  # read: the tag it pinned was built from the same master commit this one is, so
+  # the contents were always the OCEAN line and only the name said otherwise. It
+  # stopped being merely untidy when the BLAKE2b package moved to Convoy's fork,
+  # which it had to, because only Convoy's fork can talk to the pool serving that
+  # chain. The next tag in that repository is a different codebase, and handing a
+  # SHA256 miner Convoy's protocol extensions would point it at a pool that does
+  # not speak them. Hence `paulscode/datum-sha256`, built from this package's own
+  # Dockerfile by build/sha256/build-umbrel-images.sh in the store repo.
+  #
+  # `entrypoint` and `command` override the image's own entrypoint deliberately.
+  # That entrypoint regenerates the config from the environment on every start,
+  # which is right on StartOS where the settings live in actions. Here the
+  # dashboard's Config page is the only settings form there is, so the config
+  # file has to be the thing that persists. Running the gateway directly against
+  # a file the pre-start hook patches is what the official Umbrel Datum app does,
+  # and it is what lets api.modify_conf be true.
+  gateway:
+    image: paulscode/datum-sha256:1.0.4@sha256:4a8fb00f660c67018bbc7a740e8014e9233f44c560279381ae5605892e06fe71
+    entrypoint: ["/usr/local/bin/datum_gateway"]
+    command: ["-c", "/app/conf/datum_gateway_config.json"]
+    user: 1000:1000
+    restart: on-failure
+    stop_grace_period: 30s
+    volumes:
+      # The config the dashboard reads and writes. Seeded from this app's `data`
+      # directory and patched on every start by hooks/pre-start with the node's
+      # RPC details and this app's Umbrel password.
+      - ${APP_DATA_DIR}/data/settings/:/app/conf/
+    ports:
+      # Stratum, for the miner on your LAN.
+      - "23340:23340"
+    networks:
+      default:
+        ipv4_address: $APP_DATUM_GATEWAY_SHA256_IP

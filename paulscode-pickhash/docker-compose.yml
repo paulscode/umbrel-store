@@ -8,12 +8,14 @@ services:
       APP_PORT: 3030
 
   web:
-    image: paulscode/pickhash:0.1.6.0@sha256:67efc1471d1f62603806f9855a57cc742a46f8b0a2355d22c18f76210fc3d2a1
+    image: paulscode/pickhash:0.1.7.0@sha256:50f86717d558c6975efa610eeb0563b289dad2e440babebf81f3bc1ecf2f2212
     restart: on-failure
     # Give an in-flight rental purchase or extension time to be recorded before the stop.
     stop_grace_period: 60s
     environment:
       PORT: "3030"
+      # Which store Pickhash points at when the Datum Gateway needs updating.
+      PICKHASH_PLATFORM: umbrel
       DATA_DIR: /root/data
       # Dashboard login = the Umbrel app password, surfaced under the tile's
       # "Show default credentials" (deterministicPassword: true in umbrel-app.yml).
