@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-pickhash
 category: bitcoin
 name: Pickhash
-version: "0.1.7.0"
+version: "0.1.8.0"
 tagline: Rent Bitcoin hashrate on your own terms
 description: >-
   Pickhash rents SHA-256 (AsicBoost) or BLAKE2b hashrate from MiningRigRentals
@@ -80,26 +80,36 @@ defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: true
 releaseNotes: >-
-  Pickhash now checks whether your Datum Gateway can give each rented rig its own
-  difficulty, and warns you when it cannot. A pool such as CONVOY sizes its
-  minimum share difficulty to your gateway's total hashrate, and a stock Datum
-  Gateway pushes every miner up to it. Behind a busy gateway each rented rig is
-  then asked for a difficulty sized for your whole fleet: it finds a share only
-  every few minutes, MiningRigRentals shows the rig's owner a "High Worker
-  Difficulty" warning and reads its delivery as choppy (the under-delivery
-  notices), and the rig reconnects every couple of minutes.
+  Autopilot no longer fills a small leftover gap with the dearest rigs on the
+  market. Once the cheap rigs have covered most of your target, it may close the
+  rest with a modestly larger rig, by up to your hashrate tolerance, and it stops
+  once it is within that tolerance, as the live loop always has.
 
 
-  The new Datum (SHA256) and Datum (BLAKE2b) apps in this store, and the updated
-  Datum Companions, fix this: each rig keeps a difficulty that suits it while the
-  work stays committed at the pool's minimum, so pool credit is unchanged. Tested
-  live on CONVOY. The endpoint test in Setup and Settings now reports what your
-  gateway supports, and a standing alert names the app to install until it is
-  updated. It clears by itself once the gateway is updated.
+  The Autopilot preview now honours your rate ceiling, with the same per-rig
+  backstop the live loop uses, and re-runs when you change it, so it shows what
+  LIVE would rent. When the ceiling is what leaves a shortfall, it says so.
 
 
-  Also fixed: a stratum endpoint that answered the endpoint test or the periodic
-  health check with something other than a JSON object (for example the word
-  null) could crash Pickhash; such replies are now ignored.
+  New: a ceiling feed. In Settings, Guardrails, a Ceiling feed URL lets a program
+  of yours set the price ceilings from what hashrate is worth right now. It is
+  read every minute and fails closed: if it is unreachable, unreadable, too old,
+  or sends 0, autopilot and auto-extend rent and extend nothing until it is good
+  again. Running rentals are never cancelled, quick rents are not affected, and
+  the feed can never go above a ceiling you set yourself.
+
+
+  Also new, from contributor Chris Guida: fill the stratum endpoint from a pool
+  saved on your MiningRigRentals account, a DuckDNS walkthrough with a random
+  name suggested, and in DRY-RUN a panel showing what autopilot would have
+  rented.
+
+
+  Changes to note: a ceiling of 0 now means rent nothing everywhere, and an
+  unreadable ceiling is refused rather than treated as none. A ceiling lowered
+  below what a session already holds now stops new rentals above it. Rigs over
+  your per-rig backstop are left out of autopilot's plan, and an alert names
+  whichever ceiling is holding a session below target. Fixed: autopilot could
+  stall on a rig your per-rig backstop refuses, with no alert.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
