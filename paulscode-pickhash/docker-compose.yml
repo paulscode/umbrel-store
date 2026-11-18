@@ -8,7 +8,7 @@ services:
       APP_PORT: 3030
 
   web:
-    image: paulscode/pickhash:0.1.8.0@sha256:6ad5c1a6e213292800507e6accd9d51470f32805ef82bff74486e4bed8f2c7e2
+    image: paulscode/pickhash:0.1.8.1@sha256:dba4fd2b16e4c5292ce01941f07d2d3d6c7bc854e126237e64b5c14e63aef3e7
     restart: on-failure
     # Give an in-flight rental purchase or extension time to be recorded before the stop.
     stop_grace_period: 60s
