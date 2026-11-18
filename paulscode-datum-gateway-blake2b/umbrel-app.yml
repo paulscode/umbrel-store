@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-gateway-blake2b
 category: bitcoin
 name: Datum (BLAKE2b)
-version: "1.1.2.0"
+version: "1.1.3.0"
 tagline: Datum Gateway for BLAKE2b that gives rented and small miners their own difficulty
 description: >-
   PaulsCode's build of the DATUM Gateway for the BLAKE2b chain. It builds block
@@ -72,9 +72,15 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  First release: PaulsCode's DATUM Gateway for BLAKE2b as a primary gateway,
-  with per-miner difficulty below the pool's minimum and difficulty requests in
-  the Stratum password, both on by default.
+  Fixes from independent reviews of the gateway changes. A rig no longer gets
+  the same work twice when a quickdiff arrives for a job it hasn't been sent
+  yet, which brought its shares back as duplicates. A share the gateway keeps
+  from the pool (below the pool's minimum) is now answered as the pool would
+  answer it when its job can't be submitted, so a rig's measured hashrate no
+  longer counts work the pool would not take. A block the gateway can recognise
+  in a quickdiff share for an earlier job is now submitted before the share is
+  refused. A quickdiff share for another job is answered as unknown work rather
+  than as a hashing error that reads like a hardware fault.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:

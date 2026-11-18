@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-sha256
 category: bitcoin
 name: Datum (SHA256) Companion
-version: "1.0.4"
+version: "1.0.5"
 tagline: Mine with your own block templates, on a node that never enforces BIP-110
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -100,51 +100,13 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  Rented rigs keep their own difficulty. A pool such as CONVOY sizes its minimum
-  share difficulty to your gateway's total hashrate, and the gateway used to push
-  every miner up to it, so behind a busy gateway each rented rig was asked for a
-  difficulty sized for the whole fleet: few shares, choppy delivery readings, a
-  "High Worker Difficulty" warning for the rig's owner on MiningRigRentals, and a
-  reconnect every couple of minutes. With "Serve miners below the pool's minimum
-  difficulty" (on by default, on the dashboard's Config page) each miner gets a
-  difficulty that suits it, while work stays committed at the pool's minimum and
-  only shares meeting it are sent to the pool, so pool credit is unchanged.
-  Miners can also request a difficulty in the Stratum password (d=N), now on by
-  default too; Pickhash uses it to give each rented rig the difficulty
-  MiningRigRentals expects. If you had turned either setting off, it stays off.
-
-
-  Vardiff now measures at the difficulty it actually serves, which stops large
-  overshoots after a step up. A connection that opens with a TLS handshake is
-  closed at once, so the MiningRigRentals pool test no longer reports a working
-  endpoint as failing. The gateway answers datum.capabilities, so Pickhash can
-  tell what it supports.
-
-
-  PREVIOUS RELEASE:
-  Fixes a fault that could start rejecting your shares after several hours of mining.
-
-
-  The gateway keeps a list of the shares it has already seen, so it can spot one that arrives twice. The
-  first time that list filled up it lost track of itself, and from then on it could refuse perfectly good
-  shares. Restarting the app was the only thing that cleared it. How long it took to get there depended on
-  how busy your miners were, so a few hours was typical. If your reject rate has ever climbed out of
-  nowhere and then gone back to normal after you restarted, this is very likely why.
-
-
-  The app now also tells you why shares were refused, rather than only how many. On the status page, under
-  "Local Shares Rejected", there is a new "Rejected Because" line listing what has actually happened, most
-  common first. It reads "None" when there is nothing to report. The Clients page has a new "Last Reject"
-  column, so when only one of your miners is misbehaving you can see which one it is.
-
-
-  Those reasons use the same words your mining hardware writes in its own log, so you can read the two
-  side by side.
-
-
-  Behind the scenes this app now pulls its own image rather than sharing one with the BLAKE2b companion,
-  which has moved to a different codebase. Nothing about your settings changes, your miners do not need
-  reconfiguring, and this is an ordinary update to the app you already have installed.
+  Fixes from independent reviews of the gateway changes. A block found in a
+  quickdiff share for an earlier job is now submitted before the share is
+  refused; before, a block in it could be lost. A second quickdiff on the same
+  job no longer resends identical work, which brought a rig's shares back as
+  duplicates. A quickdiff share for another job is answered as unknown work
+  rather than as a hashing error that reads like a hardware fault. A misaligned
+  memory read in the duplicate-share check is fixed.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:

@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-datum-gateway-sha256
 category: bitcoin
 name: Datum (SHA256)
-version: "1.0.4"
+version: "1.0.5"
 tagline: Datum Gateway that gives rented and small miners their own difficulty
 description: >-
   PaulsCode's build of the DATUM Gateway for SHA256, for use in place of the
@@ -62,9 +62,13 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  First release: PaulsCode's DATUM Gateway for SHA256, for use in place of the
-  official Datum app, with per-miner difficulty below the pool's minimum and
-  difficulty requests in the Stratum password, both on by default.
+  Fixes from independent reviews of the gateway changes. A block found in a
+  quickdiff share for an earlier job is now submitted before the share is
+  refused; before, a block in it could be lost. A second quickdiff on the same
+  job no longer resends identical work, which brought a rig's shares back as
+  duplicates. A quickdiff share for another job is answered as unknown work
+  rather than as a hashing error that reads like a hardware fault. A misaligned
+  memory read in the duplicate-share check is fixed.
 submitter: Paul Lamb
 submission: https://github.com/paulscode/umbrel-store
 widgets:
