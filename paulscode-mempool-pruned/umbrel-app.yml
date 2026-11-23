@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-mempool-pruned
 category: bitcoin
 name: Mempool Pruned
-version: "3.3.2.2"
+version: "3.3.2.3"
 tagline: A block explorer that works with a pruned Bitcoin node
 description: >-
   Run your own mempool.space against a pruned node. The official Mempool app
@@ -86,6 +86,33 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  Security update for the backend.
+
+
+  One visitor could crash Mempool by exhausting its memory over the
+  live-update connection, by sending pings and never reading the replies
+  (GHSA-37g9-w4hg-h9qr). The WebSocket library is now 8.23.0, which bounds
+  that queue.
+
+
+  One compressed request with extra bytes after the body could crash the
+  backend (GHSA-27r3-jxmh-p828). Fixed by body-parser 1.20.9.
+
+
+  The HTTP client now uses follow-redirects 1.16.3, which keeps credentials
+  from following a redirect (CVE-2026-116689).
+
+
+  The backend runs on Node.js 26.13.1, the November 2026 Node.js security
+  release.
+
+
+  Nothing you have set changes, and no reindex is needed.
+
+
+  IF YOU ARE UPDATING FROM 3.3.2.1 OR EARLIER, the notes from 3.3.2.2 also apply:
+
+
   The Lightning pages now work on the SHA256 chain too. With the official
   Lightning Node app (LND) installed and this explorer's Bitcoin node on the
   SHA256 chain, they show the Lightning network as that node sees it, with
