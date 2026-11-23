@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: paulscode-electrs-pruned
 category: bitcoin
 name: Electrs Pruned
-version: "0.11.1.18"
+version: "0.11.1.19"
 tagline: A second Electrum server, for your pruned node
 description: >-
   Runs alongside the official Electrs app rather than replacing it. The intended
@@ -92,6 +92,17 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  The proxy inside this app is now v0.8.4-blake2b.1, built on btc-rpc-proxy
+  0.8.4. It refuses a block fetched from a peer that repeats a transaction,
+  which could otherwise carry a forged transaction list under a valid block
+  hash. It also checks passwords in constant time, waits a quarter second before
+  refusing a wrong one, and no longer tells peers it is a proxy. Nothing you
+  have set changes, and no reindex is needed.
+
+
+  FROM 0.11.1.18:
+
+
   Fixes indexing that stops a few hundred blocks after the BLAKE2b chain split
   and never moves on, on a pruned Knots (BLAKE2b) node. Blocks your node has
   already dropped are fetched from its peers by the proxy that runs inside this

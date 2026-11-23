@@ -6,7 +6,7 @@ implements:
   - paulscode-electrs-pruned
 category: bitcoin
 name: Fulcrum Pruned
-version: "2.1.4.2"
+version: "2.1.4.3"
 tagline: A fast Electrum server for a pruned node
 description: >-
   Fulcrum, the fast Electrum server, made to work with a pruned Bitcoin node, on
@@ -96,6 +96,17 @@ backupIgnore:
 defaultUsername: ""
 defaultPassword: ""
 releaseNotes: >-
+  The proxy inside this app is now v0.8.4-blake2b.1, built on btc-rpc-proxy
+  0.8.4. It refuses a block fetched from a peer that repeats a transaction,
+  which could otherwise carry a forged transaction list under a valid block
+  hash. It also checks passwords in constant time, waits a quarter second before
+  refusing a wrong one, and no longer tells peers it is a proxy. Nothing you
+  have set changes, and no reindex is needed.
+
+
+  FROM 2.1.4.2:
+
+
   Fulcrum Pruned can now stand in for Electrs Pruned: apps that need Electrs
   Pruned, such as the Frigate Electrum Server companions, can use Fulcrum Pruned
   instead, chosen from the app's dependency picker. Nothing else changes: the same

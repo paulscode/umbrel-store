@@ -134,7 +134,7 @@ services:
     # This is the same image the StartOS package runs; the two lines were split
     # and are now one. Swap back to ghcr.io/start9labs/btc-rpc-proxy once #33 is
     # merged.
-    image: paulscode/btc-rpc-proxy:v0.8.2-blake2b.2@sha256:1ca61fbc93ae6218af026712b63cfd257c9a3b838adb14e57b571be8fc0fc3f2
+    image: paulscode/btc-rpc-proxy:v0.8.4-blake2b.1@sha256:7826eaa258ec4598a96bbd87c80e671f2a362800e52b3f15d5b152b8e7daa169
     restart: on-failure
     environment:
       BITCOIND_HOST: ${APP_BITCOIN_NODE_IP}
