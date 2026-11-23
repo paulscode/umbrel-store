@@ -30,7 +30,7 @@ set -euo pipefail
 
 # Versioned separately. The pair is released together, but a fix to one is not a
 # reason to make everybody re-pull the other, and Umbrel offers an update per app.
-KNOTS_VERSION="29.5.0.0"
+KNOTS_VERSION="29.5.1.0"
 DATUM_VERSION="1.1.3.0"
 PLATFORMS="linux/amd64,linux/arm64"
 

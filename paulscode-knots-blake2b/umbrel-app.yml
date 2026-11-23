@@ -4,7 +4,7 @@ implements:
   - bitcoin
 category: bitcoin
 name: Knots (BLAKE2b) Companion
-version: "29.5.0.0"
+version: "29.5.1.0"
 tagline: A Bitcoin Knots node on the BLAKE2b chain, pruned so it fits alongside another
 description: >-
   A Bitcoin Knots node built from the BLAKE2b proof-of-work change, following the
@@ -66,7 +66,25 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >-
-  Moves the node to Bitcoin Knots 29.5.knots20260508: Bitcoin Core 29.5 with
+  Moves the node to Bitcoin Knots 29.5.1.knots20260508, with security fixes: a
+  peer could stall the node with orphan transactions (CVE-2026-117348), a
+  crafted wallet name could run a command through wallet notifications, and a
+  rare error in the UTXO set hash. A node with few peers on the BLAKE2b chain
+  now waits for them instead of cycling through addresses that cannot serve it.
+  Public keys now count toward the data carrier limit unless a signature is
+  checked against them.
+
+
+  One consensus rule tightens: the ban on the taproot annex now also applies
+  when spending bitcoins created before the data rules (RDTS) started, which
+  29.5 exempted. The annex is non-standard, so this affects no ordinary
+  transaction. The coinbase maturity rules are unchanged.
+
+
+  IF YOU ARE UPDATING FROM 29.4.3.0 OR EARLIER, 29.5.0.0 also applies:
+
+
+  It moved the node to Bitcoin Knots 29.5.knots20260508: Bitcoin Core 29.5 with
   Knots' fixes, mainly in networking and in how block and undo files are read
   and written. The coinbase maturity rules are unchanged from 29.4.3.
 
