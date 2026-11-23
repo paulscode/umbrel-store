@@ -79,6 +79,55 @@ if lightning_fork_app_installed "mempool"; then
   export APP_LIGHTNING_FORK_MEMPOOL_UI_PORT="3006"
   export APP_LIGHTNING_FORK_MEMPOOL_HIDDEN_SERVICE="$(cat "${EXPORTS_TOR_DATA_DIR:-/nonexistent}/app-mempool/hostname" 2>/dev/null || true)"
 fi
+
+# Any other Mempool app, as one list (MEMPOOL_APPS, which dashboards after
+# 1.3.2-blake2b.22 read and earlier ones ignore): one
+# "id|name|api|ui port|onion" per installed app, joined with ";". An app
+# with no static IP is reached by its container name, which Docker resolves
+# for every container on umbrel_main_network. The onion is read only if it
+# looks like one, so nothing in that file can break the list.
+lightning_fork_mempool_apps=""
+lightning_fork_mempool_add() {
+  # id, name, the web UI on the app network, the UI's port on this host
+  local onion
+  lightning_fork_app_installed "$1" || return 0
+  onion="$(grep -xE '[a-z2-7]{56}\.onion' "${EXPORTS_TOR_DATA_DIR:-/nonexistent}/app-$1/hostname" 2>/dev/null | head -n 1 || true)"
+  lightning_fork_mempool_apps="${lightning_fork_mempool_apps:+${lightning_fork_mempool_apps};}$1|$2|$3|$4|${onion}"
+}
+lightning_fork_mempool_add "kilombino-mempool" "Mempool Kilombino" "http://kilombino-mempool_web_1:8080" "7162" || true
+# An app not named above can offer itself, from any store, with a line
+#   export APP_<ID>_MEMPOOL_API="http://<host>:<port>"
+# in its own exports.sh (<ID> its app id in capitals, "-" as "_"), naming
+# its web UI on the app network. umbreld does not source that file here
+# (this app does not depend on it), and nothing of it runs: the line is
+# read with sed, and only that exact shape is taken. The name and the UI's
+# port come from its umbrel-app.yml, the same way. The dashboard still
+# asks it which chain it follows, and the operator still has to choose it.
+lightning_fork_mempool_offer() {
+  # the app's directory
+  local id var dir="$1" api name port
+  id="$(basename "${dir}")"
+  [[ "${id}" =~ ^[a-z0-9-]+$ ]] || return 0
+  if [[ "${id}" = "mempool" ]] || [[ "${id}" = "paulscode-mempool-pruned" ]]; then
+    return 0
+  fi
+  case ";${lightning_fork_mempool_apps};" in *";${id}|"*) return 0 ;; esac
+  var="APP_$(echo "${id}" | tr 'a-z-' 'A-Z_')_MEMPOOL_API"
+  api="$(sed -n "s#^export ${var}=\"\(http://[A-Za-z0-9._-]*:[0-9]\{1,5\}\)\"\$#\1#p" "${dir}/exports.sh" 2>/dev/null | head -n 1 || true)"
+  [[ -n "${api}" ]] || return 0
+  name="$(sed -n 's/^name: *"\{0,1\}\([A-Za-z0-9 ()._-]\{1,40\}\)"\{0,1\} *$/\1/p' "${dir}/umbrel-app.yml" 2>/dev/null | head -n 1 || true)"
+  port="$(sed -n 's/^port: *\([0-9]\{1,5\}\) *$/\1/p' "${dir}/umbrel-app.yml" 2>/dev/null | head -n 1 || true)"
+  lightning_fork_mempool_add "${id}" "${name:-${id}}" "${api}" "${port}"
+}
+for lightning_fork_dir in "${EXPORTS_APP_DIR:-/nonexistent}"/../*/; do
+  [[ -f "${lightning_fork_dir}exports.sh" ]] || continue
+  lightning_fork_mempool_offer "${lightning_fork_dir%/}" || true
+done
+unset -f lightning_fork_mempool_offer
+unset lightning_fork_dir
+export APP_LIGHTNING_FORK_MEMPOOL_APPS="${lightning_fork_mempool_apps}"
+unset -f lightning_fork_mempool_add
+unset lightning_fork_mempool_apps
 # The bridge's SHA256 Lightning node (sha256-lnd in docker-compose.yml) reads
 # a node on the SHA256 chain. Which one depends on how this Umbrel runs the
 # two chains: Knots (SHA256) Companion beside a main node on BLAKE2b, or the

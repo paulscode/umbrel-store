@@ -211,6 +211,8 @@ services:
       MEMPOOL_PRUNED_API: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_API:-}"
       MEMPOOL_PRUNED_UI_PORT: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_UI_PORT:-}"
       MEMPOOL_PRUNED_HIDDEN_SERVICE: "${APP_LIGHTNING_FORK_MEMPOOL_PRUNED_HIDDEN_SERVICE:-}"
+      # Any other Mempool app (exports.sh), as one list.
+      MEMPOOL_APPS: "${APP_LIGHTNING_FORK_MEMPOOL_APPS:-}"
       # The installed nodes that may be on the SHA256 chain, with their RPC
       # credentials (exports.sh). The dashboard asks each which chain it
       # follows, offers those on the SHA256 one, and writes the chosen one
